@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agcms-config
+  namespace: agcms
+data:
+  # Service discovery (internal cluster DNS)
+  PII_SERVICE_URL: "http://pii:8001"
+  INJECTION_SERVICE_URL: "http://injection:8002"
+  RESPONSE_SERVICE_URL: "http://response:8003"
+  POLICY_SERVICE_URL: "http://policy:8004"
+  AUDIT_SERVICE_URL: "http://audit:8005"
+  AUTH_SERVICE_URL: "http://auth:8006"
+  TENANT_SERVICE_URL: "http://tenant:8007"
+  # Groq endpoint
+  GROQ_BASE_URL: "https://api.groq.com/openai/v1"
+  # spaCy model toggle (en_core_web_sm in dev, en_core_web_trf in prod)
+  AGCMS_SPACY_MODEL: "en_core_web_trf"
+  # ML injection classifier
+  AGCMS_ML_ENABLED: "true"
+  # Audit log partition retention (days)
+  AUDIT_RETENTION_DAYS: "90"

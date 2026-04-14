@@ -1,0 +1,63 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: agcms-ingress
+  namespace: agcms
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    # WAF — NGINX ModSecurity (enable in production)
+    # Requires nginx-ingress built with ModSecurity support (--enable-modsecurity flag).
+    # OWASP Core Rule Set blocks SQLi, XSS, RCE, and common web attacks at ingress.
+    nginx.ingress.kubernetes.io/enable-modsecurity: "true"
+    nginx.ingress.kubernetes.io/enable-owasp-core-rules: "true"
+    nginx.ingress.kubernetes.io/modsecurity-snippet: |
+      SecRuleEngine On
+      SecRequestBodyAccess On
+      SecResponseBodyAccess Off
+      SecAuditLog /var/log/modsec_audit.log
+    # TLS via cert-manager (uncomment and configure issuer for prod)
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  # tls:
+  #   - hosts:
+  #       - agcms.example.com
+  #     secretName: agcms-tls
+  rules:
+    - host: agcms.example.com   # replace with real hostname or use IP
+      http:
+        paths:
+          # Management + governance API
+          - path: /api/v1(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: gateway
+                port:
+                  number: 8000
+          # LLM proxy endpoint
+          - path: /v1(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: gateway
+                port:
+                  number: 8000
+          # Legacy dashboard API (unauthenticated stats)
+          - path: /api/dashboard(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: gateway
+                port:
+                  number: 8000
+          # React SPA (catch-all — must be last)
+          - path: /(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: dashboard
+                port:
+                  number: 3000

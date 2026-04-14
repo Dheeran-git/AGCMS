@@ -1,0 +1,4 @@
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["agcms-audit", "agcms-pii", "agcms-injection", "agcms-response", "agcms-policy", "agcms-gateway", "agcms-auth", "agcms-tenant"]

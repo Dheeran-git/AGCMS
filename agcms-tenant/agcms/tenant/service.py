@@ -1,0 +1,209 @@
+"""Business logic for the AGCMS Tenant Management Service.
+
+Handles tenant provisioning, retrieval, usage stats, and settings updates.
+All DB interactions go through agcms.tenant.db helpers.
+"""
+
+import hashlib
+import json
+import os
+import secrets
+import string
+from typing import Optional
+
+from agcms.tenant import db
+from agcms.tenant.schemas import (
+    ProvisionResponse,
+    TenantDetail,
+    UsageStats,
+)
+
+_VALID_PLANS = {"starter", "business", "enterprise"}
+
+_DEFAULT_POLICY = {
+    "pii": {
+        "enabled": True,
+        "action_on_detection": "REDACT",
+        "critical_action": "BLOCK",
+        "risk_threshold": "MEDIUM",
+        "custom_patterns": {},
+    },
+    "injection": {
+        "enabled": True,
+        "block_threshold": 0.65,
+        "action_on_detection": "BLOCK",
+        "log_all_attempts": True,
+    },
+    "response_compliance": {
+        "enabled": True,
+        "restricted_topics": [],
+        "system_prompt_keywords": [],
+        "action_on_violation": "REDACT",
+    },
+    "rate_limits": {
+        "requests_per_minute": 60,
+        "requests_per_day": 10000,
+    },
+    "audit": {
+        "retention_days": 365,
+        "export_formats": ["json", "csv"],
+        "pii_in_logs": False,
+    },
+}
+
+
+def _generate_api_key(tenant_id: str) -> str:
+    """Generate a secure 32-character random API key prefixed with agcms_."""
+    alphabet = string.ascii_letters + string.digits
+    random_part = "".join(secrets.choice(alphabet) for _ in range(32))
+    return f"agcms_{tenant_id[:8]}_{random_part}"
+
+
+def _hash_key(api_key: str) -> str:
+    return hashlib.sha256(api_key.encode("utf-8")).hexdigest()
+
+
+def _slugify(name: str) -> str:
+    """Convert a tenant name to a safe lowercase ID (max 32 chars)."""
+    slug = "".join(c if c.isalnum() else "-" for c in name.lower()).strip("-")
+    # Collapse consecutive dashes
+    while "--" in slug:
+        slug = slug.replace("--", "-")
+    return slug[:28]
+
+
+async def provision_tenant(
+    name: str, admin_email: str, plan: str
+) -> ProvisionResponse:
+    """Create a new tenant with API key, admin user, and default policy.
+
+    Raises ValueError for invalid plan or duplicate tenant ID.
+    """
+    if plan not in _VALID_PLANS:
+        raise ValueError(f"Invalid plan '{plan}'. Must be one of {sorted(_VALID_PLANS)}")
+
+    base_id = _slugify(name)
+    if not base_id:
+        base_id = "tenant"
+
+    # Find a unique tenant ID by appending a suffix if needed
+    tenant_id = base_id
+    suffix = 2
+    while await db.fetch_one("SELECT id FROM tenants WHERE id = $1", tenant_id):
+        tenant_id = f"{base_id}-{suffix}"
+        suffix += 1
+
+    api_key = _generate_api_key(tenant_id)
+    key_hash = _hash_key(api_key)
+
+    # Insert tenant
+    await db.execute(
+        "INSERT INTO tenants (id, name, plan, admin_email, api_key_hash, is_active) "
+        "VALUES ($1, $2, $3, $4, $5, TRUE)",
+        tenant_id, name, plan, admin_email, key_hash,
+    )
+
+    # Insert admin user
+    await db.execute(
+        "INSERT INTO tenant_users (tenant_id, external_id, email, department, role) "
+        "VALUES ($1, $2, $3, $4, $5)",
+        tenant_id, "admin", admin_email, "Admin", "admin",
+    )
+
+    # Insert default policy
+    await db.execute(
+        "INSERT INTO policies (tenant_id, config, version, is_active, notes) "
+        "VALUES ($1, $2::jsonb, $3, TRUE, $4)",
+        tenant_id, json.dumps(_DEFAULT_POLICY), "1.0.0", "Auto-provisioned default policy",
+    )
+
+    return ProvisionResponse(
+        tenant_id=tenant_id,
+        api_key=api_key,
+        name=name,
+        plan=plan,
+        admin_email=admin_email,
+        message="Tenant provisioned successfully. Store the api_key securely — it will not be shown again.",
+    )
+
+
+async def get_tenant(tenant_id: str) -> Optional[TenantDetail]:
+    """Fetch tenant details. Returns None if not found."""
+    row = await db.fetch_one(
+        "SELECT id, name, plan, admin_email, is_active, settings, created_at "
+        "FROM tenants WHERE id = $1",
+        tenant_id,
+    )
+    if not row:
+        return None
+    settings = row["settings"]
+    if isinstance(settings, str):
+        settings = json.loads(settings) if settings else {}
+    elif settings is None:
+        settings = {}
+    return TenantDetail(
+        id=row["id"],
+        name=row["name"],
+        plan=row["plan"],
+        admin_email=row["admin_email"],
+        is_active=row["is_active"],
+        settings=settings,
+        created_at=row["created_at"].isoformat(),
+    )
+
+
+async def get_usage(tenant_id: str) -> UsageStats:
+    """Return aggregated usage counts from audit_logs for the tenant."""
+    today_start = "CURRENT_DATE"
+
+    requests_today = await db.fetch_val(
+        "SELECT COUNT(*) FROM audit_logs WHERE tenant_id = $1 AND created_at >= CURRENT_DATE",
+        tenant_id,
+    ) or 0
+
+    requests_this_month = await db.fetch_val(
+        "SELECT COUNT(*) FROM audit_logs "
+        "WHERE tenant_id = $1 AND created_at >= date_trunc('month', NOW())",
+        tenant_id,
+    ) or 0
+
+    blocked_today = await db.fetch_val(
+        "SELECT COUNT(*) FROM audit_logs "
+        "WHERE tenant_id = $1 AND created_at >= CURRENT_DATE "
+        "AND enforcement_action = 'BLOCK'",
+        tenant_id,
+    ) or 0
+
+    pii_today = await db.fetch_val(
+        "SELECT COUNT(*) FROM audit_logs "
+        "WHERE tenant_id = $1 AND created_at >= CURRENT_DATE AND pii_detected = TRUE",
+        tenant_id,
+    ) or 0
+
+    injection_today = await db.fetch_val(
+        "SELECT COUNT(*) FROM audit_logs "
+        "WHERE tenant_id = $1 AND created_at >= CURRENT_DATE AND injection_score > 0.5",
+        tenant_id,
+    ) or 0
+
+    return UsageStats(
+        tenant_id=tenant_id,
+        requests_today=int(requests_today),
+        requests_this_month=int(requests_this_month),
+        blocked_today=int(blocked_today),
+        pii_detections_today=int(pii_today),
+        injection_detections_today=int(injection_today),
+    )
+
+
+async def update_settings(tenant_id: str, settings: dict) -> bool:
+    """Merge new settings into the tenant's settings JSONB. Returns False if not found."""
+    row = await db.fetch_one("SELECT id FROM tenants WHERE id = $1", tenant_id)
+    if not row:
+        return False
+
+    await db.execute(
+        "UPDATE tenants SET settings = settings || $2::jsonb WHERE id = $1",
+        tenant_id, json.dumps(settings),
+    )
+    return True

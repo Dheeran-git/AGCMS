@@ -1,0 +1,310 @@
+# Response compliance, policy, audit — 2 replicas, ClusterIP services
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: response
+  namespace: agcms
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: response
+  template:
+    metadata:
+      labels:
+        app: response
+    spec:
+      containers:
+        - name: response
+          image: ghcr.io/OWNER/REPO/agcms-response:latest
+          ports:
+            - containerPort: 8003
+          envFrom:
+            - configMapRef:
+                name: agcms-config
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8003
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: response
+  namespace: agcms
+spec:
+  selector:
+    app: response
+  ports:
+    - port: 8003
+      targetPort: 8003
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: policy
+  namespace: agcms
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: policy
+  template:
+    metadata:
+      labels:
+        app: policy
+    spec:
+      containers:
+        - name: policy
+          image: ghcr.io/OWNER/REPO/agcms-policy:latest
+          ports:
+            - containerPort: 8004
+          envFrom:
+            - configMapRef:
+                name: agcms-config
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8004
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: policy
+  namespace: agcms
+spec:
+  selector:
+    app: policy
+  ports:
+    - port: 8004
+      targetPort: 8004
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audit
+  namespace: agcms
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: audit
+  template:
+    metadata:
+      labels:
+        app: audit
+    spec:
+      containers:
+        - name: audit
+          image: ghcr.io/OWNER/REPO/agcms-audit:latest
+          ports:
+            - containerPort: 8005
+          envFrom:
+            - configMapRef:
+                name: agcms-config
+            - secretRef:
+                name: agcms-secrets
+          env:
+            - name: DATABASE_URL
+              value: "postgresql+asyncpg://agcms:$(POSTGRES_PASSWORD)@postgres:5432/agcms"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8005
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: audit
+  namespace: agcms
+spec:
+  selector:
+    app: audit
+  ports:
+    - port: 8005
+      targetPort: 8005
+---
+# Auth service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth
+  namespace: agcms
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth
+  template:
+    metadata:
+      labels:
+        app: auth
+    spec:
+      containers:
+        - name: auth
+          image: ghcr.io/OWNER/REPO/agcms-auth:latest
+          ports:
+            - containerPort: 8006
+          envFrom:
+            - configMapRef:
+                name: agcms-config
+            - secretRef:
+                name: agcms-secrets
+          env:
+            - name: DATABASE_URL
+              value: "postgresql+asyncpg://agcms:$(POSTGRES_PASSWORD)@postgres:5432/agcms"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8006
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth
+  namespace: agcms
+spec:
+  selector:
+    app: auth
+  ports:
+    - port: 8006
+      targetPort: 8006
+---
+# Tenant service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tenant
+  namespace: agcms
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tenant
+  template:
+    metadata:
+      labels:
+        app: tenant
+    spec:
+      containers:
+        - name: tenant
+          image: ghcr.io/OWNER/REPO/agcms-tenant:latest
+          ports:
+            - containerPort: 8007
+          envFrom:
+            - configMapRef:
+                name: agcms-config
+            - secretRef:
+                name: agcms-secrets
+          env:
+            - name: DATABASE_URL
+              value: "postgresql+asyncpg://agcms:$(POSTGRES_PASSWORD)@postgres:5432/agcms"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "300m"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8007
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tenant
+  namespace: agcms
+spec:
+  selector:
+    app: tenant
+  ports:
+    - port: 8007
+      targetPort: 8007
+---
+# Dashboard (React SPA served via nginx)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dashboard
+  namespace: agcms
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: dashboard
+  template:
+    metadata:
+      labels:
+        app: dashboard
+    spec:
+      containers:
+        - name: dashboard
+          image: ghcr.io/OWNER/REPO/agcms-dashboard:latest
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dashboard
+  namespace: agcms
+spec:
+  selector:
+    app: dashboard
+  ports:
+    - port: 3000
+      targetPort: 3000

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: agcms
+  labels:
+    app.kubernetes.io/name: agcms
+    app.kubernetes.io/part-of: agcms-platform

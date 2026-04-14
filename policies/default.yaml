@@ -1,0 +1,31 @@
+tenant_id: "default"
+version: "1.0.0"
+effective_date: "2026-01-01"
+
+pii:
+  enabled: true
+  action_on_detection: "REDACT"
+  critical_action: "BLOCK"
+  risk_threshold: "MEDIUM"
+  custom_patterns: {}
+
+injection:
+  enabled: true
+  block_threshold: 0.65
+  action_on_detection: "BLOCK"
+  log_all_attempts: true
+
+response_compliance:
+  enabled: true
+  restricted_topics: []
+  system_prompt_keywords: []
+  action_on_violation: "REDACT"
+
+rate_limits:
+  requests_per_minute: 60
+  requests_per_day: 10000
+
+audit:
+  retention_days: 365
+  export_formats: ["json", "csv"]
+  pii_in_logs: false
