@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+*.xml
+
+# Node / frontend
+node_modules/
+agcms-dashboard/dist/
+agcms-dashboard/test-results/
+agcms-dashboard/playwright-report/
+
+# Secrets
+.env
+*.env.local
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ML model cache (too large for git)
+agcms-injection/model/
+*.onnx
+*.ort

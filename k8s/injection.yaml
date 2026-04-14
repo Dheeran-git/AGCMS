@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: injection
+  namespace: agcms
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: injection
+  template:
+    metadata:
+      labels:
+        app: injection
+    spec:
+      containers:
+        - name: injection
+          image: ghcr.io/OWNER/REPO/agcms-injection:latest
+          ports:
+            - containerPort: 8002
+          envFrom:
+            - configMapRef:
+                name: agcms-config
+          resources:
+            requests:
+              memory: "768Mi"
+              cpu: "500m"
+            limits:
+              memory: "1536Mi"   # ONNX DeBERTa model ~400MB
+              cpu: "1000m"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8002
+            initialDelaySeconds: 30   # model loading takes time
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: injection
+  namespace: agcms
+spec:
+  selector:
+    app: injection
+  ports:
+    - port: 8002
+      targetPort: 8002
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: injection-hpa
+  namespace: agcms
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: injection
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
