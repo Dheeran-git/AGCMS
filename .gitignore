@@ -36,3 +36,6 @@ Thumbs.db
 agcms-injection/model/
 *.onnx
 *.ort
+
+# Claude Code memory (not project code)
+.claude/
