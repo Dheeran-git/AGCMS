@@ -4,7 +4,7 @@ All notable product-facing changes to AGCMS are documented here. The format
 follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and each
 release has a fixed `YYYY-MM-DD` date once cut.
 
-## [1.2.0] — Unreleased
+## [1.2.0] — 2026-05-09
 
 ### Added
 - **GTM surface** — public OpenAPI 3.1 export at `/openapi.yaml`,
