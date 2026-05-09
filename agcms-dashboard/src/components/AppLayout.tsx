@@ -4,6 +4,7 @@ import { TooltipProvider } from './ui/tooltip';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { CommandPalette, useCommandPalette } from './CommandPalette';
+import { OnboardingBanner } from './OnboardingBanner';
 import { useDashboardStore } from '../stores/dashboard';
 import { cn } from '../lib/cn';
 
@@ -22,6 +23,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           )}
         >
           <TopBar onOpenPalette={() => palette.setOpen(true)} />
+          <OnboardingBanner />
           <main className="max-w-[1400px] mx-auto px-8 py-8 animate-fade-in">
             {children}
           </main>
