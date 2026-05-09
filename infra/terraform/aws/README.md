@@ -1,6 +1,22 @@
 # AGCMS — AWS Terraform Module
 
-Provisions the foundational AWS infrastructure for an AGCMS deployment:
+Provisions the foundational AWS infrastructure for an AGCMS deployment.
+
+## Layout
+
+The root composes seven self-contained modules under `modules/`:
+
+| Module | What it provisions |
+|---|---|
+| `vpc` | VPC, 3 public + 3 private subnets across 3 AZs, NAT gateway per AZ, route tables. |
+| `kms` | Three customer-managed KMS keys with rotation: platform KEK, RDS storage, S3 anchors. |
+| `s3-anchors` | Audit-anchor bucket with Object Lock COMPLIANCE, 7-year retention, SSE-KMS, lifecycle to Glacier after 90d. |
+| `eks` | EKS control plane (1.29), managed node group, control-plane + node security groups, OIDC provider for IRSA, secrets envelope encryption with the platform KEK. |
+| `rds` | Postgres 16 — Multi-AZ, gp3, encrypted at rest, `rds.force_ssl=1`, Performance Insights, only reachable from EKS nodes. |
+| `redis` | ElastiCache Redis 7.1 — multi-AZ, in-transit + at-rest encryption, AUTH token, only reachable from EKS nodes. |
+| `iam` | Audit-service IRSA role (S3 PutObject + KMS) and Secrets Manager entries for `DATABASE_URL` + `REDIS_URL`. |
+
+## Why this matters
 
 - **VPC** with 3 public + 3 private subnets across 3 AZs, NAT per AZ.
 - **EKS** cluster (Kubernetes 1.29 by default) with managed node group, OIDC provider for IRSA, and envelope encryption of cluster secrets via dedicated KMS key.
