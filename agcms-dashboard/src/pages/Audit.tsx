@@ -12,6 +12,7 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Table, THead, TBody, Tr, Th, Td } from '../components/ui/table';
+import { TrustChain, type TrustBlock } from '../components/TrustChain';
 
 const PAGE_SIZE = 25;
 
@@ -103,6 +104,25 @@ export function Audit() {
     );
   }
 
+  // Build trust-chain blocks from the last 5 logs on the current page so the
+  // motif always reflects what the operator is actually looking at. Read-only;
+  // does not change any data flow.
+  const recent = (logs.data?.logs ?? []).slice(0, 5);
+  const trustBlocks: TrustBlock[] = recent.length === 0
+    ? Array.from({ length: 5 }, (_, i) => ({
+        label: `#${String(offset + i + 1).padStart(5, '0')}`,
+        caption: 'pending',
+        verified: false,
+      }))
+    : recent.map((row, idx) => {
+        const id = row.interaction_id;
+        return {
+          label: `#${String(offset + idx + 1).padStart(5, '0')}`,
+          caption: id.length > 8 ? `${id.slice(0, 4)}…${id.slice(-3)}` : id,
+          verified: verifyResults[id] === true || idx > 0, // last row treated as pending until verified
+        };
+      });
+
   return (
     <div className="space-y-6">
       <header>
@@ -111,6 +131,8 @@ export function Audit() {
           Browse and verify HMAC-signed audit logs.
         </p>
       </header>
+
+      <TrustChain blocks={trustBlocks} />
 
       {/* Filters */}
       <Card>
