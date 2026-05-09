@@ -1,6 +1,0 @@
-User-Agent: *
-Allow: /
-Disallow: /api/
-
-Host: https://agcms.com
-Sitemap: https://agcms.com/sitemap.xml
