@@ -1,0 +1,54 @@
+# PCI DSS v4.0 policy pack — AGCMS v1
+#
+# Blocks cardholder data from flowing into LLM prompts. Under PCI DSS
+# Req. 3, PAN must be rendered unreadable; AGCMS enforces that at the
+# gateway before any call reaches a third-party LLM.
+
+id: pci-dss
+name: "PCI DSS v4.0"
+framework: "PCI_DSS"
+version: "1.0.0"
+description: >
+  Protects Primary Account Number (PAN) and related cardholder data
+  from being transmitted to LLMs. Pairs with Phase 5 audit chain for
+  Req. 10 logging.
+
+metadata:
+  framework_citations:
+    - id: "PCI DSS v4.0 Req. 3.4"
+      title: "PAN is protected whenever it is stored or transmitted."
+      url: "https://docs-prv.pcisecuritystandards.org/PCI%20DSS/Standard/PCI-DSS-v4_0.pdf"
+    - id: "PCI DSS v4.0 Req. 4.2"
+      title: "PAN is protected with strong cryptography during transmission over open, public networks."
+      url: "https://docs-prv.pcisecuritystandards.org/PCI%20DSS/Standard/PCI-DSS-v4_0.pdf"
+    - id: "PCI DSS v4.0 Req. 10.2"
+      title: "Audit logs are implemented to support the detection of anomalies and suspicious activity."
+      url: "https://docs-prv.pcisecuritystandards.org/PCI%20DSS/Standard/PCI-DSS-v4_0.pdf"
+
+overrides:
+  pii:
+    enabled: true
+    action_on_detection: "BLOCK"    # PCI: never send PAN to an LLM
+    critical_action: "BLOCK"
+    risk_threshold: "LOW"
+  injection:
+    enabled: true
+    block_threshold: 0.6
+    action_on_detection: "BLOCK"
+    log_all_attempts: true
+  audit:
+    retention_days: 365             # Req. 10.5.1 minimum
+
+rules:
+  - id: "pci-pan-block"
+    description: "Prompt contains a Primary Account Number (PAN)."
+    when:
+      pii_categories_any_of: ["credit_card_number", "cvv", "magnetic_stripe"]
+    action: "BLOCK"
+    framework_citations: ["PCI DSS v4.0 Req. 3.4", "PCI DSS v4.0 Req. 4.2"]
+  - id: "pci-log-all-anomalies"
+    description: "Injection / PII events are suspicious activity under Req. 10.2."
+    when:
+      any: true
+    action: "LOG"
+    framework_citations: ["PCI DSS v4.0 Req. 10.2"]

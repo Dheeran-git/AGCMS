@@ -1,0 +1,64 @@
+# NIST AI Risk Management Framework (AI RMF 1.0) policy pack — AGCMS v1
+#
+# Maps AGCMS enforcement capabilities to the four Core functions:
+# Govern, Map, Measure, Manage. The pack focuses on the Measure +
+# Manage functions because AGCMS is a live enforcement plane.
+
+id: nist-ai-rmf
+name: "NIST AI Risk Management Framework 1.0"
+framework: "NIST_AI_RMF"
+version: "1.0.0"
+description: >
+  Voluntary framework. AGCMS controls satisfy the Measure (risk
+  assessment) and Manage (risk treatment) functions through live
+  policy enforcement plus tamper-evident audit. Govern + Map are
+  tenant-level concerns outside this pack's scope.
+
+metadata:
+  framework_citations:
+    - id: "NIST AI RMF Measure 2.6"
+      title: "The AI system is evaluated for safety risks."
+      url: "https://airc.nist.gov/AI_RMF_Knowledge_Base/AI_RMF/Core_And_Profiles/5-sec-measure#5.3"
+    - id: "NIST AI RMF Measure 2.7"
+      title: "AI system security and resilience — commonly used metrics — are evaluated."
+      url: "https://airc.nist.gov/AI_RMF_Knowledge_Base/AI_RMF/Core_And_Profiles/5-sec-measure#5.3"
+    - id: "NIST AI RMF Manage 2.1"
+      title: "Resources required to manage AI risks are taken into account."
+      url: "https://airc.nist.gov/AI_RMF_Knowledge_Base/AI_RMF/Core_And_Profiles/6-sec-manage"
+    - id: "NIST AI RMF Manage 4.1"
+      title: "Post-deployment AI system monitoring plans are implemented."
+      url: "https://airc.nist.gov/AI_RMF_Knowledge_Base/AI_RMF/Core_And_Profiles/6-sec-manage"
+
+overrides:
+  pii:
+    enabled: true
+    action_on_detection: "REDACT"
+    critical_action: "ESCALATE"
+    risk_threshold: "MEDIUM"
+  injection:
+    enabled: true
+    block_threshold: 0.6
+    action_on_detection: "BLOCK"
+    log_all_attempts: true
+  audit:
+    retention_days: 730            # 2 years
+
+rules:
+  - id: "rmf-measure-injection"
+    description: "Injection attempts are measured (Measure 2.7) and blocked (Manage 4.1)."
+    when:
+      injection_score_at_least: 0.6
+    action: "BLOCK"
+    framework_citations: ["NIST AI RMF Measure 2.7", "NIST AI RMF Manage 4.1"]
+  - id: "rmf-measure-pii"
+    description: "PII exposure is a known safety risk (Measure 2.6)."
+    when:
+      pii_detected: true
+    action: "REDACT"
+    framework_citations: ["NIST AI RMF Measure 2.6"]
+  - id: "rmf-post-deployment-monitoring"
+    description: "Every interaction feeds post-deployment monitoring (Manage 4.1)."
+    when:
+      any: true
+    action: "LOG"
+    framework_citations: ["NIST AI RMF Manage 4.1"]

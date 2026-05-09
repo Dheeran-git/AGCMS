@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { fetchViolations } from '../lib/api';
 import { ViolationFeed } from '../components/ViolationFeed';
+import { Card, CardContent, CardFooter } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
 
 const PAGE_SIZE = 20;
 
@@ -15,48 +19,50 @@ export function Violations() {
   });
 
   const total = data?.total ?? 0;
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-6">
+      <header className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Violations</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            All blocked and redacted requests
-            {total > 0 && <span className="ml-1">({total} total)</span>}
+          <h1 className="text-h1 text-fg-primary">Violations</h1>
+          <p className="mt-1 text-small text-fg-muted">
+            All blocked and redacted requests.
           </p>
         </div>
-      </div>
+        {total > 0 && <Badge variant="subtle">{total.toLocaleString()} total</Badge>}
+      </header>
 
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <ViolationFeed
-          violations={data?.violations ?? []}
-          loading={isLoading}
-        />
-
+      <Card>
+        <CardContent>
+          <ViolationFeed violations={data?.violations ?? []} loading={isLoading} />
+        </CardContent>
         {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
-            <button
+          <CardFooter className="justify-between">
+            <Button
+              size="sm"
+              variant="ghost"
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
+              <ChevronLeft className="h-3.5 w-3.5" />
               Previous
-            </button>
-            <span className="text-sm text-gray-500">
+            </Button>
+            <span className="text-label text-fg-muted font-mono">
               Page {page + 1} of {totalPages}
             </span>
-            <button
+            <Button
+              size="sm"
+              variant="ghost"
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={page >= totalPages - 1}
-              className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
-            </button>
-          </div>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
+          </CardFooter>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

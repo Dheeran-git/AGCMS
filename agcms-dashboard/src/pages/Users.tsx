@@ -1,9 +1,49 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  Legend,
+  type TooltipProps,
 } from 'recharts';
+import { Users as UsersIcon, Building2 } from 'lucide-react';
 import { fetchUsers, deleteUser, fetchStatsDepartments } from '../lib/api';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
+import { Table, THead, TBody, Tr, Th, Td } from '../components/ui/table';
+import { chartColors } from '../lib/chart-theme';
+
+function roleVariant(role: string): 'accent' | 'info' | 'subtle' {
+  if (role === 'admin') return 'accent';
+  if (role === 'compliance') return 'info';
+  return 'subtle';
+}
+
+function ChartTooltip({ active, payload, label }: TooltipProps<number, string>) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-surface border border-border rounded-md shadow-elev-4 px-3 py-2 min-w-[140px]">
+      <div className="text-micro text-fg-muted font-mono mb-1">{label}</div>
+      {payload.map((p) => (
+        <div key={p.dataKey as string} className="flex items-center gap-2 text-label">
+          <span
+            className="h-2 w-2 rounded-full"
+            style={{ backgroundColor: p.color }}
+            aria-hidden
+          />
+          <span className="text-fg-muted capitalize">{p.name}</span>
+          <span className="ml-auto text-fg-primary font-mono">{p.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function Users() {
   const qc = useQueryClient();
@@ -33,129 +73,171 @@ export function Users() {
   const allUsers = users.data?.users ?? [];
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Users &amp; Departments</h1>
-        <p className="text-sm text-gray-500 mt-1">Tenant user roster and department activity</p>
-      </div>
+    <div className="space-y-6">
+      <header>
+        <h1 className="text-h1 text-fg-primary">Users & Departments</h1>
+        <p className="mt-1 text-small text-fg-muted">
+          Tenant user roster and department activity.
+        </p>
+      </header>
 
-      {/* Department bar chart */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Requests by Department (Last 7 days)
-        </h2>
-        {departments.isLoading ? (
-          <div className="h-48 flex items-center justify-center text-gray-400 text-sm">Loading…</div>
-        ) : (
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={departments.data?.departments ?? []}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="department" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip />
-              <Bar dataKey="total" fill="#6366f1" name="Total" radius={[3, 3, 0, 0]} />
-              <Bar dataKey="violations" fill="#f87171" name="Violations" radius={[3, 3, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        )}
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-accent-bright" />
+            Requests by department
+          </CardTitle>
+          <CardDescription>Last 7 days · total vs. violations.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {departments.isLoading ? (
+            <div className="h-52 flex items-center justify-center text-small text-fg-muted">
+              Loading…
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart
+                data={departments.data?.departments ?? []}
+                margin={{ top: 8, right: 12, left: -12, bottom: 0 }}
+              >
+                <CartesianGrid vertical={false} stroke={chartColors.grid} />
+                <XAxis
+                  dataKey="department"
+                  stroke={chartColors.subtle}
+                  tick={{ fontSize: 11, fill: chartColors.muted }}
+                  tickLine={false}
+                  axisLine={{ stroke: chartColors.axis }}
+                />
+                <YAxis
+                  stroke={chartColors.subtle}
+                  tick={{ fontSize: 11, fill: chartColors.muted }}
+                  tickLine={false}
+                  axisLine={false}
+                  width={40}
+                />
+                <Tooltip
+                  cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                  content={<ChartTooltip />}
+                />
+                <Legend
+                  wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+                  iconType="circle"
+                  iconSize={8}
+                  formatter={(value) => (
+                    <span style={{ color: chartColors.muted }}>{value}</span>
+                  )}
+                />
+                <Bar
+                  dataKey="total"
+                  fill={chartColors.primary}
+                  name="Total"
+                  radius={[3, 3, 0, 0]}
+                />
+                <Bar
+                  dataKey="violations"
+                  fill={chartColors.danger}
+                  name="Violations"
+                  radius={[3, 3, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* User table */}
-      <div className="bg-white rounded-lg border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Users{' '}
-            <span className="ml-2 px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
-              {activeUsers.length} active / {allUsers.length} total
-            </span>
-          </h2>
-        </div>
-
-        {users.isLoading ? (
-          <div className="px-6 py-12 text-center text-gray-400 text-sm">Loading users…</div>
-        ) : users.isError ? (
-          <div className="px-6 py-12 text-center text-red-500 text-sm">
-            Failed to load users: {String(users.error)}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <UsersIcon className="h-4 w-4 text-accent-bright" />
+              Users
+            </CardTitle>
+            <CardDescription className="mt-1">
+              {activeUsers.length} active · {allUsers.length} total
+            </CardDescription>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs text-gray-500 uppercase tracking-wider border-b border-gray-100">
-                  <th className="px-6 py-3">External ID</th>
-                  <th className="px-6 py-3">Email</th>
-                  <th className="px-6 py-3">Role</th>
-                  <th className="px-6 py-3">Department</th>
-                  <th className="px-6 py-3">Status</th>
-                  <th className="px-6 py-3">Created</th>
-                  <th className="px-6 py-3"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
+          <Badge variant="subtle">
+            {activeUsers.length} / {allUsers.length}
+          </Badge>
+        </CardHeader>
+        <CardContent className="px-0">
+          {users.isLoading ? (
+            <p className="px-6 py-10 text-center text-small text-fg-muted">Loading users…</p>
+          ) : users.isError ? (
+            <p className="px-6 py-10 text-center text-small text-status-danger">
+              Failed to load users: {String(users.error)}
+            </p>
+          ) : allUsers.length === 0 ? (
+            <p className="px-6 py-10 text-center text-small text-fg-muted italic">
+              No users found.
+            </p>
+          ) : (
+            <Table>
+              <THead>
+                <Tr>
+                  <Th>External ID</Th>
+                  <Th>Email</Th>
+                  <Th>Role</Th>
+                  <Th>Department</Th>
+                  <Th>Status</Th>
+                  <Th>Created</Th>
+                  <Th />
+                </Tr>
+              </THead>
+              <TBody>
                 {allUsers.map((u) => (
-                  <tr key={u.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-3 font-mono text-xs text-gray-700">{u.external_id}</td>
-                    <td className="px-6 py-3 text-gray-600">{u.email ?? '—'}</td>
-                    <td className="px-6 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        u.role === 'admin'
-                          ? 'bg-purple-100 text-purple-700'
-                          : u.role === 'compliance'
-                          ? 'bg-blue-100 text-blue-700'
-                          : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        {u.role}
-                      </span>
-                    </td>
-                    <td className="px-6 py-3 text-gray-600">{u.department ?? '—'}</td>
-                    <td className="px-6 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        u.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'
-                      }`}>
+                  <Tr key={u.id}>
+                    <Td className="font-mono text-label text-fg-primary">{u.external_id}</Td>
+                    <Td>{u.email ?? '—'}</Td>
+                    <Td>
+                      <Badge variant={roleVariant(u.role)}>{u.role}</Badge>
+                    </Td>
+                    <Td>{u.department ?? '—'}</Td>
+                    <Td>
+                      <Badge variant={u.is_active ? 'success' : 'subtle'}>
                         {u.is_active ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-3 text-gray-400 text-xs">
+                      </Badge>
+                    </Td>
+                    <Td className="font-mono text-label text-fg-subtle whitespace-nowrap">
                       {new Date(u.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-3">
-                      {u.is_active && (
-                        deletingId === u.id ? (
+                    </Td>
+                    <Td>
+                      {u.is_active &&
+                        (deletingId === u.id ? (
                           <div className="flex items-center gap-2">
-                            <button
+                            <Button
+                              size="sm"
+                              variant="danger"
                               onClick={() => softDelete.mutate(u.id)}
                               disabled={softDelete.isPending}
-                              className="text-xs text-red-600 hover:underline disabled:opacity-50"
                             >
                               Confirm
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
                               onClick={() => setDeletingId(null)}
-                              className="text-xs text-gray-400 hover:underline"
                             >
                               Cancel
-                            </button>
+                            </Button>
                           </div>
                         ) : (
-                          <button
+                          <Button
+                            size="sm"
+                            variant="bare"
                             onClick={() => setDeletingId(u.id)}
-                            className="text-xs text-gray-400 hover:text-red-500"
                           >
                             Deactivate
-                          </button>
-                        )
-                      )}
-                    </td>
-                  </tr>
+                          </Button>
+                        ))}
+                    </Td>
+                  </Tr>
                 ))}
-              </tbody>
-            </table>
-            {allUsers.length === 0 && (
-              <p className="px-6 py-8 text-center text-gray-400 text-sm">No users found.</p>
-            )}
-          </div>
-        )}
-      </div>
+              </TBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -1,0 +1,47 @@
+/* AGCMS Design Tokens — Linear-inspired dark system */
+:root {
+  /* Background surfaces */
+  --bg-canvas: #08090a;
+  --bg-canvas-deep: #010102;
+  --bg-panel: #0f1011;
+  --bg-surface: #191a1b;
+  --bg-surface-hover: #28282c;
+
+  /* Foreground text */
+  --fg-primary: #f7f8f8;
+  --fg-secondary: #d0d6e0;
+  --fg-muted: #8a8f98;
+  --fg-subtle: #62666d;
+
+  /* Brand + accent */
+  --accent: #5e6ad2;
+  --accent-bright: #7170ff;
+  --accent-hover: #828fff;
+  --accent-security: #7a7fad;
+
+  /* Borders */
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-default: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.12);
+
+  /* Translucent surfaces (for ghost buttons / cards) */
+  --surface-translucent: rgba(255, 255, 255, 0.02);
+  --surface-translucent-2: rgba(255, 255, 255, 0.04);
+  --surface-translucent-3: rgba(255, 255, 255, 0.06);
+
+  /* Status */
+  --status-success: #10b981;
+  --status-success-soft: rgba(16, 185, 129, 0.12);
+  --status-warning: #f59e0b;
+  --status-warning-soft: rgba(245, 158, 11, 0.12);
+  --status-danger: #ef4444;
+  --status-danger-soft: rgba(239, 68, 68, 0.12);
+  --status-info: #7170ff;
+  --status-info-soft: rgba(113, 112, 255, 0.12);
+
+  /* Overlay */
+  --overlay: rgba(0, 0, 0, 0.85);
+
+  /* Focus ring */
+  --focus-ring: 0 0 0 2px rgba(113, 112, 255, 0.4);
+}

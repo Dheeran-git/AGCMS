@@ -1,8 +1,107 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  darkMode: 'class',
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        canvas: 'var(--bg-canvas)',
+        'canvas-deep': 'var(--bg-canvas-deep)',
+        panel: 'var(--bg-panel)',
+        surface: 'var(--bg-surface)',
+        'surface-hover': 'var(--bg-surface-hover)',
+        fg: {
+          DEFAULT: 'var(--fg-primary)',
+          primary: 'var(--fg-primary)',
+          secondary: 'var(--fg-secondary)',
+          muted: 'var(--fg-muted)',
+          subtle: 'var(--fg-subtle)',
+        },
+        accent: {
+          DEFAULT: 'var(--accent)',
+          bright: 'var(--accent-bright)',
+          hover: 'var(--accent-hover)',
+          security: 'var(--accent-security)',
+        },
+        border: {
+          DEFAULT: 'var(--border-default)',
+          subtle: 'var(--border-subtle)',
+          strong: 'var(--border-strong)',
+        },
+        translucent: {
+          1: 'var(--surface-translucent)',
+          2: 'var(--surface-translucent-2)',
+          3: 'var(--surface-translucent-3)',
+        },
+        status: {
+          success: 'var(--status-success)',
+          'success-soft': 'var(--status-success-soft)',
+          warning: 'var(--status-warning)',
+          'warning-soft': 'var(--status-warning-soft)',
+          danger: 'var(--status-danger)',
+          'danger-soft': 'var(--status-danger-soft)',
+          info: 'var(--status-info)',
+          'info-soft': 'var(--status-info-soft)',
+        },
+      },
+      fontFamily: {
+        sans: ['"Inter Variable"', 'SF Pro Display', '-apple-system', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'],
+        mono: ['"JetBrains Mono Variable"', 'ui-monospace', 'SF Mono', 'Menlo', 'Monaco', 'monospace'],
+      },
+      fontSize: {
+        'display-xl':   ['72px', { lineHeight: '72px', letterSpacing: '-1.584px', fontWeight: '510' }],
+        'display-lg':   ['64px', { lineHeight: '64px', letterSpacing: '-1.408px', fontWeight: '510' }],
+        'display':      ['48px', { lineHeight: '48px', letterSpacing: '-1.056px', fontWeight: '510' }],
+        'h1':           ['32px', { lineHeight: '36px', letterSpacing: '-0.704px', fontWeight: '400' }],
+        'h2':           ['24px', { lineHeight: '32px', letterSpacing: '-0.288px', fontWeight: '400' }],
+        'h3':           ['20px', { lineHeight: '28px', letterSpacing: '-0.24px',  fontWeight: '590' }],
+        'body-lg':      ['18px', { lineHeight: '28px', letterSpacing: '-0.165px', fontWeight: '400' }],
+        'body':         ['16px', { lineHeight: '24px', fontWeight: '400' }],
+        'body-emph':    ['16px', { lineHeight: '24px', fontWeight: '510' }],
+        'small':        ['15px', { lineHeight: '24px', letterSpacing: '-0.165px', fontWeight: '400' }],
+        'caption':      ['13px', { lineHeight: '20px', letterSpacing: '-0.13px',  fontWeight: '510' }],
+        'label':        ['12px', { lineHeight: '16px', fontWeight: '510' }],
+        'micro':        ['11px', { lineHeight: '16px', fontWeight: '510' }],
+        'tiny':         ['10px', { lineHeight: '16px', fontWeight: '510' }],
+      },
+      spacing: {
+        '1.75': '7px',
+        '2.75': '11px',
+      },
+      borderRadius: {
+        none: '0',
+        sm: '2px',
+        DEFAULT: '4px',
+        md: '6px',
+        lg: '8px',
+        xl: '12px',
+        '2xl': '22px',
+        full: '9999px',
+      },
+      boxShadow: {
+        'ring':      'inset 0 0 0 1px rgba(0, 0, 0, 0.2)',
+        'elev-1':    '0 1.2px 0 rgba(0, 0, 0, 0.03)',
+        'elev-2':    '0 0 0 1px rgba(255, 255, 255, 0.06), 0 2px 6px rgba(0, 0, 0, 0.25)',
+        'elev-4':    '0 2px 4px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.06)',
+        'elev-5':    '0 0 0 1px rgba(255, 255, 255, 0.08), 0 8px 2px rgba(0, 0, 0, 0), 0 5px 2px rgba(0, 0, 0, 0.01), 0 3px 2px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.07), 0 12px 32px rgba(0, 0, 0, 0.4)',
+        'inset-recessed': 'inset 0 0 12px rgba(0, 0, 0, 0.2)',
+        'focus':     '0 0 0 2px rgba(113, 112, 255, 0.4)',
+        'glow':      '0 0 24px rgba(113, 112, 255, 0.25)',
+      },
+      backgroundImage: {
+        'radial-glow': 'radial-gradient(circle at center, rgba(113,112,255,0.12), transparent 60%)',
+        'grid-faint':  'linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px)',
+      },
+      keyframes: {
+        'fade-in': {
+          '0%': { opacity: '0', transform: 'translateY(4px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        'fade-in': 'fade-in 320ms cubic-bezier(0.16, 1, 0.3, 1)',
+      },
+    },
   },
   plugins: [],
 }
