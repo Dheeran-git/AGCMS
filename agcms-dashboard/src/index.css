@@ -1,3 +1,4 @@
+@import '@fontsource-variable/geist';
 @import '@fontsource-variable/inter';
 @import '@fontsource-variable/jetbrains-mono';
 @import './styles/tokens.css';
@@ -7,7 +8,7 @@
 @tailwind utilities;
 
 html {
-  font-family: 'Inter Variable', 'SF Pro Display', -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Geist Variable', 'Inter Variable', 'SF Pro Display', -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif;
   font-feature-settings: 'cv01', 'ss03';
   background-color: var(--bg-canvas);
   color-scheme: dark;
