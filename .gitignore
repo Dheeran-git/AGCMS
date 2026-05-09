@@ -48,3 +48,8 @@ marketing/.next/
 marketing/tsconfig.tsbuildinfo
 marketing/next-env.d.ts
 docs-site/.next/
+
+# Claude Design handoff bundle (reference only; implementation lives in agcms-dashboard/)
+AGCMS Design System-handoff.zip
+design-system.zip
+agcms-design-system/
