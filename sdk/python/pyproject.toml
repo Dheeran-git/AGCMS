@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agcms"
-version = "0.1.0"
+version = "0.1.1"
 description = "Official Python SDK for AGCMS — AI Governance & Compliance Monitoring."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "Apache-2.0" }
-authors = [{ name = "AGCMS", email = "support@agcms.com" }]
+authors = [{ name = "S Dheeran", email = "dheeran.karna@gmail.com" }]
 keywords = ["llm", "governance", "compliance", "openai", "audit", "pii"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -34,10 +34,10 @@ dev = ["pytest>=7.4", "pytest-asyncio>=0.21", "respx>=0.20"]
 agcms = "agcms.cli:main"
 
 [project.urls]
-Homepage = "https://agcms.com"
-Documentation = "https://docs.agcms.com"
-Source = "https://github.com/agcms/sdk-python"
-Changelog = "https://github.com/agcms/sdk-python/blob/main/CHANGELOG.md"
+Homepage = "https://agcms-six.vercel.app"
+Documentation = "https://uip-f4b0bbe5.mintlify.app"
+Source = "https://github.com/Dheeran-git/AGCMS"
+Changelog = "https://github.com/Dheeran-git/AGCMS/blob/master/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 where = ["."]

@@ -1,15 +1,16 @@
 {
   "name": "@agcms/sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Official TypeScript SDK for AGCMS — AI Governance & Compliance Monitoring",
   "license": "Apache-2.0",
-  "homepage": "https://agcms.com",
+  "homepage": "https://agcms-six.vercel.app",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/agcms/sdk-typescript.git"
+    "url": "git+https://github.com/Dheeran-git/AGCMS.git",
+    "directory": "sdk/typescript"
   },
   "bugs": {
-    "url": "https://github.com/agcms/sdk-typescript/issues"
+    "url": "https://github.com/Dheeran-git/AGCMS/issues"
   },
   "keywords": [
     "agcms",
