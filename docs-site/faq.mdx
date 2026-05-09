@@ -1,0 +1,91 @@
+---
+title: "FAQ"
+description: "Common questions from compliance officers, developers, and security reviewers."
+---
+
+## What does AGCMS sit between?
+
+Your application code and the LLM provider. AGCMS exposes an OpenAI-compatible
+endpoint, so you change a `base_url` and an API key — every request flows through
+the gateway, gets inspected, governed, signed, and forwarded.
+
+## Which LLM providers are supported?
+
+OpenAI, Anthropic, Groq, Google Gemini, Mistral, and self-hosted Ollama. Adding a
+new provider is a router-level change; tenants pick per call via the model field
+(e.g. `groq:llama-3.3-70b-versatile`).
+
+## How does AGCMS prove the audit log hasn't been tampered with?
+
+Every row is HMAC-SHA256-signed with the previous row's signature in the payload
+(hash chain). Each night we compute a Merkle root over the day's signatures, sign
+the root with a separate anchor key, and write the signed manifest to S3 Object
+Lock (Compliance mode, 7-year retention by default). Any reorder, deletion, or
+substitution breaks the chain — and the daily root anchors that chain to a
+write-once external store.
+
+## Can an external auditor verify without AGCMS credentials?
+
+Yes. Export an audit bundle (`POST /api/v1/audit/bundle`); it includes a
+self-contained `verify.py` with no AGCMS dependencies. The auditor runs
+`python verify.py` from the unzipped bundle and gets a green/red proof report.
+Same script ships in the SDK as `agcms verify bundle.zip`.
+
+## Is the data multi-tenant safe?
+
+Postgres row-level security from day one. Every connection executes
+`SET LOCAL app.tenant_id = '<uuid>'` after auth; RLS policies on every
+tenant-scoped table reject cross-tenant reads at the database, not at the
+application layer.
+
+## Which compliance frameworks ship with policy packs?
+
+HIPAA, GDPR, EU AI Act (high-risk Article 13), NIST AI RMF, SOC 2 Common
+Criteria, PCI-DSS. Each pack ships with `framework_citations` so every finding
+in a Report cites the specific article it satisfies.
+
+## How do you handle GDPR Article 17 (right to erasure)?
+
+A two-admin approval flow. The first admin requests purge for a user; a 24-hour
+window opens for a second admin to approve. Approved purges overwrite the PII
+fields with a fixed-size tombstone and write a `redaction_record` linking back
+to the approval — the hash chain stays intact because the redaction is itself a
+signed event.
+
+## Is encryption at rest tenant-isolated?
+
+Yes — per-tenant DEK wrapped by a KEK. KMS abstraction supports AWS KMS, GCP
+KMS, or a local key for development. DEK rotation is a tenant-admin action.
+
+## How do I rotate the audit signing key?
+
+`POST /api/v1/admin/signing-keys/rotate` (admin role + dual approval). The new
+`kid` becomes active for new rows; the old `kid` is preserved indefinitely for
+historical verification. Verifier picks key by `kid` per row.
+
+## What's the SLA?
+
+99.95% uptime on Enterprise tier; 99.9% on Business; best-effort on Starter.
+Status published at [status.agcms.com](https://status.agcms.com).
+
+## Can we self-host?
+
+Enterprise tier supports dedicated VPC deployment via Helm chart and Terraform
+modules. Starter and Business are managed multi-tenant only.
+
+## How do I get a SOC 2 report?
+
+Request via your CSM (Business and Enterprise tiers). SOC 2 Type II observation
+is in progress with Vanta; first report targeted Q3 2026.
+
+## Where do I report a vulnerability?
+
+[security@agcms.com](mailto:security@agcms.com) — PGP key on the security page.
+We follow a 90-day coordinated disclosure window.
+
+## Where can I get help?
+
+- **Docs**: you're here.
+- **Slack** (Business+): your dedicated channel.
+- **Email**: [support@agcms.com](mailto:support@agcms.com).
+- **Status**: [status.agcms.com](https://status.agcms.com).

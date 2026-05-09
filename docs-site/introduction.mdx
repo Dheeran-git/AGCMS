@@ -1,0 +1,18 @@
+---
+title: "Introduction"
+description: "AGCMS — AI Governance & Compliance Monitoring System"
+---
+
+AGCMS is a live runtime plane that sits in front of your LLM traffic and:
+
+- **Detects PII** (PCI, PHI, names, addresses, credentials) and **redacts**
+  or **blocks** based on policy.
+- **Detects prompt injection** with a heuristic + ML hybrid.
+- **Resolves policy** — `ALLOW`, `REDACT`, `BLOCK`, `ESCALATE`.
+- **Writes a cryptographically signed audit row** for every request, hash-chained
+  per tenant and Merkle-anchored to S3 Object Lock daily.
+- **Maps every finding to your compliance framework** (HIPAA, GDPR, EU AI Act,
+  NIST AI RMF, SOC 2, PCI-DSS).
+
+Read [Quickstart](/quickstart) to send your first request in five minutes,
+or jump to [Concepts](/concepts) for the architectural tour.

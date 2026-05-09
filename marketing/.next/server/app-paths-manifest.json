@@ -1,0 +1,18 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/book-demo/page": "app/book-demo/page.js",
+  "/blog/page": "app/blog/page.js",
+  "/compliance/page": "app/compliance/page.js",
+  "/pricing/page": "app/pricing/page.js",
+  "/robots.txt/route": "app/robots.txt/route.js",
+  "/product/page": "app/product/page.js",
+  "/security/page": "app/security/page.js",
+  "/sitemap.xml/route": "app/sitemap.xml/route.js",
+  "/legal/terms/page": "app/legal/terms/page.js",
+  "/changelog/rss.xml/route": "app/changelog/rss.xml/route.js",
+  "/changelog/page": "app/changelog/page.js",
+  "/legal/privacy/page": "app/legal/privacy/page.js",
+  "/page": "app/page.js",
+  "/signup/page": "app/signup/page.js",
+  "/status/page": "app/status/page.js"
+}

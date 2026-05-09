@@ -1,0 +1,18 @@
+---
+title: "SOC 2 (Common Criteria)"
+description: "How AGCMS supports SOC 2 Type II."
+---
+
+Common Criteria (CC) coverage:
+
+| Criterion                          | AGCMS feature                                     |
+|------------------------------------|---------------------------------------------------|
+| CC6.1 — Logical access             | SSO via WorkOS, MFA, scoped API keys              |
+| CC6.7 — Restricted system access   | RLS-isolated tenant data, RBAC                    |
+| CC7.2 — System monitoring          | Prometheus `/metrics`, Grafana dashboards         |
+| CC7.3 — Security event response    | Alerts page workflow with SLA timers              |
+| CC7.4 — Vulnerability management   | Daily dependency scans, quarterly pen-tests       |
+| CC8.1 — Change management          | Policy versions, audit-logged config changes      |
+
+AGCMS is in **observation period** with Vanta. The Type II report is targeted
+for Q3 2026 and will be available on request.

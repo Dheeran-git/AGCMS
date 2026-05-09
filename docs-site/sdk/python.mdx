@@ -1,0 +1,66 @@
+---
+title: "Python SDK"
+description: "pip install agcms"
+---
+
+## Install
+
+```bash
+pip install agcms
+```
+
+Requires Python 3.9+.
+
+## AGCMSClient
+
+```python
+from agcms import AGCMSClient
+
+client = AGCMSClient(
+    base_url="https://api.your-tenant.agcms.com",
+    api_key="agc_live_...",
+    user_id="alice@corp",       # optional — propagated to audit
+    department="support",       # optional
+)
+
+resp = client.chat.completions.create(
+    model="groq:llama-3.3-70b-versatile",
+    messages=[{"role": "user", "content": "Hello!"}],
+)
+print(client.last_interaction_id)
+```
+
+There is also `AsyncAGCMSClient` with the same API and `await client.chat.completions.create(...)`.
+
+## openai_wrap
+
+3-line drop-in for the official `openai` client:
+
+```python
+from openai import OpenAI
+from agcms import openai_wrap
+
+client = openai_wrap(OpenAI(api_key="..."), agcms_base_url="...", agcms_api_key="...")
+```
+
+`embeddings`, `files`, and other namespaces fall through to the original
+OpenAI client unchanged — only `chat.completions.create(...)` is rerouted.
+
+## Errors
+
+```python
+from agcms import AGCMSError, BlockedError, RateLimitedError, AuthError, UpstreamError
+
+try:
+    client.chat.completions.create(...)
+except BlockedError as e:
+    # AGCMS policy refused this request
+    log.warning("blocked", reason=str(e), interaction=e.interaction_id)
+```
+
+## CLI
+
+```bash
+agcms verify bundle.zip
+agcms version
+```

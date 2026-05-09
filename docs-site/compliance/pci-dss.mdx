@@ -1,0 +1,19 @@
+---
+title: "PCI-DSS"
+description: "Card-data leakage prevention in AI workflows."
+---
+
+The PCI-DSS pack treats card numbers, CVV, and expiry as `BLOCK` by
+default — they are never forwarded to an LLM under this policy.
+
+| Requirement                          | AGCMS control                                   |
+|--------------------------------------|-------------------------------------------------|
+| Req 3 — Protect stored cardholder data | Encryption at rest, redaction in audit log     |
+| Req 4 — Protect cardholder data in transit | TLS 1.3, HMAC-signed webhooks              |
+| Req 7 — Restrict access by need-to-know | RBAC, scoped API keys                          |
+| Req 10 — Track and monitor all access | Hash-chained audit log, Merkle anchor          |
+| Req 11 — Regularly test security      | Dependency scans, quarterly pen-tests          |
+
+If a request triggers a `pan` (primary account number) or `cvv` finding, the
+gateway returns `403 request_blocked` and the audit row records the
+detection without the raw value.

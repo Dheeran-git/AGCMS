@@ -1,0 +1,36 @@
+---
+title: "Exporting audit bundles"
+description: "Hand an auditor a portable, verifiable archive."
+---
+
+## Export
+
+```bash
+curl -X POST "$AGCMS_BASE_URL/api/v1/audit/bundle" \
+  -H "Authorization: Bearer $AGCMS_JWT" \
+  -H "Content-Type: application/json" \
+  -d '{"start":"2026-04-01T00:00:00Z","end":"2026-04-30T00:00:00Z"}' \
+  -o bundle.zip
+```
+
+## Bundle contents
+
+| File              | Purpose                                                     |
+|-------------------|-------------------------------------------------------------|
+| `metadata.json`   | Tenant ID, period, chain start metadata, anchor S3 keys.    |
+| `logs.jsonl`      | Audit rows (one per line) covering the period.              |
+| `signatures.jsonl`| Side-car: parallel HMAC signatures for each row.            |
+| `roots.json`      | Per-period Merkle roots + signed roots.                     |
+| `verify.py`       | Self-contained verifier (Python stdlib only).               |
+| `README.md`       | Auditor-facing instructions.                                |
+
+## Run the auditor playbook
+
+```bash
+unzip bundle.zip -d ./agcms-bundle
+cd agcms-bundle
+python verify.py .
+# [OK] chain intact for tenant ...
+# [OK] Merkle root matches for tenant ...
+# [OK] VERIFICATION PASSED — bundle is intact
+```

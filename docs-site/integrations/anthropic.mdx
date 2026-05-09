@@ -1,0 +1,27 @@
+---
+title: "Anthropic"
+description: "Route Anthropic Messages API through AGCMS."
+---
+
+The AGCMS gateway exposes an Anthropic-compatible endpoint at
+`/v1/anthropic` that proxies to `api.anthropic.com` with PII redaction,
+injection detection, and signed audit.
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key="agc_live_...",                        # AGCMS gateway auth
+    base_url="https://api.your-tenant.agcms.com/v1/anthropic",
+    default_headers={"X-Anthropic-Key": "sk-ant-..."},
+)
+
+msg = client.messages.create(
+    model="claude-3-5-sonnet-latest",
+    max_tokens=256,
+    messages=[{"role": "user", "content": "Hello!"}],
+)
+```
+
+The audit row records the AGCMS interaction ID; cross-reference it in the
+dashboard to inspect the policy decision.

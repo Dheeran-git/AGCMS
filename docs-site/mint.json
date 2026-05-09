@@ -1,0 +1,63 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "AGCMS Docs",
+  "logo": { "light": "/logo/light.svg", "dark": "/logo/dark.svg" },
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#5B8DEF",
+    "light": "#7AA8FF",
+    "dark": "#13161B",
+    "anchors": { "from": "#5B8DEF", "to": "#7AA8FF" }
+  },
+  "topbarLinks": [
+    { "name": "Pricing", "url": "https://agcms.com/pricing" },
+    { "name": "Status", "url": "https://status.agcms.com" }
+  ],
+  "topbarCtaButton": { "name": "Book a demo", "url": "https://agcms.com/book-demo" },
+  "anchors": [
+    { "name": "API Reference", "icon": "rectangle-terminal", "url": "api-reference" },
+    { "name": "GitHub", "icon": "github", "url": "https://github.com/agcms" }
+  ],
+  "navigation": [
+    {
+      "group": "Getting Started",
+      "pages": ["introduction", "quickstart", "concepts"]
+    },
+    {
+      "group": "SDKs",
+      "pages": ["sdk/python", "sdk/typescript"]
+    },
+    {
+      "group": "Compliance",
+      "pages": [
+        "compliance/hipaa",
+        "compliance/gdpr",
+        "compliance/eu-ai-act",
+        "compliance/nist-ai-rmf",
+        "compliance/soc2",
+        "compliance/pci-dss"
+      ]
+    },
+    {
+      "group": "Audit",
+      "pages": ["audit/architecture", "audit/verification", "audit/bundles"]
+    },
+    {
+      "group": "Integrations",
+      "pages": ["integrations/openai", "integrations/anthropic", "integrations/langchain", "integrations/notifications"]
+    },
+    {
+      "group": "API Reference",
+      "pages": ["api-reference/openapi"]
+    },
+    {
+      "group": "Help",
+      "pages": ["faq"]
+    }
+  ],
+  "openapi": "https://api.agcms.com/openapi.yaml",
+  "footerSocials": {
+    "github": "https://github.com/agcms",
+    "linkedin": "https://www.linkedin.com/company/agcms"
+  }
+}

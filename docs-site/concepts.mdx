@@ -1,0 +1,42 @@
+---
+title: "Concepts"
+description: "The architecture in 90 seconds."
+---
+
+## The 13-step request lifecycle
+
+1. Parse request body.
+2. Per-IP global rate limit (pre-auth).
+3. Authenticate (API key or JWT).
+4. Per-tenant rate limit.
+5. PII scan.
+6. Prompt-injection scan (parallel with 5).
+7. Policy resolution → `ALLOW` / `REDACT` / `BLOCK` / `ESCALATE`.
+8. Enforce.
+9. Forward to LLM (Groq, Gemini, Mistral, Ollama).
+10. Response compliance check.
+11. Write HMAC-signed, hash-chained audit row.
+12. Nightly Merkle anchor (S3 Object Lock).
+13. Deliver response with `X-AGCMS-Interaction-ID`.
+
+## Multi-tenancy
+
+Postgres row-level security partitions every table by `tenant_id`. The gateway
+sets `current_setting('app.current_tenant')` on each connection. There is no
+shared global query path that bypasses RLS — including the audit log.
+
+## The audit chain
+
+Each row's HMAC-SHA256 signature is computed over `(payload || previous_log_hash)`,
+and the row's `previous_log_hash` equals the prior row's signature. Per-tenant
+sequence numbers are assigned via a Postgres advisory lock so rows are
+contiguous within a tenant. Every night a per-tenant Merkle tree is built over
+the day's signatures; the root is signed with a separate anchor key and pushed
+to an S3 Object-Lock bucket in Compliance mode (default 7-year retention).
+
+## Why this design wins compliance reviews
+
+1. Truncation, reordering, or row substitution breaks the chain.
+2. Substituting a Merkle root requires bypassing S3 Object Lock.
+3. The bundle exporter ships a self-contained `verify.py` — auditors never
+   need AGCMS credentials to validate integrity.
