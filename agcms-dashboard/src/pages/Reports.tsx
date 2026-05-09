@@ -1,5 +1,14 @@
 import { useState } from 'react';
-import { fetchComplianceReport, type GDPRReport, type EUAIActReport, type ComplianceReport } from '../lib/api';
+import { FileText, Scale, Download, Check, X, AlertTriangle } from 'lucide-react';
+import {
+  fetchComplianceReport,
+  type GDPRReport,
+  type EUAIActReport,
+  type ComplianceReport,
+} from '../lib/api';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
 
 type ReportType = 'gdpr' | 'eu-ai-act';
 
@@ -7,82 +16,105 @@ interface ReportCard {
   type: ReportType;
   title: string;
   description: string;
-  icon: string;
+  icon: typeof FileText;
 }
 
 const REPORT_CARDS: ReportCard[] = [
   {
     type: 'gdpr',
     title: 'GDPR Article 30 Report',
-    description: 'Records of Processing Activities — PII categories, retention policy, cross-border transfers, and detection summary for the last 30 days.',
-    icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+    description:
+      'Records of Processing Activities — PII categories, retention policy, cross-border transfers, and detection summary for the last 30 days.',
+    icon: FileText,
   },
   {
     type: 'eu-ai-act',
     title: 'EU AI Act Compliance Report',
-    description: 'Article 13 Transparency — AI system classification, injection detection method, human oversight metrics, and audit trail integrity.',
-    icon: 'M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3',
+    description:
+      'Article 13 Transparency — AI system classification, injection detection method, human oversight metrics, and audit trail integrity.',
+    icon: Scale,
   },
 ];
 
-function FindingRow({ check, status, detail }: { check: string; status: 'pass' | 'fail' | 'warning'; detail: string }) {
-  const icon = status === 'pass' ? '✓' : status === 'fail' ? '✗' : '⚠';
-  const cls = status === 'pass'
-    ? 'text-green-600'
-    : status === 'fail'
-    ? 'text-red-600'
-    : 'text-yellow-600';
+function FindingRow({
+  check,
+  status,
+  detail,
+}: {
+  check: string;
+  status: 'pass' | 'fail' | 'warning';
+  detail: string;
+}) {
+  const Icon = status === 'pass' ? Check : status === 'fail' ? X : AlertTriangle;
+  const tone =
+    status === 'pass'
+      ? 'text-status-success'
+      : status === 'fail'
+      ? 'text-status-danger'
+      : 'text-status-warning';
 
   return (
-    <tr className="border-b border-gray-50 last:border-0">
-      <td className={`py-2 pr-4 font-medium text-sm ${cls}`}>{icon}</td>
-      <td className="py-2 pr-4 text-sm text-gray-700">{check}</td>
-      <td className="py-2 text-sm text-gray-500">{detail}</td>
+    <tr className="border-b border-border-subtle last:border-0">
+      <td className="py-2.5 pr-4 w-6">
+        <Icon className={`h-4 w-4 ${tone}`} strokeWidth={2} />
+      </td>
+      <td className="py-2.5 pr-4 text-caption text-fg-secondary">{check}</td>
+      <td className="py-2.5 text-caption text-fg-muted">{detail}</td>
     </tr>
+  );
+}
+
+function StatTile({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="bg-translucent-1 border border-border-subtle rounded-md px-3 py-2.5">
+      <p className="text-micro uppercase tracking-wider text-fg-muted">{label}</p>
+      <p className="mt-1 text-body-emph text-fg-primary font-mono">{String(value)}</p>
+    </div>
   );
 }
 
 function GDPRContent({ report }: { report: GDPRReport }) {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        {[
-          ['Total Requests', report.total_requests],
-          ['PII Detections', report.total_pii_detections],
-          ['Redacted', report.pii_redacted],
-          ['Blocked', report.pii_blocked],
-          ['Escalated', report.pii_escalated],
-          ['Period', report.period],
-        ].map(([label, value]) => (
-          <div key={String(label)} className="bg-gray-50 rounded-lg p-3">
-            <p className="text-xs text-gray-500">{label}</p>
-            <p className="text-lg font-semibold text-gray-800 mt-0.5">{String(value)}</p>
-          </div>
-        ))}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <StatTile label="Total Requests" value={report.total_requests} />
+        <StatTile label="PII Detections" value={report.total_pii_detections} />
+        <StatTile label="Redacted" value={report.pii_redacted} />
+        <StatTile label="Blocked" value={report.pii_blocked} />
+        <StatTile label="Escalated" value={report.pii_escalated} />
+        <StatTile label="Period" value={report.period} />
       </div>
+
       <div>
-        <p className="text-sm font-medium text-gray-700 mb-1">Data Categories Processed</p>
-        <div className="flex flex-wrap gap-2">
-          {report.data_categories_processed.length > 0
-            ? report.data_categories_processed.map((cat) => (
-                <span key={cat} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-xs rounded-full">{cat}</span>
-              ))
-            : <span className="text-sm text-gray-400">None detected</span>
-          }
+        <p className="text-caption text-fg-secondary mb-2">Data Categories Processed</p>
+        <div className="flex flex-wrap gap-1.5">
+          {report.data_categories_processed.length > 0 ? (
+            report.data_categories_processed.map((cat) => (
+              <Badge key={cat} variant="info">
+                {cat}
+              </Badge>
+            ))
+          ) : (
+            <span className="text-small text-fg-muted italic">None detected</span>
+          )}
         </div>
       </div>
-      <div className="flex gap-6 text-sm">
+
+      <div className="flex flex-wrap gap-x-8 gap-y-2 text-caption">
         <div>
-          <span className="text-gray-500">Cross-border transfers:</span>{' '}
-          <span className="font-medium">{report.cross_border_transfers ? 'Yes' : 'No'}</span>
+          <span className="text-fg-muted">Cross-border transfers:</span>{' '}
+          <Badge variant={report.cross_border_transfers ? 'warning' : 'subtle'}>
+            {report.cross_border_transfers ? 'Yes' : 'No'}
+          </Badge>
         </div>
         <div>
-          <span className="text-gray-500">Retention policy:</span>{' '}
-          <span className="font-medium">{report.retention_policy}</span>
+          <span className="text-fg-muted">Retention policy:</span>{' '}
+          <span className="text-fg-primary font-mono">{report.retention_policy}</span>
         </div>
       </div>
+
       <div>
-        <p className="text-sm font-medium text-gray-700 mb-2">Compliance Findings</p>
+        <p className="text-caption text-fg-secondary mb-2">Compliance Findings</p>
         <table className="w-full">
           <tbody>
             {report.findings.map((f) => (
@@ -98,33 +130,32 @@ function GDPRContent({ report }: { report: GDPRReport }) {
 function EUAIActContent({ report }: { report: EUAIActReport }) {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-        {[
-          ['System Name', report.system_name],
-          ['Risk Classification', report.risk_classification],
-          ['Detection Method', report.injection_detection_method],
-          ['Escalations (30d)', report.human_oversight_escalations],
-          ['Pending', report.pending_escalations],
-          ['Policy Changes (30d)', report.policy_changes_30d],
-        ].map(([label, value]) => (
-          <div key={String(label)} className="bg-gray-50 rounded-lg p-3">
-            <p className="text-xs text-gray-500">{label}</p>
-            <p className="text-lg font-semibold text-gray-800 mt-0.5">{String(value)}</p>
-          </div>
-        ))}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <StatTile label="System Name" value={report.system_name} />
+        <StatTile label="Risk Classification" value={report.risk_classification} />
+        <StatTile label="Detection Method" value={report.injection_detection_method} />
+        <StatTile label="Escalations (30d)" value={report.human_oversight_escalations} />
+        <StatTile label="Pending" value={report.pending_escalations} />
+        <StatTile label="Policy Changes (30d)" value={report.policy_changes_30d} />
       </div>
-      <div className="flex gap-6 text-sm">
+
+      <div className="flex flex-wrap gap-x-8 gap-y-2 text-caption">
         <div>
-          <span className="text-gray-500">Injection detection:</span>{' '}
-          <span className="font-medium">{report.injection_detection_enabled ? 'Enabled' : 'Disabled'}</span>
+          <span className="text-fg-muted">Injection detection:</span>{' '}
+          <Badge variant={report.injection_detection_enabled ? 'success' : 'danger'}>
+            {report.injection_detection_enabled ? 'Enabled' : 'Disabled'}
+          </Badge>
         </div>
         <div>
-          <span className="text-gray-500">Audit trail signed:</span>{' '}
-          <span className="font-medium">{report.audit_trail_signed ? 'Yes (HMAC-SHA256)' : 'No'}</span>
+          <span className="text-fg-muted">Audit trail signed:</span>{' '}
+          <Badge variant={report.audit_trail_signed ? 'success' : 'danger'}>
+            {report.audit_trail_signed ? 'HMAC-SHA256' : 'No'}
+          </Badge>
         </div>
       </div>
+
       <div>
-        <p className="text-sm font-medium text-gray-700 mb-2">Compliance Findings</p>
+        <p className="text-caption text-fg-secondary mb-2">Compliance Findings</p>
         <table className="w-full">
           <tbody>
             {report.findings.map((f) => (
@@ -168,77 +199,82 @@ export function Reports() {
   }
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Compliance Reports</h1>
-        <p className="text-sm text-gray-500 mt-1">Generate GDPR and EU AI Act compliance documentation</p>
-      </div>
+    <div className="space-y-6">
+      <header>
+        <h1 className="text-h1 text-fg-primary">Compliance Reports</h1>
+        <p className="mt-1 text-small text-fg-muted">
+          Generate GDPR and EU AI Act compliance documentation.
+        </p>
+      </header>
 
-      <div className="space-y-8">
+      <div className="space-y-6">
         {REPORT_CARDS.map((card) => {
           const report = reports[card.type];
           const isLoading = loading[card.type] ?? false;
           const error = errors[card.type];
+          const Icon = card.icon;
 
           return (
-            <div key={card.type} className="bg-white rounded-lg border border-gray-200">
-              {/* Card header */}
-              <div className="px-6 py-5 border-b border-gray-100 flex items-start justify-between gap-4">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d={card.icon} />
-                    </svg>
+            <Card key={card.type}>
+              <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="h-9 w-9 rounded-md bg-accent/15 border border-accent/30 flex items-center justify-center flex-shrink-0">
+                    <Icon className="h-4 w-4 text-accent-bright" strokeWidth={1.75} />
                   </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900">{card.title}</h2>
-                    <p className="text-sm text-gray-500 mt-0.5">{card.description}</p>
+                  <div className="min-w-0">
+                    <CardTitle>{card.title}</CardTitle>
+                    <CardDescription className="mt-1">{card.description}</CardDescription>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {report && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => downloadReport(card.type)}
-                      className="px-3 py-1.5 bg-gray-100 text-gray-600 text-sm rounded-md hover:bg-gray-200"
                     >
-                      Download JSON
-                    </button>
+                      <Download className="h-3.5 w-3.5" />
+                      JSON
+                    </Button>
                   )}
-                  <button
+                  <Button
+                    variant="primary"
+                    size="sm"
                     onClick={() => void generate(card.type)}
                     disabled={isLoading}
-                    className="px-4 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 disabled:opacity-50"
                   >
                     {isLoading ? 'Generating…' : report ? 'Regenerate' : 'Generate'}
-                  </button>
+                  </Button>
                 </div>
-              </div>
+              </CardHeader>
 
-              {/* Card body */}
-              <div className="px-6 py-5">
+              <CardContent>
                 {error && (
-                  <p className="text-red-500 text-sm">{error}</p>
+                  <p className="text-caption text-status-danger">{error}</p>
                 )}
                 {!report && !error && !isLoading && (
-                  <p className="text-gray-400 text-sm">Click "Generate" to produce this report.</p>
+                  <p className="text-small text-fg-muted italic">
+                    Click "Generate" to produce this report.
+                  </p>
                 )}
                 {isLoading && (
-                  <div className="text-gray-400 text-sm">Querying audit database…</div>
+                  <p className="text-small text-fg-muted">Querying audit database…</p>
                 )}
                 {report && !isLoading && (
                   <div>
-                    <p className="text-xs text-gray-400 mb-4">
-                      Generated: {new Date(report.generated_at).toLocaleString()} —
-                      Tenant: {report.tenant_id}
+                    <p className="text-label text-fg-subtle mb-5 font-mono">
+                      Generated {new Date(report.generated_at).toLocaleString()} · Tenant{' '}
+                      {report.tenant_id}
                     </p>
-                    {report.report_type === 'gdpr'
-                      ? <GDPRContent report={report as GDPRReport} />
-                      : <EUAIActContent report={report as EUAIActReport} />
-                    }
+                    {report.report_type === 'gdpr' ? (
+                      <GDPRContent report={report as GDPRReport} />
+                    ) : (
+                      <EUAIActContent report={report as EUAIActReport} />
+                    )}
                   </div>
                 )}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           );
         })}
       </div>

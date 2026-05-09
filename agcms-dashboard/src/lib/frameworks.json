@@ -1,0 +1,175 @@
+{
+  "45 CFR §164.312(a)(1)": {
+    "framework": "HIPAA",
+    "title": "Technical safeguards — Access control",
+    "text": "Implement technical policies and procedures for electronic information systems that maintain electronic protected health information to allow access only to those persons or software programs that have been granted access rights.",
+    "url": "https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-C/section-164.312#p-164.312(a)(1)"
+  },
+  "45 CFR §164.312(b)": {
+    "framework": "HIPAA",
+    "title": "Audit controls",
+    "text": "Implement hardware, software, and/or procedural mechanisms that record and examine activity in information systems that contain or use electronic protected health information.",
+    "url": "https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-C/section-164.312#p-164.312(b)"
+  },
+  "45 CFR §164.312(c)(1)": {
+    "framework": "HIPAA",
+    "title": "Integrity",
+    "text": "Implement policies and procedures to protect electronic protected health information from improper alteration or destruction.",
+    "url": "https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-C/section-164.312#p-164.312(c)(1)"
+  },
+  "45 CFR §164.312(e)(1)": {
+    "framework": "HIPAA",
+    "title": "Transmission security",
+    "text": "Implement technical security measures to guard against unauthorized access to electronic protected health information that is being transmitted over an electronic communications network.",
+    "url": "https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-C/section-164.312#p-164.312(e)(1)"
+  },
+
+  "GDPR Art. 5": {
+    "framework": "GDPR",
+    "title": "Principles relating to processing of personal data",
+    "text": "Personal data shall be processed lawfully, fairly, and in a transparent manner; collected for specified purposes; limited to what is necessary; accurate; kept in a form which permits identification no longer than is necessary; and processed securely.",
+    "url": "https://gdpr-info.eu/art-5-gdpr/"
+  },
+  "GDPR Art. 13": {
+    "framework": "GDPR",
+    "title": "Information to be provided where personal data are collected from the data subject",
+    "text": "Where personal data relating to a data subject are collected from the data subject, the controller shall, at the time when personal data are obtained, provide the data subject with specified information.",
+    "url": "https://gdpr-info.eu/art-13-gdpr/"
+  },
+  "GDPR Art. 17": {
+    "framework": "GDPR",
+    "title": "Right to erasure ('right to be forgotten')",
+    "text": "The data subject shall have the right to obtain from the controller the erasure of personal data concerning him or her without undue delay.",
+    "url": "https://gdpr-info.eu/art-17-gdpr/"
+  },
+  "GDPR Art. 25": {
+    "framework": "GDPR",
+    "title": "Data protection by design and by default",
+    "text": "The controller shall, both at the time of the determination of the means for processing and at the time of the processing itself, implement appropriate technical and organisational measures.",
+    "url": "https://gdpr-info.eu/art-25-gdpr/"
+  },
+  "GDPR Art. 30": {
+    "framework": "GDPR",
+    "title": "Records of processing activities",
+    "text": "Each controller shall maintain a record of processing activities under its responsibility, containing specified information.",
+    "url": "https://gdpr-info.eu/art-30-gdpr/"
+  },
+  "GDPR Art. 32": {
+    "framework": "GDPR",
+    "title": "Security of processing",
+    "text": "The controller and the processor shall implement appropriate technical and organisational measures to ensure a level of security appropriate to the risk.",
+    "url": "https://gdpr-info.eu/art-32-gdpr/"
+  },
+
+  "EU AI Act Art. 9": {
+    "framework": "EU_AI_ACT",
+    "title": "Risk management system",
+    "text": "A risk management system shall be established, implemented, documented and maintained in relation to high-risk AI systems throughout the entire lifecycle of the system.",
+    "url": "https://artificialintelligenceact.eu/article/9/"
+  },
+  "EU AI Act Art. 10": {
+    "framework": "EU_AI_ACT",
+    "title": "Data and data governance",
+    "text": "High-risk AI systems that make use of techniques involving the training of models shall be developed on the basis of training, validation and testing data sets that meet quality criteria.",
+    "url": "https://artificialintelligenceact.eu/article/10/"
+  },
+  "EU AI Act Art. 12": {
+    "framework": "EU_AI_ACT",
+    "title": "Record-keeping",
+    "text": "High-risk AI systems shall technically allow for the automatic recording of events ('logs') over the duration of the lifetime of the system.",
+    "url": "https://artificialintelligenceact.eu/article/12/"
+  },
+  "EU AI Act Art. 13": {
+    "framework": "EU_AI_ACT",
+    "title": "Transparency and provision of information to users",
+    "text": "High-risk AI systems shall be designed and developed in such a way to ensure that their operation is sufficiently transparent to enable users to interpret the system's output and use it appropriately.",
+    "url": "https://artificialintelligenceact.eu/article/13/"
+  },
+  "EU AI Act Art. 14": {
+    "framework": "EU_AI_ACT",
+    "title": "Human oversight",
+    "text": "High-risk AI systems shall be designed and developed in such a way that they can be effectively overseen by natural persons during the period in which the AI system is in use.",
+    "url": "https://artificialintelligenceact.eu/article/14/"
+  },
+  "EU AI Act Art. 15": {
+    "framework": "EU_AI_ACT",
+    "title": "Accuracy, robustness and cybersecurity",
+    "text": "High-risk AI systems shall be designed and developed in such a way that they achieve, in the light of their intended purpose, an appropriate level of accuracy, robustness and cybersecurity.",
+    "url": "https://artificialintelligenceact.eu/article/15/"
+  },
+
+  "NIST AI RMF Measure 2.6": {
+    "framework": "NIST_AI_RMF",
+    "title": "Safety risk evaluation",
+    "text": "The AI system is evaluated for safety risks—consistent with prevailing AI RMF values and principles—through the use of the appropriate scientific, technical, and organizational methods.",
+    "url": "https://airc.nist.gov/AI_RMF_Knowledge_Base/AI_RMF/Core_And_Profiles/5-sec-measure"
+  },
+  "NIST AI RMF Measure 2.7": {
+    "framework": "NIST_AI_RMF",
+    "title": "Security and resilience metrics",
+    "text": "AI system security and resilience — as identified in the Map function — are evaluated and documented with commonly used metrics.",
+    "url": "https://airc.nist.gov/AI_RMF_Knowledge_Base/AI_RMF/Core_And_Profiles/5-sec-measure"
+  },
+  "NIST AI RMF Manage 2.1": {
+    "framework": "NIST_AI_RMF",
+    "title": "Resources required to manage AI risks",
+    "text": "Resources required to manage AI risks are taken into account, along with viable non-AI alternative systems, approaches, or methods — to reduce the magnitude or likelihood of potential impacts.",
+    "url": "https://airc.nist.gov/AI_RMF_Knowledge_Base/AI_RMF/Core_And_Profiles/6-sec-manage"
+  },
+  "NIST AI RMF Manage 4.1": {
+    "framework": "NIST_AI_RMF",
+    "title": "Post-deployment monitoring",
+    "text": "Post-deployment AI system monitoring plans are implemented, including mechanisms for capturing and evaluating input from users and other relevant parties, appeal and override, decommissioning, incident response, recovery, and change management.",
+    "url": "https://airc.nist.gov/AI_RMF_Knowledge_Base/AI_RMF/Core_And_Profiles/6-sec-manage"
+  },
+
+  "SOC 2 CC6.1": {
+    "framework": "SOC_2",
+    "title": "Logical access security",
+    "text": "The entity implements logical access security software, infrastructure, and architectures over protected information assets to protect them from security events to meet the entity's objectives.",
+    "url": "https://www.aicpa-cima.com/topic/audit-assurance/audit-and-assurance-greater-than-soc-2"
+  },
+  "SOC 2 CC6.6": {
+    "framework": "SOC_2",
+    "title": "External-threat protection",
+    "text": "The entity implements logical access security measures to protect against threats from sources outside its system boundaries.",
+    "url": "https://www.aicpa-cima.com/topic/audit-assurance/audit-and-assurance-greater-than-soc-2"
+  },
+  "SOC 2 CC7.2": {
+    "framework": "SOC_2",
+    "title": "System monitoring",
+    "text": "The entity monitors system components and the operation of those components for anomalies that are indicative of malicious acts, natural disasters, and errors.",
+    "url": "https://www.aicpa-cima.com/topic/audit-assurance/audit-and-assurance-greater-than-soc-2"
+  },
+  "SOC 2 CC7.3": {
+    "framework": "SOC_2",
+    "title": "Security event evaluation",
+    "text": "The entity evaluates security events to determine whether they could or have resulted in a failure of the entity to meet its objectives (security incidents) and, if so, takes actions to prevent or address such failures.",
+    "url": "https://www.aicpa-cima.com/topic/audit-assurance/audit-and-assurance-greater-than-soc-2"
+  },
+  "SOC 2 CC8.1": {
+    "framework": "SOC_2",
+    "title": "Change management",
+    "text": "The entity authorizes, designs, develops or acquires, configures, documents, tests, approves, and implements changes to infrastructure, data, software, and procedures to meet its objectives.",
+    "url": "https://www.aicpa-cima.com/topic/audit-assurance/audit-and-assurance-greater-than-soc-2"
+  },
+
+  "PCI DSS v4.0 Req. 3.4": {
+    "framework": "PCI_DSS",
+    "title": "PAN protection in storage and transmission",
+    "text": "PAN is protected whenever it is stored or transmitted. PAN is rendered unreadable anywhere it is stored by using one-way hashes, truncation, index tokens, or strong cryptography.",
+    "url": "https://docs-prv.pcisecuritystandards.org/PCI%20DSS/Standard/PCI-DSS-v4_0.pdf"
+  },
+  "PCI DSS v4.0 Req. 4.2": {
+    "framework": "PCI_DSS",
+    "title": "PAN protection during transmission",
+    "text": "PAN is protected with strong cryptography during transmission over open, public networks.",
+    "url": "https://docs-prv.pcisecuritystandards.org/PCI%20DSS/Standard/PCI-DSS-v4_0.pdf"
+  },
+  "PCI DSS v4.0 Req. 10.2": {
+    "framework": "PCI_DSS",
+    "title": "Audit logs support anomaly detection",
+    "text": "Audit logs are implemented to support the detection of anomalies and suspicious activity, and the forensic analysis of events.",
+    "url": "https://docs-prv.pcisecuritystandards.org/PCI%20DSS/Standard/PCI-DSS-v4_0.pdf"
+  }
+}

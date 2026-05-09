@@ -1,32 +1,47 @@
 import { formatDistanceToNow } from 'date-fns';
-import { cn } from '../lib/cn';
+import { ShieldCheck } from 'lucide-react';
 import type { Violation } from '../lib/api';
+import { Badge } from './ui/badge';
+import { FrameworkMap } from './FrameworkMap';
+import { citationsForViolation } from '../lib/citations';
 
 interface ViolationFeedProps {
   violations: Violation[];
   loading?: boolean;
 }
 
-const ACTION_STYLES: Record<string, string> = {
-  BLOCK: 'bg-red-100 text-red-700',
-  REDACT: 'bg-yellow-100 text-yellow-700',
-  ALLOW: 'bg-green-100 text-green-700',
-};
+type ActionVariant = 'danger' | 'warning' | 'success' | 'neutral';
 
-const RISK_STYLES: Record<string, string> = {
-  CRITICAL: 'bg-red-100 text-red-700',
-  HIGH: 'bg-orange-100 text-orange-700',
-  MEDIUM: 'bg-yellow-100 text-yellow-700',
-  LOW: 'bg-blue-100 text-blue-700',
-  NONE: 'bg-gray-100 text-gray-700',
-};
+function actionVariant(action: string): ActionVariant {
+  if (action === 'BLOCK') return 'danger';
+  if (action === 'REDACT') return 'warning';
+  if (action === 'ALLOW') return 'success';
+  return 'neutral';
+}
+
+type SeverityKey = 'severity-critical' | 'severity-high' | 'severity-medium' | 'severity-low' | 'neutral';
+
+function riskVariant(level: string | null): SeverityKey {
+  switch (level) {
+    case 'CRITICAL':
+      return 'severity-critical';
+    case 'HIGH':
+      return 'severity-high';
+    case 'MEDIUM':
+      return 'severity-medium';
+    case 'LOW':
+      return 'severity-low';
+    default:
+      return 'neutral';
+  }
+}
 
 export function ViolationFeed({ violations, loading }: ViolationFeedProps) {
   if (loading) {
     return (
-      <div className="animate-pulse space-y-3">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-20 bg-gray-100 rounded-lg" />
+      <div className="space-y-2">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-[82px] bg-translucent-1 border border-border-subtle rounded-lg animate-pulse" />
         ))}
       </div>
     );
@@ -34,71 +49,79 @@ export function ViolationFeed({ violations, loading }: ViolationFeedProps) {
 
   if (violations.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-400">
-        <svg className="mx-auto h-12 w-12 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <p className="text-sm">No violations recorded yet.</p>
-        <p className="text-xs mt-1">Route LLM requests through the gateway to see activity.</p>
+      <div className="text-center py-10 border border-dashed border-border-subtle rounded-lg">
+        <ShieldCheck className="mx-auto h-8 w-8 mb-3 text-fg-subtle" strokeWidth={1.25} />
+        <p className="text-caption text-fg-secondary">All clear.</p>
+        <p className="text-label text-fg-muted mt-1">
+          No violations recorded in the selected window.
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {violations.map((v) => (
         <div
           key={v.interaction_id}
-          className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors"
+          className="bg-translucent-1 border border-border-subtle rounded-lg p-3.5 hover:bg-translucent-2 hover:border-border transition-colors"
         >
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className={cn(
-                  'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
-                  ACTION_STYLES[v.action] || ACTION_STYLES.BLOCK
-                )}>
-                  {v.action}
-                </span>
+              <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                <Badge variant={actionVariant(v.action)}>{v.action}</Badge>
                 {v.pii_risk_level && v.pii_risk_level !== 'NONE' && (
-                  <span className={cn(
-                    'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
-                    RISK_STYLES[v.pii_risk_level] || RISK_STYLES.MEDIUM
-                  )}>
-                    PII: {v.pii_risk_level}
-                  </span>
+                  <Badge variant={riskVariant(v.pii_risk_level)}>PII · {v.pii_risk_level}</Badge>
                 )}
                 {v.injection_type && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
-                    Injection: {v.injection_type}
-                  </span>
+                  <Badge variant="accent">Injection · {v.injection_type}</Badge>
                 )}
               </div>
-              <p className="text-sm text-gray-700 truncate">
+              <p className="text-caption text-fg-secondary truncate">
                 {v.reason || 'No reason provided'}
               </p>
-              <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
-                <span>User: {v.user_id}</span>
-                {v.department && <span>Dept: {v.department}</span>}
-                {v.latency_ms != null && <span>{v.latency_ms}ms</span>}
+              <div className="flex items-center gap-3 mt-1.5 text-label text-fg-subtle">
+                <span>
+                  <span className="text-fg-muted">user</span>{' '}
+                  <span className="font-mono text-fg-secondary">{v.user_id}</span>
+                </span>
+                {v.department && (
+                  <span>
+                    <span className="text-fg-muted">dept</span> {v.department}
+                  </span>
+                )}
+                {v.latency_ms != null && (
+                  <span className="font-mono">{v.latency_ms} ms</span>
+                )}
               </div>
             </div>
-            <div className="text-xs text-gray-400 whitespace-nowrap ml-4">
+            <div className="text-label text-fg-subtle whitespace-nowrap shrink-0 font-mono">
               {v.created_at
                 ? formatDistanceToNow(new Date(v.created_at), { addSuffix: true })
-                : '--'}
+                : '—'}
             </div>
           </div>
-          <div className="mt-2 flex items-center gap-2">
-            {v.pii_entity_types.map((t) => (
-              <span key={t} className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">
-                {t}
-              </span>
-            ))}
-          </div>
-          <p className="text-xs text-gray-300 mt-1 font-mono truncate">
-            {v.interaction_id}
-          </p>
+          {v.pii_entity_types.length > 0 && (
+            <div className="mt-2 flex flex-wrap items-center gap-1">
+              {v.pii_entity_types.map((t) => (
+                <Badge key={t} variant="subtle">
+                  {t}
+                </Badge>
+              ))}
+            </div>
+          )}
+          {(() => {
+            const cites = citationsForViolation({
+              piiCategories: v.pii_entity_types,
+              injectionDetected: !!v.injection_type,
+            });
+            return cites.length > 0 ? (
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <span className="text-micro text-fg-muted">Maps to:</span>
+                <FrameworkMap citations={cites} />
+              </div>
+            ) : null;
+          })()}
         </div>
       ))}
     </div>

@@ -1,0 +1,72 @@
+# EU AI Act (High-Risk Systems) policy pack — AGCMS v1
+#
+# Targets operators of high-risk AI systems under Annex III (credit
+# scoring, employment, law enforcement, etc.). Enforces transparency,
+# human oversight, and tamper-evident logging requirements from Chapter III.
+
+id: eu-ai-act-high-risk
+name: "EU AI Act — High-Risk Systems"
+framework: "EU_AI_ACT"
+version: "1.0.0"
+description: >
+  Controls mapped to the EU AI Act Chapter III obligations for
+  high-risk AI systems: risk management, data governance, logging,
+  transparency, human oversight, accuracy/robustness, cybersecurity.
+
+metadata:
+  framework_citations:
+    - id: "EU AI Act Art. 9"
+      title: "Risk management system"
+      url: "https://artificialintelligenceact.eu/article/9/"
+    - id: "EU AI Act Art. 10"
+      title: "Data and data governance"
+      url: "https://artificialintelligenceact.eu/article/10/"
+    - id: "EU AI Act Art. 12"
+      title: "Record-keeping"
+      url: "https://artificialintelligenceact.eu/article/12/"
+    - id: "EU AI Act Art. 13"
+      title: "Transparency and provision of information to users"
+      url: "https://artificialintelligenceact.eu/article/13/"
+    - id: "EU AI Act Art. 14"
+      title: "Human oversight"
+      url: "https://artificialintelligenceact.eu/article/14/"
+    - id: "EU AI Act Art. 15"
+      title: "Accuracy, robustness and cybersecurity"
+      url: "https://artificialintelligenceact.eu/article/15/"
+
+overrides:
+  pii:
+    enabled: true
+    action_on_detection: "REDACT"
+    critical_action: "ESCALATE"   # Art. 14: human oversight before blocking
+    risk_threshold: "LOW"
+  injection:
+    enabled: true
+    block_threshold: 0.6
+    action_on_detection: "BLOCK"
+    log_all_attempts: true         # Art. 15: cybersecurity
+  response_compliance:
+    enabled: true
+    action_on_violation: "REDACT"
+  audit:
+    retention_days: 3650           # Art. 12: at least lifetime of the system, default 10y
+
+rules:
+  - id: "ai-act-high-risk-pii"
+    description: "Prompt contains identifier suggesting use in a high-risk domain."
+    when:
+      pii_categories_any_of: ["credit_score", "criminal_record", "employment_record"]
+    action: "ESCALATE"
+    framework_citations: ["EU AI Act Art. 9", "EU AI Act Art. 14"]
+  - id: "ai-act-logging"
+    description: "Every inference on high-risk input is logged (Art. 12)."
+    when:
+      pii_detected: true
+    action: "LOG"
+    framework_citations: ["EU AI Act Art. 12"]
+  - id: "ai-act-prompt-injection"
+    description: "Prompt-injection attempts are a cybersecurity concern (Art. 15)."
+    when:
+      injection_score_at_least: 0.6
+    action: "BLOCK"
+    framework_citations: ["EU AI Act Art. 15"]

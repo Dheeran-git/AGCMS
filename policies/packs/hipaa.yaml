@@ -1,0 +1,73 @@
+# HIPAA Security Rule policy pack — AGCMS v1
+#
+# Loadable preset that layers HIPAA-specific detection + enforcement onto
+# the tenant's default policy. Each rule carries `framework_citations[]`
+# so violations surface the exact 45 CFR reference on the dashboard.
+#
+# This pack is opinionated. It treats every detected PHI field as
+# MEDIUM-risk-minimum and escalates on CRITICAL rather than blocking
+# silently — healthcare customers almost always want a human in the loop.
+
+id: hipaa
+name: "HIPAA Security Rule"
+framework: "HIPAA"
+version: "1.0.0"
+description: >
+  Safeguards for Protected Health Information under 45 CFR Part 164
+  Subparts A and C. Enforces access control, audit, integrity, and
+  transmission-security technical safeguards.
+
+metadata:
+  framework_citations:
+    - id: "45 CFR §164.312(a)(1)"
+      title: "Technical safeguards — Access control"
+      url: "https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-C/section-164.312#p-164.312(a)(1)"
+    - id: "45 CFR §164.312(b)"
+      title: "Audit controls"
+      url: "https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-C/section-164.312#p-164.312(b)"
+    - id: "45 CFR §164.312(c)(1)"
+      title: "Integrity"
+      url: "https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-C/section-164.312#p-164.312(c)(1)"
+    - id: "45 CFR §164.312(e)(1)"
+      title: "Transmission security"
+      url: "https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-C/section-164.312#p-164.312(e)(1)"
+
+overrides:
+  pii:
+    enabled: true
+    action_on_detection: "REDACT"
+    critical_action: "ESCALATE"   # HIPAA: human review beats silent block
+    risk_threshold: "LOW"          # PHI is always at least LOW
+  injection:
+    enabled: true
+    block_threshold: 0.5           # stricter than default 0.65
+    action_on_detection: "BLOCK"
+    log_all_attempts: true
+  response_compliance:
+    enabled: true
+    restricted_topics:
+      - "unverified medical advice"
+      - "dosing without prescriber review"
+    action_on_violation: "BLOCK"
+  audit:
+    retention_days: 2190           # 6 years (HIPAA §164.530(j))
+
+rules:
+  - id: "hipaa-phi-detected"
+    description: "Prompt contains PHI (diagnosis, treatment, or insurance identifier)."
+    when:
+      pii_categories_any_of: ["medical_record_number", "diagnosis_code", "insurance_id", "us_ssn"]
+    action: "REDACT"
+    framework_citations: ["45 CFR §164.312(a)(1)", "45 CFR §164.312(e)(1)"]
+  - id: "hipaa-critical-block"
+    description: "Prompt contains PHI at CRITICAL risk (multiple identifiers, re-identification likely)."
+    when:
+      pii_risk_level_at_least: "CRITICAL"
+    action: "ESCALATE"
+    framework_citations: ["45 CFR §164.312(a)(1)"]
+  - id: "hipaa-audit-always"
+    description: "All interactions with PHI must be auditable."
+    when:
+      pii_detected: true
+    action: "LOG"
+    framework_citations: ["45 CFR §164.312(b)"]

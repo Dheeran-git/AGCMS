@@ -1,0 +1,74 @@
+# GDPR policy pack — AGCMS v1
+#
+# Implements the enforcement side of GDPR: lawful basis, data minimisation,
+# and subject-rights-aware auditing. Purge workflow for Art. 17 erasure
+# requests ships separately (Phase 6.6) — this pack governs *ingress*.
+
+id: gdpr
+name: "General Data Protection Regulation"
+framework: "GDPR"
+version: "1.0.0"
+description: >
+  Enforcement pack for EU personal-data processing. Pairs with Phase 6.6
+  purge workflow (Art. 17) and Phase 5 audit bundles (Art. 30).
+
+metadata:
+  framework_citations:
+    - id: "GDPR Art. 5"
+      title: "Principles relating to processing of personal data"
+      url: "https://gdpr-info.eu/art-5-gdpr/"
+    - id: "GDPR Art. 13"
+      title: "Information to be provided when data is collected"
+      url: "https://gdpr-info.eu/art-13-gdpr/"
+    - id: "GDPR Art. 17"
+      title: "Right to erasure ('right to be forgotten')"
+      url: "https://gdpr-info.eu/art-17-gdpr/"
+    - id: "GDPR Art. 25"
+      title: "Data protection by design and by default"
+      url: "https://gdpr-info.eu/art-25-gdpr/"
+    - id: "GDPR Art. 30"
+      title: "Records of processing activities"
+      url: "https://gdpr-info.eu/art-30-gdpr/"
+    - id: "GDPR Art. 32"
+      title: "Security of processing"
+      url: "https://gdpr-info.eu/art-32-gdpr/"
+
+overrides:
+  pii:
+    enabled: true
+    action_on_detection: "REDACT"    # Art. 25: PbD default
+    critical_action: "BLOCK"
+    risk_threshold: "LOW"
+  injection:
+    enabled: true
+    block_threshold: 0.65
+    action_on_detection: "BLOCK"
+    log_all_attempts: true
+  audit:
+    retention_days: 1095             # 3 years (reasonable default under Art. 5(1)(e))
+
+rules:
+  - id: "gdpr-eu-identifier"
+    description: "Prompt contains EU identifier (passport, VAT, national ID, IBAN)."
+    when:
+      pii_categories_any_of: ["eu_national_id", "eu_vat_number", "eu_passport", "iban"]
+    action: "REDACT"
+    framework_citations: ["GDPR Art. 5", "GDPR Art. 25"]
+  - id: "gdpr-minimise"
+    description: "Medium+ risk personal data must be minimised before forwarding."
+    when:
+      pii_risk_level_at_least: "MEDIUM"
+    action: "REDACT"
+    framework_citations: ["GDPR Art. 5"]
+  - id: "gdpr-special-categories"
+    description: "Special-category data (health, biometric, political) is disallowed without explicit consent."
+    when:
+      pii_categories_any_of: ["health_data", "biometric_data", "political_opinion", "religious_belief"]
+    action: "BLOCK"
+    framework_citations: ["GDPR Art. 9"]
+  - id: "gdpr-processing-record"
+    description: "All processing must be recorded (Art. 30)."
+    when:
+      pii_detected: true
+    action: "LOG"
+    framework_citations: ["GDPR Art. 30"]

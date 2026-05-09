@@ -1,0 +1,22 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7f8bff"/>
+      <stop offset="55%" stop-color="#5e6ad2"/>
+      <stop offset="100%" stop-color="#3d47a8"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="stroke" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.98"/>
+      <stop offset="100%" stop-color="#dfe3ff" stop-opacity="0.92"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="32" height="32" rx="8" fill="url(#bg)"/>
+  <rect x="0" y="0" width="32" height="16" rx="8" fill="url(#sheen)"/>
+  <rect x="0.5" y="0.5" width="31" height="31" rx="7.5" fill="none" stroke="#ffffff" stroke-opacity="0.18"/>
+  <path d="M8.6 23 L15.1 9.2 Q15.6 8.2 16.4 8.2 Q17.2 8.2 17.7 9.2 L24.2 23" stroke="url(#stroke)" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M11.8 17.8 L21 17.8" stroke="url(#stroke)" stroke-width="1.85" stroke-linecap="round"/>
+</svg>

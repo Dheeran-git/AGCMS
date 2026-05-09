@@ -1,6 +1,20 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchPolicy, updatePolicy, fetchPolicyVersions, type PolicyConfig } from '../lib/api';
+import { CheckCircle2, History, Pencil, Send, ScrollText } from 'lucide-react';
+import {
+  fetchPolicy,
+  updatePolicy,
+  fetchPolicyVersions,
+  fetchPolicyPacks,
+  type PolicyConfig,
+} from '../lib/api';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea';
+import { Table, THead, TBody, Tr, Th, Td } from '../components/ui/table';
+import { FrameworkMap, frameworkLabel } from '../components/FrameworkMap';
 
 export function Policy() {
   const qc = useQueryClient();
@@ -18,6 +32,11 @@ export function Policy() {
   const versions = useQuery({
     queryKey: ['policy-versions'],
     queryFn: fetchPolicyVersions,
+  });
+
+  const packs = useQuery({
+    queryKey: ['policy-packs'],
+    queryFn: fetchPolicyPacks,
   });
 
   const deploy = useMutation({
@@ -59,137 +78,198 @@ export function Policy() {
   const active = policy.data;
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Policy Manager</h1>
-        <p className="text-sm text-gray-500 mt-1">View and deploy tenant governance policies</p>
-      </div>
+    <div className="space-y-6">
+      <header>
+        <h1 className="text-h1 text-fg-primary">Policy Manager</h1>
+        <p className="mt-1 text-small text-fg-muted">
+          View and deploy tenant governance policies.
+        </p>
+      </header>
 
       {successMsg && (
-        <div className="mb-4 px-4 py-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+        <div className="flex items-center gap-2 px-4 py-3 bg-status-success-soft border border-status-success/30 rounded-md text-caption text-status-success">
+          <CheckCircle2 className="h-4 w-4" />
           {successMsg}
         </div>
       )}
 
-      {/* Active policy panel */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
-        <div className="flex items-center justify-between mb-4">
+      <Card>
+        <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Active Policy</h2>
+            <CardTitle>Active policy</CardTitle>
             {active && (
-              <p className="text-xs text-gray-400 mt-0.5">
-                v{active.version} — deployed {new Date(active.created_at).toLocaleString()}
-                {active.notes && <span className="ml-2 italic">"{active.notes}"</span>}
-              </p>
+              <CardDescription className="mt-1">
+                <Badge variant="accent" className="mr-2">
+                  v{active.version}
+                </Badge>
+                Deployed {new Date(active.created_at).toLocaleString()}
+                {active.notes && (
+                  <span className="ml-2 italic text-fg-muted">"{active.notes}"</span>
+                )}
+              </CardDescription>
             )}
           </div>
-          {active && !editJson && (
-            <button
-              onClick={startEdit}
-              className="px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700"
-            >
-              Edit &amp; Deploy
-            </button>
+          {active && editJson === null && (
+            <Button variant="primary" size="sm" onClick={startEdit}>
+              <Pencil className="h-3.5 w-3.5" />
+              Edit & deploy
+            </Button>
           )}
-        </div>
+        </CardHeader>
 
-        {policy.isLoading ? (
-          <div className="text-gray-400 text-sm">Loading…</div>
-        ) : policy.isError ? (
-          <div className="text-red-500 text-sm">Error: {String(policy.error)}</div>
-        ) : editJson !== null ? (
-          <div>
-            <textarea
-              value={editJson}
-              onChange={(e) => {
-                setEditJson(e.target.value);
-                setJsonError(null);
-              }}
-              rows={20}
-              className="w-full font-mono text-xs border border-gray-300 rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-            {jsonError && (
-              <p className="mt-1 text-red-500 text-xs">{jsonError}</p>
-            )}
-            <div className="mt-3 flex items-center gap-3">
-              <input
-                type="text"
-                placeholder="Deploy notes (optional)"
-                value={deployNotes}
-                onChange={(e) => setDeployNotes(e.target.value)}
-                className="flex-1 border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        <CardContent>
+          {policy.isLoading ? (
+            <p className="text-small text-fg-muted">Loading…</p>
+          ) : policy.isError ? (
+            <p className="text-small text-status-danger">Error: {String(policy.error)}</p>
+          ) : editJson !== null ? (
+            <div className="space-y-3">
+              <Textarea
+                value={editJson}
+                onChange={(e) => {
+                  setEditJson(e.target.value);
+                  setJsonError(null);
+                }}
+                rows={20}
+                className="font-mono text-label leading-relaxed resize-y"
+                spellCheck={false}
               />
-              <button
-                onClick={handleDeploy}
-                disabled={deploy.isPending}
-                className="px-4 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 disabled:opacity-50"
-              >
-                {deploy.isPending ? 'Deploying…' : 'Deploy'}
-              </button>
-              <button
-                onClick={() => { setEditJson(null); setJsonError(null); }}
-                className="px-4 py-1.5 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200"
-              >
-                Cancel
-              </button>
+              {jsonError && (
+                <p className="text-label text-status-danger">{jsonError}</p>
+              )}
+              <div className="flex items-center gap-3">
+                <Input
+                  type="text"
+                  placeholder="Deploy notes (optional)"
+                  value={deployNotes}
+                  onChange={(e) => setDeployNotes(e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={handleDeploy}
+                  disabled={deploy.isPending}
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  {deploy.isPending ? 'Deploying…' : 'Deploy'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="md"
+                  onClick={() => {
+                    setEditJson(null);
+                    setJsonError(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
-          </div>
-        ) : (
-          <pre className="bg-gray-50 rounded-md p-4 text-xs font-mono text-gray-700 overflow-auto max-h-96">
-            {JSON.stringify(active?.config ?? {}, null, 2)}
-          </pre>
-        )}
-      </div>
+          ) : (
+            <pre className="bg-translucent-1 border border-border-subtle rounded-md p-4 text-label font-mono text-fg-secondary overflow-auto max-h-96 shadow-inset-recessed">
+              {JSON.stringify(active?.config ?? {}, null, 2)}
+            </pre>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Version history */}
-      <div className="bg-white rounded-lg border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900">Version History</h2>
-        </div>
-        {versions.isLoading ? (
-          <div className="px-6 py-8 text-center text-gray-400 text-sm">Loading…</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs text-gray-500 uppercase tracking-wider border-b border-gray-100">
-                  <th className="px-6 py-3">Version</th>
-                  <th className="px-6 py-3">Status</th>
-                  <th className="px-6 py-3">Notes</th>
-                  <th className="px-6 py-3">Deployed</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {(versions.data?.versions ?? []).map((v) => (
-                  <tr key={v.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-3 font-mono text-gray-800">v{v.version}</td>
-                    <td className="px-6 py-3">
-                      {v.is_active ? (
-                        <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full">
-                          Active
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 bg-gray-100 text-gray-400 text-xs rounded-full">
-                          Archived
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-3 text-gray-500 italic text-xs">
-                      {v.notes ?? '—'}
-                    </td>
-                    <td className="px-6 py-3 text-gray-400 text-xs">
-                      {new Date(v.created_at).toLocaleString()}
-                    </td>
-                  </tr>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ScrollText className="h-4 w-4 text-accent-bright" />
+            Compliance frameworks
+          </CardTitle>
+          <CardDescription>
+            Installed policy packs map every enforcement rule to a specific regulatory citation.
+            Hover any chip to see the article text.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="px-0">
+          {packs.isLoading ? (
+            <p className="px-6 py-8 text-center text-small text-fg-muted">Loading…</p>
+          ) : (packs.data?.packs ?? []).length === 0 ? (
+            <p className="px-6 py-8 text-center text-small text-fg-muted italic">
+              No packs installed.
+            </p>
+          ) : (
+            <Table>
+              <THead>
+                <Tr>
+                  <Th>Framework</Th>
+                  <Th>Pack</Th>
+                  <Th>Version</Th>
+                  <Th>Rules</Th>
+                  <Th>Citations</Th>
+                </Tr>
+              </THead>
+              <TBody>
+                {(packs.data?.packs ?? []).map((p) => (
+                  <Tr key={p.id}>
+                    <Td>
+                      <Badge variant="accent">{frameworkLabel(p.framework)}</Badge>
+                    </Td>
+                    <Td className="text-fg-primary">{p.name}</Td>
+                    <Td className="font-mono text-label text-fg-subtle">v{p.version}</Td>
+                    <Td className="text-fg-secondary">{p.rule_count}</Td>
+                    <Td>
+                      <FrameworkMap
+                        citations={p.citations}
+                        emptyHint="—"
+                      />
+                    </Td>
+                  </Tr>
                 ))}
-              </tbody>
-            </table>
-            {(versions.data?.versions ?? []).length === 0 && (
-              <p className="px-6 py-8 text-center text-gray-400 text-sm">No versions found.</p>
-            )}
-          </div>
-        )}
-      </div>
+              </TBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <History className="h-4 w-4 text-accent-bright" />
+            Version history
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-0">
+          {versions.isLoading ? (
+            <p className="px-6 py-8 text-center text-small text-fg-muted">Loading…</p>
+          ) : (versions.data?.versions ?? []).length === 0 ? (
+            <p className="px-6 py-8 text-center text-small text-fg-muted italic">
+              No versions found.
+            </p>
+          ) : (
+            <Table>
+              <THead>
+                <Tr>
+                  <Th>Version</Th>
+                  <Th>Status</Th>
+                  <Th>Notes</Th>
+                  <Th>Deployed</Th>
+                </Tr>
+              </THead>
+              <TBody>
+                {(versions.data?.versions ?? []).map((v) => (
+                  <Tr key={v.id}>
+                    <Td className="font-mono text-fg-primary">v{v.version}</Td>
+                    <Td>
+                      <Badge variant={v.is_active ? 'success' : 'subtle'}>
+                        {v.is_active ? 'Active' : 'Archived'}
+                      </Badge>
+                    </Td>
+                    <Td className="italic text-fg-muted">{v.notes ?? '—'}</Td>
+                    <Td className="font-mono text-label text-fg-subtle whitespace-nowrap">
+                      {new Date(v.created_at).toLocaleString()}
+                    </Td>
+                  </Tr>
+                ))}
+              </TBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

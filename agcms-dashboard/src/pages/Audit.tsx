@@ -1,15 +1,38 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { ChevronLeft, ChevronRight, Download, RotateCcw, ShieldCheck, ShieldAlert } from 'lucide-react';
 import {
   fetchAuditLogs,
   exportAuditLogs,
   verifyAuditLog,
   type AuditLog,
 } from '../lib/api';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Table, THead, TBody, Tr, Th, Td } from '../components/ui/table';
 
 const PAGE_SIZE = 25;
 
 const ACTION_OPTIONS = ['', 'ALLOW', 'REDACT', 'BLOCK', 'ESCALATE'];
+
+type ActionVariant = 'success' | 'warning' | 'danger' | 'neutral';
+
+function actionVariant(action: string): ActionVariant {
+  switch (action) {
+    case 'ALLOW':
+      return 'success';
+    case 'REDACT':
+      return 'warning';
+    case 'BLOCK':
+      return 'danger';
+    case 'ESCALATE':
+      return 'warning';
+    default:
+      return 'neutral';
+  }
+}
 
 export function Audit() {
   const [offset, setOffset] = useState(0);
@@ -52,198 +75,217 @@ export function Audit() {
     setEndFilter('');
   }
 
-  function actionBadge(action: string) {
-    const cls: Record<string, string> = {
-      ALLOW: 'bg-green-100 text-green-700',
-      REDACT: 'bg-yellow-100 text-yellow-700',
-      BLOCK: 'bg-red-100 text-red-700',
-      ESCALATE: 'bg-orange-100 text-orange-700',
-    };
-    return (
-      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${cls[action] ?? 'bg-gray-100 text-gray-600'}`}>
-        {action}
-      </span>
-    );
-  }
-
-  function verifyBadge(id: string) {
+  function verifyCell(id: string) {
     const result = verifyResults[id];
-    if (result === undefined) return null;
-    if (result === 'loading') return <span className="text-xs text-gray-400">Checking…</span>;
-    return result ? (
-      <span className="text-xs text-green-600 font-medium">✓ Verified</span>
-    ) : (
-      <span className="text-xs text-red-600 font-medium">✗ Tampered</span>
+    if (result === 'loading') {
+      return <span className="text-label text-fg-muted">Checking…</span>;
+    }
+    if (result === true) {
+      return (
+        <Badge variant="success" className="gap-1">
+          <ShieldCheck className="h-3 w-3" />
+          Verified
+        </Badge>
+      );
+    }
+    if (result === false) {
+      return (
+        <Badge variant="danger" className="gap-1">
+          <ShieldAlert className="h-3 w-3" />
+          Tampered
+        </Badge>
+      );
+    }
+    return (
+      <Button size="sm" variant="bare" onClick={() => verify.mutate(id)}>
+        Verify
+      </Button>
     );
   }
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Audit Explorer</h1>
-        <p className="text-sm text-gray-500 mt-1">Browse and verify HMAC-signed audit logs</p>
-      </div>
+    <div className="space-y-6">
+      <header>
+        <h1 className="text-h1 text-fg-primary">Audit Explorer</h1>
+        <p className="mt-1 text-small text-fg-muted">
+          Browse and verify HMAC-signed audit logs.
+        </p>
+      </header>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6 flex flex-wrap gap-3 items-end">
-        <div>
-          <label className="block text-xs text-gray-500 mb-1">Action</label>
-          <select
-            value={actionFilter}
-            onChange={(e) => { setActionFilter(e.target.value); setOffset(0); }}
-            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            {ACTION_OPTIONS.map((a) => (
-              <option key={a} value={a}>{a || 'All actions'}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs text-gray-500 mb-1">From</label>
-          <input
-            type="datetime-local"
-            value={startFilter}
-            onChange={(e) => { setStartFilter(e.target.value); setOffset(0); }}
-            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
-        <div>
-          <label className="block text-xs text-gray-500 mb-1">To</label>
-          <input
-            type="datetime-local"
-            value={endFilter}
-            onChange={(e) => { setEndFilter(e.target.value); setOffset(0); }}
-            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
-        <button
-          onClick={resetFilters}
-          className="px-3 py-1.5 bg-gray-100 text-gray-600 text-sm rounded-md hover:bg-gray-200"
-        >
-          Reset
-        </button>
-        <div className="ml-auto flex gap-2">
-          <button
-            onClick={() => void exportAuditLogs('json')}
-            className="px-3 py-1.5 bg-indigo-50 text-indigo-700 text-sm rounded-md hover:bg-indigo-100"
-          >
-            Export JSON
-          </button>
-          <button
-            onClick={() => void exportAuditLogs('csv')}
-            className="px-3 py-1.5 bg-indigo-50 text-indigo-700 text-sm rounded-md hover:bg-indigo-100"
-          >
-            Export CSV
-          </button>
-        </div>
-      </div>
+      <Card>
+        <CardContent className="flex flex-wrap gap-3 items-end py-4">
+          <div>
+            <label className="block text-micro uppercase tracking-wider text-fg-muted mb-1.5">
+              Action
+            </label>
+            <select
+              value={actionFilter}
+              onChange={(e) => {
+                setActionFilter(e.target.value);
+                setOffset(0);
+              }}
+              className="h-9 rounded-md bg-translucent-1 border border-border text-caption text-fg-primary px-3 focus-visible:outline-none focus-visible:shadow-focus"
+            >
+              {ACTION_OPTIONS.map((a) => (
+                <option key={a} value={a} className="bg-surface">
+                  {a || 'All actions'}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-micro uppercase tracking-wider text-fg-muted mb-1.5">
+              From
+            </label>
+            <Input
+              type="datetime-local"
+              value={startFilter}
+              onChange={(e) => {
+                setStartFilter(e.target.value);
+                setOffset(0);
+              }}
+              className="w-48"
+            />
+          </div>
+          <div>
+            <label className="block text-micro uppercase tracking-wider text-fg-muted mb-1.5">
+              To
+            </label>
+            <Input
+              type="datetime-local"
+              value={endFilter}
+              onChange={(e) => {
+                setEndFilter(e.target.value);
+                setOffset(0);
+              }}
+              className="w-48"
+            />
+          </div>
+          <Button size="md" variant="ghost" onClick={resetFilters}>
+            <RotateCcw className="h-3.5 w-3.5" />
+            Reset
+          </Button>
+          <div className="ml-auto flex gap-2">
+            <Button size="md" variant="subtle" onClick={() => void exportAuditLogs('json')}>
+              <Download className="h-3.5 w-3.5" />
+              Export JSON
+            </Button>
+            <Button size="md" variant="subtle" onClick={() => void exportAuditLogs('csv')}>
+              <Download className="h-3.5 w-3.5" />
+              Export CSV
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Table */}
-      <div className="bg-white rounded-lg border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Logs{' '}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle>
+            Logs
             {!logs.isLoading && (
-              <span className="text-sm text-gray-400 font-normal ml-1">
+              <span className="text-small text-fg-muted font-normal ml-2">
                 ({total.toLocaleString()} total)
               </span>
             )}
-          </h2>
-          <span className="text-sm text-gray-400">
+          </CardTitle>
+          <span className="text-small text-fg-muted font-mono">
             Page {currentPage} of {totalPages}
           </span>
-        </div>
+        </CardHeader>
 
-        {logs.isLoading ? (
-          <div className="px-6 py-12 text-center text-gray-400 text-sm">Loading…</div>
-        ) : logs.isError ? (
-          <div className="px-6 py-12 text-center text-red-500 text-sm">
-            Error: {String(logs.error)}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs text-gray-500 uppercase tracking-wider border-b border-gray-100">
-                  <th className="px-4 py-3">Interaction ID</th>
-                  <th className="px-4 py-3">Action</th>
-                  <th className="px-4 py-3">User</th>
-                  <th className="px-4 py-3">Dept</th>
-                  <th className="px-4 py-3">PII</th>
-                  <th className="px-4 py-3">Inj. Score</th>
-                  <th className="px-4 py-3">Latency</th>
-                  <th className="px-4 py-3">Created</th>
-                  <th className="px-4 py-3">HMAC</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
+        <CardContent className="px-0">
+          {logs.isLoading ? (
+            <p className="px-6 py-10 text-center text-small text-fg-muted">Loading…</p>
+          ) : logs.isError ? (
+            <p className="px-6 py-10 text-center text-small text-status-danger">
+              Error: {String(logs.error)}
+            </p>
+          ) : (logs.data?.logs ?? []).length === 0 ? (
+            <p className="px-6 py-10 text-center text-small text-fg-muted italic">
+              No audit logs found.
+            </p>
+          ) : (
+            <Table>
+              <THead>
+                <Tr>
+                  <Th>Interaction</Th>
+                  <Th>Action</Th>
+                  <Th>User</Th>
+                  <Th>Dept</Th>
+                  <Th>PII</Th>
+                  <Th>Inj.</Th>
+                  <Th>Latency</Th>
+                  <Th>Created</Th>
+                  <Th>HMAC</Th>
+                </Tr>
+              </THead>
+              <TBody>
                 {(logs.data?.logs ?? []).map((row: AuditLog) => (
-                  <tr key={row.interaction_id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-mono text-xs text-gray-500">
+                  <Tr key={row.interaction_id}>
+                    <Td className="font-mono text-label text-fg-primary">
                       {row.interaction_id.slice(0, 8)}…
-                    </td>
-                    <td className="px-4 py-3">{actionBadge(row.enforcement_action)}</td>
-                    <td className="px-4 py-3 text-xs text-gray-600">{row.user_id}</td>
-                    <td className="px-4 py-3 text-xs text-gray-500">{row.department ?? '—'}</td>
-                    <td className="px-4 py-3">
+                    </Td>
+                    <Td>
+                      <Badge variant={actionVariant(row.enforcement_action)}>
+                        {row.enforcement_action}
+                      </Badge>
+                    </Td>
+                    <Td className="text-label font-mono">{row.user_id}</Td>
+                    <Td className="text-label text-fg-muted">{row.department ?? '—'}</Td>
+                    <Td>
                       {row.pii_detected ? (
-                        <span className="text-xs text-yellow-600">
+                        <span className="text-label text-status-warning">
                           {row.pii_entity_types.join(', ') || 'Yes'}
                         </span>
                       ) : (
-                        <span className="text-xs text-gray-300">—</span>
+                        <span className="text-label text-fg-subtle">—</span>
                       )}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-600">
+                    </Td>
+                    <Td className="font-mono text-label">
                       {row.injection_score != null ? row.injection_score.toFixed(2) : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-500">
+                    </Td>
+                    <Td className="font-mono text-label text-fg-muted">
                       {row.total_latency_ms != null ? `${row.total_latency_ms}ms` : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-gray-400">
+                    </Td>
+                    <Td className="font-mono text-label text-fg-subtle whitespace-nowrap">
                       {new Date(row.created_at).toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3">
-                      {verifyBadge(row.interaction_id) ?? (
-                        <button
-                          onClick={() => verify.mutate(row.interaction_id)}
-                          className="text-xs text-indigo-500 hover:underline"
-                        >
-                          Verify
-                        </button>
-                      )}
-                    </td>
-                  </tr>
+                    </Td>
+                    <Td>{verifyCell(row.interaction_id)}</Td>
+                  </Tr>
                 ))}
-              </tbody>
-            </table>
-            {(logs.data?.logs ?? []).length === 0 && (
-              <p className="px-6 py-8 text-center text-gray-400 text-sm">No audit logs found.</p>
-            )}
-          </div>
-        )}
+              </TBody>
+            </Table>
+          )}
+        </CardContent>
 
-        {/* Pagination */}
-        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
-          <button
+        <CardFooter className="flex items-center justify-between border-t border-border-subtle">
+          <Button
+            size="sm"
+            variant="ghost"
             onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
             disabled={offset === 0}
-            className="px-3 py-1.5 text-sm bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 disabled:opacity-40"
           >
-            ← Prev
-          </button>
-          <span className="text-sm text-gray-500">
-            Showing {offset + 1}–{Math.min(offset + PAGE_SIZE, total)} of {total}
+            <ChevronLeft className="h-3.5 w-3.5" />
+            Prev
+          </Button>
+          <span className="text-label text-fg-muted font-mono">
+            {total === 0
+              ? '0 results'
+              : `${offset + 1}–${Math.min(offset + PAGE_SIZE, total)} of ${total}`}
           </span>
-          <button
+          <Button
+            size="sm"
+            variant="ghost"
             onClick={() => setOffset(offset + PAGE_SIZE)}
             disabled={offset + PAGE_SIZE >= total}
-            className="px-3 py-1.5 text-sm bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 disabled:opacity-40"
           >
-            Next →
-          </button>
-        </div>
-      </div>
+            Next
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
