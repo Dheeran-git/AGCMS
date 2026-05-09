@@ -103,11 +103,48 @@ def _mock_db_for_provision(id_exists: bool = False):
     return fake_fetch_one
 
 
+class _FakeConn:
+    """Async context / conn mock capturing every write for assertions.
+
+    Mimics the asyncpg subset the service uses: execute, fetchrow,
+    transaction(). fetchrow returns None so mint_and_store takes the
+    'no active DEK → insert new row' path.
+    """
+    def __init__(self):
+        self.executes: list[tuple[str, tuple]] = []
+
+    async def execute(self, query, *args):
+        self.executes.append((query, args))
+        return "OK"
+
+    async def fetchrow(self, query, *args):
+        return None
+
+    def transaction(self):
+        class _Tx:
+            async def __aenter__(self_inner): return None
+            async def __aexit__(self_inner, *a): return False
+        return _Tx()
+
+
+def _patch_conn(fake: _FakeConn):
+    """Patch db.connection so `async with db.connection() as conn`
+    yields our FakeConn."""
+    from contextlib import asynccontextmanager
+
+    @asynccontextmanager
+    async def fake_connection():
+        yield fake
+
+    return patch("agcms.tenant.service.db.connection", fake_connection)
+
+
 class TestProvisionTenant:
     async def test_happy_path(self):
+        fake = _FakeConn()
         with (
             patch("agcms.tenant.service.db.fetch_one", side_effect=_mock_db_for_provision(False)),
-            patch("agcms.tenant.service.db.execute", new_callable=AsyncMock) as mock_exec,
+            _patch_conn(fake),
         ):
             result = await provision_tenant("Acme Corp", "admin@acme.com", "starter")
 
@@ -116,8 +153,8 @@ class TestProvisionTenant:
         assert result.api_key.startswith("agcms_acme-cor_")
         assert result.plan == "starter"
         assert result.admin_email == "admin@acme.com"
-        # Should have inserted tenant, admin user, and default policy
-        assert mock_exec.call_count == 3
+        # tenant + admin user + default policy + tenant_keys DEK insert = 4
+        assert len(fake.executes) == 4
 
     async def test_invalid_plan_raises(self):
         with pytest.raises(ValueError, match="Invalid plan"):
@@ -134,32 +171,29 @@ class TestProvisionTenant:
                 return {"id": args[0]} if call_count == 1 else None
             return None
 
+        fake = _FakeConn()
         with (
             patch("agcms.tenant.service.db.fetch_one", side_effect=fake_fetch_one),
-            patch("agcms.tenant.service.db.execute", new_callable=AsyncMock),
+            _patch_conn(fake),
         ):
             result = await provision_tenant("Acme Corp", "admin@acme.com", "business")
 
         assert result.tenant_id == "acme-corp-2"
 
     async def test_api_key_is_hashed_in_db_insert(self):
-        insert_args = []
+        fake = _FakeConn()
 
         async def fake_fetch_one(query, *args):
             return None
 
-        async def fake_execute(query, *args):
-            insert_args.append((query, args))
-            return "INSERT 0 1"
-
         with (
             patch("agcms.tenant.service.db.fetch_one", side_effect=fake_fetch_one),
-            patch("agcms.tenant.service.db.execute", side_effect=fake_execute),
+            _patch_conn(fake),
         ):
             result = await provision_tenant("Hash Test", "h@t.com", "enterprise")
 
         # First execute is the tenant INSERT: args are (id, name, plan, email, key_hash)
-        tenant_insert_args = insert_args[0][1]
+        tenant_insert_args = fake.executes[0][1]
         stored_hash = tenant_insert_args[4]  # 5th positional arg
         expected_hash = _hash_key(result.api_key)
         assert stored_hash == expected_hash, "API key must be stored as its SHA-256 hash"

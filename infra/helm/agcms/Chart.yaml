@@ -1,0 +1,26 @@
+apiVersion: v2
+name: agcms
+description: |
+  AGCMS — AI Governance & Compliance Monitoring.
+  Single-chart deploy of the gateway, auth, tenant, audit, policy, PII,
+  injection, response, notifications, and dashboard services plus the
+  Postgres/Redis dependencies a VPC install needs.
+type: application
+version: 1.0.0
+appVersion: "1.2.0"
+kubeVersion: ">=1.27.0"
+keywords:
+  - ai-governance
+  - compliance
+  - llm-security
+  - audit
+  - multi-tenant
+home: https://agcms.com
+sources:
+  - https://github.com/agcms/agcms
+maintainers:
+  - name: AGCMS
+    email: support@agcms.com
+annotations:
+  category: Security
+  licenses: Apache-2.0

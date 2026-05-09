@@ -15,6 +15,7 @@ from typing import Optional
 
 from fastapi import Depends, Header, HTTPException, status
 
+from agcms.common import scopes as scope_vocab
 from agcms.gateway.auth import AuthContext, authenticate
 
 
@@ -48,3 +49,24 @@ def require_role(*allowed_roles: str):
 # Convenience dependencies (most common gates)
 require_admin = require_role("admin")
 require_compliance = require_role("compliance")
+
+
+def require_scope(scope: str):
+    """FastAPI dependency factory: gate by API-key / JWT scope.
+
+    JWT-authenticated callers have their scopes derived from ``role`` via
+    ``scopes_for_role``. API-key callers carry the exact scope array from
+    their ``api_keys`` row. The ``admin`` scope implicitly grants all.
+    """
+    if scope not in scope_vocab.ALL_SCOPES:
+        raise ValueError(f"Unknown scope '{scope}'")
+
+    async def _dep(ctx: AuthContext = Depends(get_current_auth)) -> AuthContext:
+        if not ctx.has_scope(scope):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Missing required scope '{scope}'",
+            )
+        return ctx
+
+    return _dep

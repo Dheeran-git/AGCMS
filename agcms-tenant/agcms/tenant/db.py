@@ -1,6 +1,7 @@
 """Database helpers for the AGCMS Tenant Management Service."""
 
 import os
+from contextlib import asynccontextmanager
 from typing import Optional
 
 import asyncpg
@@ -8,6 +9,16 @@ import asyncpg
 
 def _database_url() -> str:
     return os.environ.get("DATABASE_URL", "")
+
+
+@asynccontextmanager
+async def connection():
+    """Yield a dedicated asyncpg connection. Closes on exit."""
+    conn = await asyncpg.connect(_database_url())
+    try:
+        yield conn
+    finally:
+        await conn.close()
 
 
 async def fetch_one(query: str, *args) -> Optional[dict]:

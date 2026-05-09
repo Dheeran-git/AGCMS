@@ -1,0 +1,33 @@
+AGCMS {{ .Chart.AppVersion }} installed into namespace "{{ include "agcms.namespace" . }}".
+
+Services:
+{{- range $name, $svc := .Values.services }}
+{{- if $svc.enabled }}
+  * {{ printf "%-14s" $name }} port {{ $svc.port }}  replicas={{ $svc.replicas | default 1 }}{{ if and $svc.hpa $svc.hpa.enabled }}  HPA={{ $svc.hpa.minReplicas }}-{{ $svc.hpa.maxReplicas }}{{ end }}
+{{- end }}
+{{- end }}
+
+{{ if .Values.ingress.enabled -}}
+Ingress:  https://{{ .Values.ingress.host }}/
+  - /v1/*              → gateway (LLM proxy)
+  - /api/v1/*          → gateway (management API)
+  - /                  → dashboard
+{{- end }}
+
+Next steps:
+
+  1. Run the database migrations — from a pod in the namespace:
+       kubectl -n {{ include "agcms.namespace" . }} exec -it postgres-0 -- \
+         psql -U agcms -d agcms -f /migrations/init.sql
+
+  2. Provision your first tenant via the tenant service:
+       curl -X POST https://{{ .Values.ingress.host }}/api/v1/tenants/provision \
+         -d '{"name":"Your Co","admin_email":"admin@your.co","plan":"enterprise"}'
+
+  3. Verify the audit chain wedge is live:
+       curl https://{{ .Values.ingress.host }}/api/v1/audit/chain/verify
+
+Upgrade with:
+  helm upgrade {{ .Release.Name }} ./infra/helm/agcms -n {{ include "agcms.namespace" . }}
+
+Support: https://agcms.com/book-demo — or security@agcms.com for vulnerabilities.
