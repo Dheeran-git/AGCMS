@@ -17,6 +17,7 @@ Cryptographically signed, legally defensible audit trails across a multi-tenant 
 |---|---|
 | 🌐 **Marketing** | [agcms-six.vercel.app](https://agcms-six.vercel.app) |
 | 📚 **Docs** | [uip-f4b0bbe5.mintlify.app](https://uip-f4b0bbe5.mintlify.app) |
+| 📈 **Status** | [agcms.betteruptime.com](https://agcms.betteruptime.com) |
 | 🐍 **Python SDK** | [`pip install agcms`](https://pypi.org/project/agcms/) |
 | 📦 **TypeScript SDK** | [`npm install @agcms/sdk`](https://www.npmjs.com/package/@agcms/sdk) |
 | 💻 **Source** | [github.com/Dheeran-git/AGCMS](https://github.com/Dheeran-git/AGCMS) |
