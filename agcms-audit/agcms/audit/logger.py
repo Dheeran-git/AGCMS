@@ -1,37 +1,34 @@
 import hashlib
 import hmac
 import json
-import os
 import time
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 
+import sqlalchemy
+
+from agcms.audit.keys import REGISTRY
+from agcms.common.observability import metrics as _obs_metrics
 from agcms.db import audit_logs, database
 
-# RULE 4: Fail fast if signing key is missing
-_raw_key = os.environ.get("AGCMS_SIGNING_KEY")
-if _raw_key is None:
-    raise RuntimeError(
-        "AGCMS_SIGNING_KEY environment variable is not set. "
-        "The audit logger cannot start without a signing key."
-    )
-if not _raw_key:
-    raise RuntimeError(
-        "AGCMS_SIGNING_KEY environment variable is empty. "
-        "Provide a non-empty signing key."
-    )
-
-SIGNING_KEY: bytes = _raw_key.encode("utf-8")
+# Backward-compat export: existing tests and callers import SIGNING_KEY
+# as the raw bytes of the active row-signing key.
+SIGNING_KEY: bytes = REGISTRY.row_key(REGISTRY.active_row_kid)
 
 
 class AuditLogger:
-    """Tamper-evident audit logger with HMAC-SHA256 signing.
+    """Tamper-evident audit logger with per-tenant hash chaining.
 
-    Every audit log entry is cryptographically signed before being written
-    to PostgreSQL.  The signature covers a deterministic JSON serialization
-    of the entry (sort_keys=True) and is appended as the last field.
+    Every row's signing payload includes the previous row's signature
+    (``previous_log_hash``), its position in the chain (``sequence_number``),
+    and the id of the key that signed it (``signing_key_id``). Chain
+    extension is serialized per-tenant via ``SELECT ... FOR UPDATE`` on
+    ``chain_heads``; concurrent writers for the same tenant queue behind
+    that row lock.
     """
+
+    ZERO_HASH = "0" * 64
 
     # ------------------------------------------------------------------
     # Public API
@@ -52,13 +49,18 @@ class AuditLogger:
         llm_provider: str = "groq",
         llm_model: Optional[str] = None,
     ) -> dict:
-        """Build, sign, and persist an audit log entry.
+        """Build, chain-extend, sign, and persist an audit log entry.
 
-        Returns the full entry dict (including log_signature).
+        Returns the full entry dict (including chain columns + signature).
         """
         now = time.time()
         prompt_text = self._extract_prompt(raw_body)
+        active_kid = REGISTRY.active_row_kid
 
+        # Pre-populate entry with placeholder chain fields so the object
+        # shape is complete for callers that patch `_write` in tests.
+        # `_write` will overwrite the chain fields and re-sign under the
+        # chain_heads row lock before persisting.
         entry = {
             "interaction_id": str(interaction_id),
             "tenant_id": tenant_id,
@@ -79,53 +81,132 @@ class AuditLogger:
             "response_violated": self._get_response_violated(compliance_result),
             "response_violations": self._get_response_violations(compliance_result),
             "total_latency_ms": int((now - start_time) * 1000),
+            "previous_log_hash": self.ZERO_HASH,
+            "sequence_number": 0,
+            "signing_key_id": active_kid,
         }
 
-        # Signature is ALWAYS the last field written (never included in
-        # the payload that generates it).
-        entry["log_signature"] = self.sign(entry)
+        entry["log_signature"] = self.sign(entry, kid=active_kid)
 
-        await self._write(entry)
+        _write_start = time.perf_counter()
+        try:
+            await self._write(entry)
+        finally:
+            _obs_metrics.audit_chain_write.labels(tenant=tenant_id).observe(
+                time.perf_counter() - _write_start,
+            )
         return entry
 
     @staticmethod
-    def sign(entry: dict) -> str:
-        """Compute HMAC-SHA256 signature over a deterministic JSON payload."""
+    def sign(entry: dict, *, kid: Optional[str] = None) -> str:
+        """Compute HMAC-SHA256 over the deterministic JSON of ``entry``.
+
+        If ``kid`` is None, uses ``entry['signing_key_id']`` (if present)
+        or the active row kid. The signature covers every field of the
+        entry — including the chain columns — so any tampering with
+        ``previous_log_hash`` or ``sequence_number`` invalidates the row.
+        """
+        chosen_kid = kid or entry.get("signing_key_id") or REGISTRY.active_row_kid
+        key = REGISTRY.row_key(chosen_kid)
         payload = json.dumps(entry, sort_keys=True, default=str).encode("utf-8")
-        return hmac.new(SIGNING_KEY, payload, hashlib.sha256).hexdigest()
+        return hmac.new(key, payload, hashlib.sha256).hexdigest()
 
     @staticmethod
     def verify(entry: dict) -> bool:
-        """Verify the integrity of an audit log entry.
+        """Verify a row's signature using the kid recorded on the row.
 
-        Removes the stored signature, recomputes it, and compares using
-        constant-time comparison to prevent timing attacks.
+        Returns False on any of: missing signature, unknown kid, mismatch.
         """
         entry_copy = dict(entry)
         stored_sig = entry_copy.pop("log_signature", None)
-        if stored_sig is None:
+        if stored_sig is None or stored_sig == "":
             return False
-        expected_sig = AuditLogger.sign(entry_copy)
+        try:
+            expected_sig = AuditLogger.sign(entry_copy)
+        except KeyError:
+            return False
         return hmac.compare_digest(stored_sig, expected_sig)
 
     @staticmethod
     def hash_prompt(text: str) -> str:
-        """SHA-256 hash of prompt text (raw prompts never stored)."""
         return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
     # ------------------------------------------------------------------
-    # Database write
+    # Database write with chain extension
     # ------------------------------------------------------------------
 
     async def _write(self, entry: dict) -> None:
-        """Persist entry to PostgreSQL via the ``databases`` async driver.
+        """Persist `entry` after extending the tenant's chain.
 
-        Explicitly passes ``created_at`` parsed from the signed entry so that
-        the stored timestamp matches the one covered by the HMAC signature.
-        Relying on the column's ``DEFAULT NOW()`` would produce a different
-        instant and break signature verification.
+        Transaction scope:
+          1. UPSERT chain_heads row (idempotent).
+          2. SELECT ... FOR UPDATE on that row.
+          3. Mutate `entry` with real chain fields; re-sign.
+          4. INSERT audit_logs row.
+          5. UPDATE chain_heads with new tip.
+
+        Tests that don't need a real database patch this method with an
+        AsyncMock; those callers will see the placeholder chain fields
+        set in ``log()``.
         """
-        row = {
+        tenant_id = entry["tenant_id"]
+
+        async with database.transaction():
+            await database.execute(
+                sqlalchemy.text(
+                    "INSERT INTO chain_heads (tenant_id) VALUES (:tid) "
+                    "ON CONFLICT DO NOTHING"
+                ).bindparams(tid=tenant_id),
+            )
+
+            head = await database.fetch_one(
+                sqlalchemy.text(
+                    "SELECT last_sequence_number, last_log_signature "
+                    "FROM chain_heads WHERE tenant_id = :tid FOR UPDATE"
+                ).bindparams(tid=tenant_id),
+            )
+
+            previous_log_hash = (
+                head["last_log_signature"] or self.ZERO_HASH
+            ) if head is not None else self.ZERO_HASH
+            sequence_number = (
+                (head["last_sequence_number"] if head is not None else 0) + 1
+            )
+            active_kid = REGISTRY.active_row_kid
+
+            entry["previous_log_hash"] = previous_log_hash
+            entry["sequence_number"] = sequence_number
+            entry["signing_key_id"] = active_kid
+            # Strip the placeholder signature from log() before re-signing —
+            # otherwise it would be included in the payload and the stored
+            # hash would diverge from what any verifier (which strips
+            # log_signature before recomputing) produces.
+            entry.pop("log_signature", None)
+            entry["log_signature"] = self.sign(entry, kid=active_kid)
+
+            await database.execute(
+                audit_logs.insert().values(**self._row_values(entry))
+            )
+
+            await database.execute(
+                sqlalchemy.text(
+                    "UPDATE chain_heads SET "
+                    "last_sequence_number = :seq, "
+                    "last_log_signature = :sig, "
+                    "last_row_created_at = :ts, "
+                    "updated_at = NOW() "
+                    "WHERE tenant_id = :tid"
+                ).bindparams(
+                    seq=sequence_number,
+                    sig=entry["log_signature"],
+                    ts=datetime.fromisoformat(entry["created_at"]),
+                    tid=tenant_id,
+                ),
+            )
+
+    @staticmethod
+    def _row_values(entry: dict) -> dict:
+        values = {
             "interaction_id": uuid.UUID(entry["interaction_id"]),
             "tenant_id": entry["tenant_id"],
             "user_id": entry["user_id"],
@@ -146,8 +227,18 @@ class AuditLogger:
             "response_violations": entry["response_violations"],
             "total_latency_ms": entry["total_latency_ms"],
             "log_signature": entry["log_signature"],
+            "previous_log_hash": entry["previous_log_hash"],
+            "sequence_number": entry["sequence_number"],
+            "signing_key_id": entry["signing_key_id"],
         }
-        await database.execute(audit_logs.insert().values(**row))
+        # Redaction columns are only populated for rows that have been
+        # tombstoned under a GDPR Art. 17 purge. At insert time they are
+        # always NULL; the redaction writer patches them later.
+        if entry.get("redaction_record_id") is not None:
+            values["redaction_record_id"] = entry["redaction_record_id"]
+        if entry.get("pre_redaction_signature") is not None:
+            values["pre_redaction_signature"] = entry["pre_redaction_signature"]
+        return values
 
     # ------------------------------------------------------------------
     # Field extractors (duck-typed for flexibility)
