@@ -9,7 +9,9 @@ services:
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/00-init.sql
+      - ./database/migrations:/docker-entrypoint-initdb.d/migrations:ro
+      - ./database/run-migrations.sh:/docker-entrypoint-initdb.d/99-run-migrations.sh
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U agcms -d agcms"]
       interval: 5s
@@ -28,7 +30,9 @@ services:
       retries: 5
 
   gateway:
-    build: ./agcms-gateway
+    build:
+      context: .
+      dockerfile: agcms-gateway/Dockerfile
     ports:
       - "8000:8000"
     environment:
@@ -62,7 +66,9 @@ services:
       start_period: 10s
 
   pii:
-    build: ./agcms-pii
+    build:
+      context: .
+      dockerfile: agcms-pii/Dockerfile
     ports:
       - "8001:8001"
     environment:
@@ -75,7 +81,9 @@ services:
       start_period: 30s
 
   injection:
-    build: ./agcms-injection
+    build:
+      context: .
+      dockerfile: agcms-injection/Dockerfile
     ports:
       - "8002:8002"
     environment:
@@ -89,7 +97,9 @@ services:
       start_period: 30s
 
   response:
-    build: ./agcms-response
+    build:
+      context: .
+      dockerfile: agcms-response/Dockerfile
     ports:
       - "8003:8003"
     environment:
@@ -102,7 +112,9 @@ services:
       start_period: 10s
 
   policy:
-    build: ./agcms-policy
+    build:
+      context: .
+      dockerfile: agcms-policy/Dockerfile
     ports:
       - "8004:8004"
     volumes:
@@ -115,12 +127,15 @@ services:
       start_period: 10s
 
   audit:
-    build: ./agcms-audit
+    build:
+      context: .
+      dockerfile: agcms-audit/Dockerfile
     ports:
       - "8005:8005"
     environment:
       - DATABASE_URL=postgresql://agcms:${POSTGRES_PASSWORD:-secret}@postgres:5432/agcms
       - AGCMS_SIGNING_KEY=${AGCMS_SIGNING_KEY}
+      - AGCMS_ANCHOR_KEY=${AGCMS_ANCHOR_KEY}
     depends_on:
       postgres:
         condition: service_healthy
@@ -132,7 +147,9 @@ services:
       start_period: 10s
 
   auth:
-    build: ./agcms-auth
+    build:
+      context: .
+      dockerfile: agcms-auth/Dockerfile
     ports:
       - "8006:8006"
     environment:
@@ -152,12 +169,16 @@ services:
       start_period: 10s
 
   tenant:
-    build: ./agcms-tenant
+    build:
+      context: .
+      dockerfile: agcms-tenant/Dockerfile
     ports:
       - "8007:8007"
     environment:
       - DATABASE_URL=postgresql://agcms:${POSTGRES_PASSWORD:-secret}@postgres:5432/agcms
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-dev-jwt-secret-change-me}
+      - AGCMS_KMS_BACKEND=${AGCMS_KMS_BACKEND:-local}
+      - AGCMS_KMS_LOCAL_KEY=${AGCMS_KMS_LOCAL_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy

@@ -39,3 +39,6 @@ agcms-injection/model/
 
 # Claude Code memory (not project code)
 .claude/
+
+# Playwright MCP server cache (page snapshots, console logs)
+.playwright-mcp/

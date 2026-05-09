@@ -84,7 +84,52 @@ audit_logs = sqlalchemy.Table(
     sqlalchemy.Column("response_latency_ms", sqlalchemy.Integer),
     sqlalchemy.Column("llm_latency_ms", sqlalchemy.Integer),
     sqlalchemy.Column("log_signature", sqlalchemy.String(64), nullable=False),
-    sqlalchemy.Column("schema_version", sqlalchemy.String(8), nullable=False, server_default=sqlalchemy.text("'1.0'")),
+    sqlalchemy.Column("schema_version", sqlalchemy.String(8), nullable=False, server_default=sqlalchemy.text("'2.0'")),
+    # Phase 5.1 — hash chain columns
+    sqlalchemy.Column("previous_log_hash", sqlalchemy.String(64)),
+    sqlalchemy.Column("sequence_number", sqlalchemy.BigInteger, nullable=False, server_default=sqlalchemy.text("0")),
+    sqlalchemy.Column("signing_key_id", sqlalchemy.String(32), nullable=False, server_default=sqlalchemy.text("'v1'")),
+)
+
+signing_keys = sqlalchemy.Table(
+    "signing_keys",
+    metadata,
+    sqlalchemy.Column("kid", sqlalchemy.String(32), primary_key=True),
+    sqlalchemy.Column("purpose", sqlalchemy.String(16), nullable=False),
+    sqlalchemy.Column("key_hash", sqlalchemy.String(64)),
+    sqlalchemy.Column("is_active", sqlalchemy.Boolean, nullable=False, default=True),
+    sqlalchemy.Column("created_at", sqlalchemy.DateTime(timezone=True), server_default=sqlalchemy.text("NOW()")),
+    sqlalchemy.Column("retired_at", sqlalchemy.DateTime(timezone=True)),
+    sqlalchemy.Column("notes", sqlalchemy.Text),
+)
+
+chain_heads = sqlalchemy.Table(
+    "chain_heads",
+    metadata,
+    sqlalchemy.Column("tenant_id", sqlalchemy.String(32), sqlalchemy.ForeignKey("tenants.id"), primary_key=True),
+    sqlalchemy.Column("last_sequence_number", sqlalchemy.BigInteger, nullable=False, server_default=sqlalchemy.text("0")),
+    sqlalchemy.Column("last_log_signature", sqlalchemy.String(64)),
+    sqlalchemy.Column("last_row_created_at", sqlalchemy.DateTime(timezone=True)),
+    sqlalchemy.Column("updated_at", sqlalchemy.DateTime(timezone=True), server_default=sqlalchemy.text("NOW()")),
+)
+
+audit_roots = sqlalchemy.Table(
+    "audit_roots",
+    metadata,
+    sqlalchemy.Column("id", sqlalchemy.dialects.postgresql.UUID, primary_key=True, server_default=sqlalchemy.text("gen_random_uuid()")),
+    sqlalchemy.Column("tenant_id", sqlalchemy.String(32), sqlalchemy.ForeignKey("tenants.id"), nullable=False),
+    sqlalchemy.Column("period_start", sqlalchemy.DateTime(timezone=True), nullable=False),
+    sqlalchemy.Column("period_end", sqlalchemy.DateTime(timezone=True), nullable=False),
+    sqlalchemy.Column("row_count", sqlalchemy.BigInteger, nullable=False),
+    sqlalchemy.Column("first_sequence_number", sqlalchemy.BigInteger, nullable=False),
+    sqlalchemy.Column("last_sequence_number", sqlalchemy.BigInteger, nullable=False),
+    sqlalchemy.Column("merkle_root", sqlalchemy.String(64), nullable=False),
+    sqlalchemy.Column("signed_root", sqlalchemy.String(64), nullable=False),
+    sqlalchemy.Column("anchor_key_id", sqlalchemy.String(32), sqlalchemy.ForeignKey("signing_keys.kid"), nullable=False),
+    sqlalchemy.Column("s3_url", sqlalchemy.Text),
+    sqlalchemy.Column("s3_object_version", sqlalchemy.Text),
+    sqlalchemy.Column("retention_until", sqlalchemy.DateTime(timezone=True), nullable=False),
+    sqlalchemy.Column("created_at", sqlalchemy.DateTime(timezone=True), server_default=sqlalchemy.text("NOW()")),
 )
 
 escalations = sqlalchemy.Table(
