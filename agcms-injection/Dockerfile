@@ -5,8 +5,9 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc curl && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY agcms-injection/requirements.txt ./requirements.txt
+COPY agcms-common/requirements.txt ./common-requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt -r common-requirements.txt
 
 # Pre-download and convert the injection classifier to ONNX at build time.
 # This makes container startup fast and deterministic (~400 MB model).
@@ -31,7 +32,8 @@ t.save_pretrained('/app/model/onnx'); \
 print('ONNX model exported successfully (SHA:', revision, ')')" \
     || echo "WARNING: ONNX export failed — will run in heuristic-only mode"
 
-COPY . .
+COPY agcms-common/agcms ./agcms
+COPY agcms-injection/agcms ./agcms
 
 RUN useradd -r -u 1001 agcms
 USER agcms

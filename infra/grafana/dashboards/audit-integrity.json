@@ -1,0 +1,112 @@
+{
+  "uid": "agcms-audit-integrity",
+  "title": "AGCMS — Audit Integrity",
+  "description": "Per-tenant audit-chain write latency and throughput. A spike here is the first signal a chain writer is struggling under a hot tenant or a lock-contention scenario.",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "timezone": "browser",
+  "tags": ["agcms", "audit"],
+  "templating": {
+    "list": [
+      {
+        "name": "tenant",
+        "label": "Tenant",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(agcms_audit_chain_write_seconds_bucket, tenant)",
+        "refresh": 1,
+        "includeAll": true,
+        "multi": true
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Chain-write rate (writes/s, per tenant)",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(rate(agcms_audit_chain_write_seconds_count{tenant=~\"$tenant\"}[5m])) by (tenant)",
+          "legendFormat": "{{tenant}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Chain-write latency percentiles (s)",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum(rate(agcms_audit_chain_write_seconds_bucket{tenant=~\"$tenant\"}[5m])) by (le))",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(agcms_audit_chain_write_seconds_bucket{tenant=~\"$tenant\"}[5m])) by (le))",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(agcms_audit_chain_write_seconds_bucket{tenant=~\"$tenant\"}[5m])) by (le))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "heatmap",
+      "title": "Chain-write latency heatmap",
+      "gridPos": { "x": 0, "y": 8, "w": 24, "h": 10 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(rate(agcms_audit_chain_write_seconds_bucket{tenant=~\"$tenant\"}[5m])) by (le)",
+          "format": "heatmap",
+          "legendFormat": "{{le}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Total chain writes (last 1h)",
+      "gridPos": { "x": 0, "y": 18, "w": 8, "h": 6 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(increase(agcms_audit_chain_write_seconds_count{tenant=~\"$tenant\"}[1h]))"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "p99 chain-write (last 1h, s)",
+      "gridPos": { "x": 8, "y": 18, "w": 8, "h": 6 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(agcms_audit_chain_write_seconds_bucket{tenant=~\"$tenant\"}[1h])) by (le))"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Tenants writing in last 5m",
+      "gridPos": { "x": 16, "y": 18, "w": 8, "h": 6 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "count(count by (tenant) (increase(agcms_audit_chain_write_seconds_count[5m]) > 0))"
+        }
+      ]
+    }
+  ]
+}

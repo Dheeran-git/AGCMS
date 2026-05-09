@@ -183,9 +183,11 @@ class TestIssueToken:
 
     def test_valid_api_key_returns_tokens(self, client):
         with patch("agcms.auth.main.get_tenant_by_api_key", new_callable=AsyncMock) as mock_t, \
-             patch("agcms.auth.main.get_admin_user", new_callable=AsyncMock) as mock_u:
+             patch("agcms.auth.main.get_admin_user", new_callable=AsyncMock) as mock_u, \
+             patch("agcms.auth.main.mfa_db.fetch_mfa", new_callable=AsyncMock) as mock_mfa:
             mock_t.return_value = _TENANT
             mock_u.return_value = _USER
+            mock_mfa.return_value = None
             resp = client.post("/v1/auth/token", json={"api_key": "agcms_test_key_for_development"})
 
         assert resp.status_code == 200
@@ -212,15 +214,37 @@ class TestIssueToken:
 
     def test_access_token_has_correct_role(self, client):
         with patch("agcms.auth.main.get_tenant_by_api_key", new_callable=AsyncMock) as mock_t, \
-             patch("agcms.auth.main.get_admin_user", new_callable=AsyncMock) as mock_u:
+             patch("agcms.auth.main.get_admin_user", new_callable=AsyncMock) as mock_u, \
+             patch("agcms.auth.main.mfa_db.fetch_mfa", new_callable=AsyncMock) as mock_mfa:
             mock_t.return_value = _TENANT
             mock_u.return_value = _USER
+            mock_mfa.return_value = None
             resp = client.post("/v1/auth/token", json={"api_key": "test_key"})
 
         token = resp.json()["access_token"]
         payload = jwt.decode(token, _SECRET, algorithms=[_ALGORITHM])
         assert payload["role"] == "admin"
         assert payload["sub"] == "default"
+
+    def test_mfa_enabled_user_returns_challenge(self, client):
+        with patch("agcms.auth.main.get_tenant_by_api_key", new_callable=AsyncMock) as mock_t, \
+             patch("agcms.auth.main.get_admin_user", new_callable=AsyncMock) as mock_u, \
+             patch("agcms.auth.main.mfa_db.fetch_mfa", new_callable=AsyncMock) as mock_mfa:
+            mock_t.return_value = _TENANT
+            mock_u.return_value = _USER
+            mock_mfa.return_value = {
+                "id": "mfa-id",
+                "totp_secret": "ABCD" * 4,
+                "recovery_codes": [],
+                "enabled": True,
+            }
+            resp = client.post("/v1/auth/token", json={"api_key": "test_key"})
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["mfa_required"] is True
+        assert "challenge_token" in data
+        assert data["expires_in"] == 300
 
 
 # ==================================================================

@@ -1,0 +1,128 @@
+{
+  "uid": "agcms-enforcement",
+  "title": "AGCMS — Enforcement Overview",
+  "description": "Policy enforcement actions, PII, and injection detection rates — per tenant.",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "refresh": "30s",
+  "time": { "from": "now-24h", "to": "now" },
+  "timezone": "browser",
+  "tags": ["agcms", "enforcement"],
+  "templating": {
+    "list": [
+      {
+        "name": "tenant",
+        "label": "Tenant",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(agcms_enforcement_action_count, tenant)",
+        "refresh": 1,
+        "includeAll": true,
+        "multi": true
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Enforcement actions (per 5m)",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(increase(agcms_enforcement_action_count{tenant=~\"$tenant\"}[5m])) by (action)",
+          "legendFormat": "{{action}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "piechart",
+      "title": "Action mix (last 24h)",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(increase(agcms_enforcement_action_count{tenant=~\"$tenant\"}[24h])) by (action)",
+          "legendFormat": "{{action}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "PII detections (per 5m, by category)",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(increase(agcms_pii_detected_count{tenant=~\"$tenant\"}[5m])) by (category)",
+          "legendFormat": "{{category}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Injection detections (per 5m, by technique)",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(increase(agcms_injection_detected_count{tenant=~\"$tenant\"}[5m])) by (technique)",
+          "legendFormat": "{{technique}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "BLOCK rate (last 1h)",
+      "gridPos": { "x": 0, "y": 16, "w": 6, "h": 6 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(increase(agcms_enforcement_action_count{action=\"BLOCK\",tenant=~\"$tenant\"}[1h])) / clamp_min(sum(increase(agcms_enforcement_action_count{tenant=~\"$tenant\"}[1h])), 1)"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "ESCALATE rate (last 1h)",
+      "gridPos": { "x": 6, "y": 16, "w": 6, "h": 6 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(increase(agcms_enforcement_action_count{action=\"ESCALATE\",tenant=~\"$tenant\"}[1h])) / clamp_min(sum(increase(agcms_enforcement_action_count{tenant=~\"$tenant\"}[1h])), 1)"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "REDACT rate (last 1h)",
+      "gridPos": { "x": 12, "y": 16, "w": 6, "h": 6 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(increase(agcms_enforcement_action_count{action=\"REDACT\",tenant=~\"$tenant\"}[1h])) / clamp_min(sum(increase(agcms_enforcement_action_count{tenant=~\"$tenant\"}[1h])), 1)"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "ALLOW rate (last 1h)",
+      "gridPos": { "x": 18, "y": 16, "w": 6, "h": 6 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(increase(agcms_enforcement_action_count{action=\"ALLOW\",tenant=~\"$tenant\"}[1h])) / clamp_min(sum(increase(agcms_enforcement_action_count{tenant=~\"$tenant\"}[1h])), 1)"
+        }
+      ]
+    }
+  ]
+}

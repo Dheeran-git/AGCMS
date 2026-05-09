@@ -1,0 +1,8 @@
+{{- if ne .Release.Namespace (include "agcms.namespace" .) -}}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ include "agcms.namespace" . }}
+  labels:
+    {{- include "agcms.labels" . | nindent 4 }}
+{{- end -}}

@@ -1,0 +1,18 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    # Let's Encrypt production endpoint. Rate-limited: do not apply this
+    # until the ingress + DNS resolution is verified through the staging
+    # issuer first.
+    server: https://acme-v02.api.letsencrypt.org/directory
+    # TODO: replace with the tenant-admin / on-call email address.
+    email: ops@agcms.example.com
+    privateKeySecretRef:
+      name: letsencrypt-prod-account-key
+    solvers:
+      - http01:
+          ingress:
+            class: nginx

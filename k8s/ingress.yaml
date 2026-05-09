@@ -7,6 +7,18 @@ metadata:
     nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    # Enforce HTTPS — nginx redirects any HTTP request to HTTPS.
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    # Only serve modern TLS ciphers; disable TLS < 1.2.
+    nginx.ingress.kubernetes.io/ssl-protocols: "TLSv1.2 TLSv1.3"
+    # HSTS on. Browsers will refuse to downgrade to HTTP for 1 year.
+    # Remove `preload` for staging issuers.
+    nginx.ingress.kubernetes.io/server-snippet: |
+      add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-Frame-Options "DENY" always;
+      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     # WAF — NGINX ModSecurity (enable in production)
     # Requires nginx-ingress built with ModSecurity support (--enable-modsecurity flag).
     # OWASP Core Rule Set blocks SQLi, XSS, RCE, and common web attacks at ingress.
@@ -17,14 +29,15 @@ metadata:
       SecRequestBodyAccess On
       SecResponseBodyAccess Off
       SecAuditLog /var/log/modsec_audit.log
-    # TLS via cert-manager (uncomment and configure issuer for prod)
-    # cert-manager.io/cluster-issuer: letsencrypt-prod
+    # cert-manager: issue + renew a Let's Encrypt certificate automatically.
+    # Swap to `letsencrypt-staging` while testing to avoid hitting rate limits.
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: nginx
-  # tls:
-  #   - hosts:
-  #       - agcms.example.com
-  #     secretName: agcms-tls
+  tls:
+    - hosts:
+        - agcms.example.com
+      secretName: agcms-tls
   rules:
     - host: agcms.example.com   # replace with real hostname or use IP
       http:

@@ -54,3 +54,43 @@ class UsageStats(BaseModel):
     blocked_today: int
     pii_detections_today: int
     injection_detections_today: int
+
+
+class SSOConfig(BaseModel):
+    workos_org_id: Optional[str] = Field(default=None, max_length=100)
+    sso_enforced: bool = False
+
+
+class UpdateSSORequest(BaseModel):
+    workos_org_id: Optional[str] = Field(default=None, max_length=100)
+    sso_enforced: Optional[bool] = None
+
+
+class ByokConfig(BaseModel):
+    """Customer-managed KMS key reference. Returned by GET /byok."""
+
+    enabled: bool
+    provider: Optional[str] = Field(default=None, description="aws | gcp | azure")
+    key_arn: Optional[str] = None
+    kek_fingerprint: Optional[str] = Field(
+        default=None,
+        description="kek_id stored on the tenant's active DEK row "
+                    "(useful for rotation evidence in audit reports).",
+    )
+
+
+class UpdateByokRequest(BaseModel):
+    """PUT /tenants/{id}/byok payload.
+
+    Send ``key_arn = ""`` (empty string) to disable BYOK and revert to the
+    AGCMS-platform KEK on the next DEK rotation.
+    """
+
+    provider: Optional[str] = Field(default="aws", description="aws | gcp | azure")
+    key_arn: Optional[str] = Field(default=None, max_length=512)
+    rotate_now: bool = Field(
+        default=True,
+        description="If True, immediately rotate the DEK using the new KMS so "
+                    "the change is verified end-to-end before the response is "
+                    "returned. Set False to defer rotation to a maintenance window.",
+    )

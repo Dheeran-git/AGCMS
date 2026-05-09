@@ -1,0 +1,200 @@
+# ===========================================================================
+# AGCMS Helm chart — default values.
+# Override anything below with `--set` or a custom values.yaml.
+#
+# Quick start (VPC install, single cluster):
+#
+#   helm install agcms ./infra/helm/agcms \
+#     --namespace agcms --create-namespace \
+#     --set image.registry=ghcr.io/your-org \
+#     --set image.tag=1.2.0 \
+#     --set ingress.host=agcms.yourco.com \
+#     --set-file secrets.databaseUrl=./secrets/db.url \
+#     --set-file secrets.jwtSecret=./secrets/jwt \
+#     --set-file secrets.auditHmacKey=./secrets/hmac \
+#     --set-file secrets.anchorKey=./secrets/anchor
+#
+# Nothing below should contain real secret values. Populate them via
+# ExternalSecret / SealedSecret / a wrapped secrets.yaml, not the
+# chart's default values.
+# ===========================================================================
+
+global:
+  namespace: agcms
+  # Short identifier used in labels. Must be DNS-1123 compliant.
+  releaseName: agcms
+
+image:
+  registry: ghcr.io/agcms
+  pullPolicy: IfNotPresent
+  tag: "1.2.0"
+  # Optionally pin each service to a different tag. Empty = use image.tag.
+  pullSecrets: []
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+# ---------------------------------------------------------------------------
+# Services — one entry per AGCMS microservice.
+#
+# Each service reuses the same template so we avoid 11x copy-paste. Only
+# override fields that differ from the defaults.
+# ---------------------------------------------------------------------------
+services:
+  gateway:
+    enabled: true
+    port: 8000
+    replicas: 2
+    image: agcms-gateway
+    hpa:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 10
+      cpuTarget: 70
+    resources:
+      requests: { cpu: 250m, memory: 256Mi }
+      limits:   { cpu: 500m, memory: 512Mi }
+  pii:
+    enabled: true
+    port: 8001
+    replicas: 2
+    image: agcms-pii
+    resources:
+      requests: { cpu: 200m, memory: 512Mi }
+      limits:   { cpu: 500m, memory: 1Gi }
+  injection:
+    enabled: true
+    port: 8002
+    replicas: 2
+    image: agcms-injection
+    resources:
+      requests: { cpu: 200m, memory: 512Mi }
+      limits:   { cpu: 500m, memory: 1Gi }
+  response:
+    enabled: true
+    port: 8003
+    replicas: 2
+    image: agcms-response
+  policy:
+    enabled: true
+    port: 8004
+    replicas: 2
+    image: agcms-policy
+  audit:
+    enabled: true
+    port: 8005
+    replicas: 2
+    image: agcms-audit
+  auth:
+    enabled: true
+    port: 8006
+    replicas: 1
+    image: agcms-auth
+  tenant:
+    enabled: true
+    port: 8007
+    replicas: 1
+    image: agcms-tenant
+  notifications:
+    enabled: true
+    port: 8008
+    replicas: 1
+    image: agcms-notifications
+  dashboard:
+    enabled: true
+    port: 3000
+    replicas: 2
+    image: agcms-dashboard
+    resources:
+      requests: { cpu: 50m,  memory: 64Mi }
+      limits:   { cpu: 200m, memory: 128Mi }
+
+# ---------------------------------------------------------------------------
+# Shared defaults that every service inherits unless it overrides.
+# ---------------------------------------------------------------------------
+defaults:
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits:   { cpu: 300m, memory: 256Mi }
+  probes:
+    readiness:
+      path: /health
+      initialDelaySeconds: 10
+      periodSeconds: 10
+    liveness:
+      path: /health
+      initialDelaySeconds: 20
+      periodSeconds: 30
+
+# ---------------------------------------------------------------------------
+# Shared configmap — service URLs, feature toggles, model selection.
+# ---------------------------------------------------------------------------
+config:
+  AGCMS_API_VERSION: "1.2.0"
+  AGCMS_SPACY_MODEL: "en_core_web_trf"
+  AGCMS_ML_ENABLED: "true"
+  AUDIT_RETENTION_DAYS: "90"
+  GROQ_BASE_URL: "https://api.groq.com/openai/v1"
+  AGCMS_KMS_BACKEND: "local"   # 'aws' when using AWS KMS
+  OTEL_EXPORTER_OTLP_ENDPOINT: ""
+
+# ---------------------------------------------------------------------------
+# Secrets. For VPC installs, prefer External Secrets or SealedSecrets and
+# set `secrets.external: true` — the chart will skip creating a plain
+# Secret and mount the externally-managed one instead.
+# ---------------------------------------------------------------------------
+secrets:
+  external: false
+  # Plaintext values — DEV ONLY. Override or use ExternalSecret in prod.
+  databaseUrl: ""
+  redisUrl: ""
+  jwtSecret: ""
+  auditHmacKey: ""
+  anchorKey: ""
+  kmsLocalKey: ""
+  workosApiKey: ""
+  postgresPassword: ""
+
+# ---------------------------------------------------------------------------
+# Ingress — NGINX + cert-manager + ModSecurity, matching k8s/ingress.yaml.
+# ---------------------------------------------------------------------------
+ingress:
+  enabled: true
+  className: nginx
+  host: agcms.example.com
+  tls:
+    enabled: true
+    secretName: agcms-tls
+    clusterIssuer: letsencrypt-prod
+  hsts: true
+  modsecurity: true
+  extraAnnotations: {}
+
+# ---------------------------------------------------------------------------
+# Dependencies — disable if you point to an out-of-cluster RDS / ElastiCache.
+# ---------------------------------------------------------------------------
+postgres:
+  enabled: true
+  image: postgres:16-alpine
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClass: ""
+  resources:
+    requests: { cpu: 250m, memory: 512Mi }
+    limits:   { cpu: 1,    memory: 2Gi }
+
+redis:
+  enabled: true
+  image: redis:7-alpine
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits:   { cpu: 300m, memory: 256Mi }
+
+# ---------------------------------------------------------------------------
+# NetworkPolicy — default-deny, service-to-service whitelist.
+# ---------------------------------------------------------------------------
+networkPolicy:
+  enabled: true

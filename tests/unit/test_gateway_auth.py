@@ -200,17 +200,27 @@ class TestJWTAuth:
 # ==================================================================
 
 
-def _make_mock_connect(row: dict | None):
-    """Return an AsyncMock that behaves like asyncpg.connect → conn."""
+def _make_mock_connect(row: dict | None, legacy_row: dict | None = None):
+    """Return an AsyncMock that behaves like asyncpg.connect → conn.
+
+    ``row`` is returned for the first ``fetchrow`` (scoped api_keys lookup).
+    ``legacy_row`` is returned for the second (fallback to tenants.api_key_hash).
+    """
     conn = AsyncMock()
-    conn.fetchrow.return_value = row
+    conn.fetchrow.side_effect = [row, legacy_row]
     conn.close.return_value = None
+    conn.execute.return_value = None
     return AsyncMock(return_value=conn)
 
 
 class TestAPIKeyDBAuth:
     async def test_valid_api_key_returns_ctx(self):
-        mock_connect = _make_mock_connect({"id": "acme-corp"})
+        scoped_row = {
+            "id": "api-key-uuid",
+            "tenant_id": "acme-corp",
+            "scopes": ["ingest", "read:audit"],
+        }
+        mock_connect = _make_mock_connect(scoped_row)
         with patch("agcms.gateway.auth.asyncpg.connect", mock_connect):
             ctx, err = await authenticate("Bearer agcms_prod_key_xyz")
 
@@ -220,19 +230,49 @@ class TestAPIKeyDBAuth:
         assert ctx.auth_method == "api_key"
         assert ctx.user_id == "api_key"
         assert ctx.role == "user"
+        assert ctx.scopes == frozenset({"ingest", "read:audit"})
+        assert ctx.api_key_id == "api-key-uuid"
 
         # Confirm the query was called with the SHA-256 of the token
         expected_hash = hashlib.sha256(b"agcms_prod_key_xyz").hexdigest()
         conn = mock_connect.return_value
-        call_args = conn.fetchrow.call_args
-        assert call_args.args[1] == expected_hash
+        assert conn.fetchrow.call_args_list[0].args[1] == expected_hash
+        # last_used_at updated
+        assert conn.execute.await_count == 1
+
+    async def test_legacy_api_key_fallback(self):
+        """Pre-6.4 keys only exist in tenants.api_key_hash — must still auth."""
+        mock_connect = _make_mock_connect(None, legacy_row={"id": "legacy-tenant"})
+        with patch("agcms.gateway.auth.asyncpg.connect", mock_connect):
+            ctx, err = await authenticate("Bearer agcms_legacy_key")
+
+        assert err is None
+        assert ctx is not None
+        assert ctx.tenant_id == "legacy-tenant"
+        # Legacy keys retain full scope set (behavior preservation).
+        assert "admin" in ctx.scopes
 
     async def test_unknown_api_key_returns_error(self):
-        mock_connect = _make_mock_connect(None)
+        mock_connect = _make_mock_connect(None, legacy_row=None)
         with patch("agcms.gateway.auth.asyncpg.connect", mock_connect):
             ctx, err = await authenticate("Bearer agcms_unknown_key")
         assert ctx is None
         assert err is not None
+
+    async def test_scoped_key_has_only_granted_scopes(self):
+        scoped_row = {
+            "id": "k1",
+            "tenant_id": "t1",
+            "scopes": ["ingest"],
+        }
+        mock_connect = _make_mock_connect(scoped_row)
+        with patch("agcms.gateway.auth.asyncpg.connect", mock_connect):
+            ctx, err = await authenticate("Bearer agcms_ingest_only")
+
+        assert err is None
+        assert ctx.has_scope("ingest")
+        assert not ctx.has_scope("admin")
+        assert not ctx.has_scope("write:policy")
 
     async def test_db_connection_failure_returns_error(self):
         def raise_conn(*_a, **_kw):
@@ -268,7 +308,9 @@ class TestSelectionLogic:
 
     async def test_no_dots_uses_api_key_path(self):
         # Non-dev, non-JWT token must hit the DB
-        mock_connect = _make_mock_connect({"id": "t1"})
+        mock_connect = _make_mock_connect({
+            "id": "k1", "tenant_id": "t1", "scopes": ["ingest"],
+        })
         with patch("agcms.gateway.auth.asyncpg.connect", mock_connect):
             ctx, err = await authenticate("Bearer plainapikey123")
         assert err is None

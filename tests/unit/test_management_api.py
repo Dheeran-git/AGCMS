@@ -499,18 +499,28 @@ class TestUsersEndpoints:
 
 
 class TestEscalationsEndpoints:
-    def _escalation_row(self, status="PENDING"):
-        return {
+    def _escalation_row(self, status="PENDING", **overrides):
+        row = {
             "id": uuid4(),
             "interaction_id": uuid4(),
             "tenant_id": "t1",
             "created_at": datetime(2026, 4, 1, tzinfo=timezone.utc),
             "reason": "Critical PII detected",
             "status": status,
+            "severity": "warning",
             "reviewed_by": None,
             "reviewed_at": None,
             "notes": None,
+            "assignee_user_id": None,
+            "acknowledged_at": None,
+            "acknowledged_by": None,
+            "resolved_at": None,
+            "resolved_by": None,
+            "resolution_notes": None,
+            "sla_breached": False,
         }
+        row.update(overrides)
+        return row
 
     def test_list_escalations_no_filter(self):
         fake_conn = FakeConn()
@@ -555,6 +565,146 @@ class TestEscalationsEndpoints:
         call_args = fake_conn.fetchrow.call_args.args
         assert "reviewed_at = NOW()" in call_args[0]
         assert "REVIEWED" in call_args
+
+    def test_acknowledge_escalation_sets_ack_fields(self):
+        esc_uuid = uuid4()
+        fake_conn = FakeConn()
+        fake_conn.fetchrow.return_value = self._escalation_row(
+            acknowledged_at=datetime(2026, 4, 1, 0, 5, tzinfo=timezone.utc),
+        )
+        app = _make_app(_COMPLIANCE)
+        with _patch_asyncpg(fake_conn):
+            resp = TestClient(app).post(
+                f"/api/v1/escalations/{esc_uuid}/acknowledge",
+                json={"notes": "on it"},
+            )
+        assert resp.status_code == 200
+        sql = fake_conn.fetchrow.call_args.args[0]
+        # COALESCE pattern keeps ack idempotent — first ack wins.
+        assert "acknowledged_at = COALESCE(acknowledged_at, NOW())" in sql
+
+    def test_assign_escalation_validates_assignee_in_tenant(self):
+        esc_uuid = uuid4()
+        assignee = uuid4()
+        fake_conn = FakeConn()
+        fake_conn.fetchval.return_value = None  # assignee not in tenant
+        app = _make_app(_COMPLIANCE)
+        with _patch_asyncpg(fake_conn):
+            resp = TestClient(app).post(
+                f"/api/v1/escalations/{esc_uuid}/assign",
+                json={"assignee_user_id": str(assignee)},
+            )
+        assert resp.status_code == 404
+        assert "tenant" in resp.json()["detail"].lower()
+
+    def test_assign_escalation_clears_when_null(self):
+        esc_uuid = uuid4()
+        fake_conn = FakeConn()
+        fake_conn.fetchrow.return_value = self._escalation_row()
+        app = _make_app(_COMPLIANCE)
+        with _patch_asyncpg(fake_conn):
+            resp = TestClient(app).post(
+                f"/api/v1/escalations/{esc_uuid}/assign",
+                json={"assignee_user_id": None},
+            )
+        assert resp.status_code == 200
+        # No tenant-membership probe when clearing
+        assert fake_conn.fetchval.call_count == 0
+
+    def test_resolve_escalation_requires_notes(self):
+        esc_uuid = uuid4()
+        fake_conn = FakeConn()
+        app = _make_app(_COMPLIANCE)
+        with _patch_asyncpg(fake_conn):
+            resp = TestClient(app).post(
+                f"/api/v1/escalations/{esc_uuid}/resolve",
+                json={"resolution_notes": ""},
+            )
+        assert resp.status_code == 422
+
+    def test_resolve_escalation_marks_actioned(self):
+        esc_uuid = uuid4()
+        fake_conn = FakeConn()
+        fake_conn.fetchrow.return_value = self._escalation_row(
+            status="ACTIONED",
+            resolved_at=datetime(2026, 4, 1, 1, tzinfo=timezone.utc),
+            resolution_notes="Investigated; no action required",
+        )
+        app = _make_app(_COMPLIANCE)
+        with _patch_asyncpg(fake_conn):
+            resp = TestClient(app).post(
+                f"/api/v1/escalations/{esc_uuid}/resolve",
+                json={"resolution_notes": "Investigated; no action required"},
+            )
+        assert resp.status_code == 200
+        sql = fake_conn.fetchrow.call_args.args[0]
+        assert "resolved_at = NOW()" in sql
+        assert "status = 'ACTIONED'" in sql
+
+    def test_sse_violations_requires_compliance(self):
+        app_anon = _make_app(_USER)
+        with _patch_asyncpg(FakeConn()):
+            r = TestClient(app_anon).get("/api/v1/stream/violations")
+        assert r.status_code == 403
+
+    def test_sse_violations_emits_snapshot_event(self):
+        # Drive one tick of the loop and then disconnect, so the stream
+        # closes cleanly after the snapshot + first poll iteration.
+        snapshot_row = {
+            "interaction_id": uuid4(),
+            "tenant_id": "t1",
+            "user_id": "alice",
+            "department": "eng",
+            "created_at": datetime(2026, 4, 1, 12, tzinfo=timezone.utc),
+            "enforcement_action": "BLOCK",
+            "enforcement_reason": "PII detected",
+            "pii_detected": True,
+            "pii_entity_types": ["US_SSN"],
+            "pii_risk_level": "CRITICAL",
+            "injection_score": None,
+            "injection_type": None,
+            "response_violated": False,
+            "total_latency_ms": 42,
+        }
+        fake_conn = FakeConn()
+        fake_conn.fetch.side_effect = [[snapshot_row], []]
+
+        # Patch Request.is_disconnected so the loop exits after one poll.
+        async def _disconnected(_self):
+            return True
+
+        # Speed up the loop: no real sleep.
+        async def _no_sleep(_seconds):
+            return None
+
+        from starlette.requests import Request as _Req
+
+        app = _make_app(_COMPLIANCE)
+        with _patch_asyncpg(fake_conn), patch.object(
+            _Req, "is_disconnected", _disconnected
+        ), patch("agcms.gateway.management_api.asyncio.sleep", new=_no_sleep):
+            with TestClient(app) as client:
+                r = client.get("/api/v1/stream/violations")
+                body = r.text
+        assert r.status_code == 200
+        assert "event: snapshot" in body
+        assert "BLOCK" in body
+        assert "US_SSN" in body
+
+    def test_serializer_emits_sla_target_minutes(self):
+        # Critical → 30m target; computed from severity in serializer.
+        fake_conn = FakeConn()
+        fake_conn.fetch.return_value = [
+            self._escalation_row(severity="critical"),
+            self._escalation_row(severity="info"),
+        ]
+        app = _make_app(_COMPLIANCE)
+        with _patch_asyncpg(fake_conn):
+            resp = TestClient(app).get("/api/v1/escalations")
+        body = resp.json()["escalations"]
+        targets = {e["severity"]: e["sla_target_minutes"] for e in body}
+        assert targets["critical"] == 30
+        assert targets["info"] == 1440
 
 
 # ==================================================================

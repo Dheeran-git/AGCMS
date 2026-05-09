@@ -1,0 +1,116 @@
+{{- $root := . -}}
+{{- range $svcName, $svc := .Values.services -}}
+{{- if $svc.enabled -}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $svcName }}
+  namespace: {{ include "agcms.namespace" $root }}
+  labels:
+    {{- include "agcms.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $svcName }}
+spec:
+  replicas: {{ $svc.replicas | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "agcms.selectorLabels" (dict "root" $root "svcName" $svcName) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "agcms.selectorLabels" (dict "root" $root "svcName" $svcName) | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") $root | sha256sum }}
+        {{- if not $root.Values.secrets.external }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") $root | sha256sum }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "agcms.serviceAccountName" $root }}
+      {{- with $root.Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ $svcName }}
+          image: {{ include "agcms.image" (dict "svc" $svc "root" $root) }}
+          imagePullPolicy: {{ $root.Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ $svc.port }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "agcms.fullname" $root }}-config
+            - secretRef:
+                name: {{ include "agcms.fullname" $root }}-secrets
+          {{- if ne $svcName "dashboard" }}
+          readinessProbe:
+            httpGet:
+              path: {{ $root.Values.defaults.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ $root.Values.defaults.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ $root.Values.defaults.probes.readiness.periodSeconds }}
+          livenessProbe:
+            httpGet:
+              path: {{ $root.Values.defaults.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ $root.Values.defaults.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ $root.Values.defaults.probes.liveness.periodSeconds }}
+          {{- else }}
+          readinessProbe:
+            httpGet: { path: /, port: http }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          {{- end }}
+          resources:
+            {{- toYaml (default $root.Values.defaults.resources $svc.resources) | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            capabilities:
+              drop: [ALL]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $svcName }}
+  namespace: {{ include "agcms.namespace" $root }}
+  labels:
+    {{- include "agcms.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $svcName }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "agcms.selectorLabels" (dict "root" $root "svcName" $svcName) | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ $svc.port }}
+      targetPort: http
+{{- if and $svc.hpa $svc.hpa.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $svcName }}-hpa
+  namespace: {{ include "agcms.namespace" $root }}
+  labels:
+    {{- include "agcms.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $svcName }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $svcName }}
+  minReplicas: {{ $svc.hpa.minReplicas }}
+  maxReplicas: {{ $svc.hpa.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $svc.hpa.cpuTarget }}
+{{- end }}
+{{- end }}
+{{- end }}

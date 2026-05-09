@@ -18,6 +18,7 @@ Endpoint groups:
 All DB queries are filtered by ``ctx.tenant_id`` for tenant isolation.
 """
 
+import asyncio
 import csv
 import io
 import json
@@ -46,6 +47,7 @@ _DB_URL = os.environ.get("DATABASE_URL", "")
 _AUTH_URL = os.environ.get("AUTH_SERVICE_URL", "http://auth:8006")
 _TENANT_URL = os.environ.get("TENANT_SERVICE_URL", "http://tenant:8007")
 _AUDIT_URL = os.environ.get("AUDIT_SERVICE_URL", "http://audit:8005")
+_POLICY_URL = os.environ.get("POLICY_SERVICE_URL", "http://policy:8004")
 
 
 def _db_dsn() -> str:
@@ -354,6 +356,29 @@ async def list_policy_versions(ctx: AuthContext = Depends(require_compliance)):
     return {"versions": [_serialize_policy(r) for r in rows]}
 
 
+# ─── Policy packs (proxied to agcms-policy) ─────────────────────────────────
+
+
+@router.get("/policy/packs")
+async def list_policy_packs(ctx: AuthContext = Depends(require_compliance)):
+    """List installed policy packs (HIPAA, GDPR, EU AI Act, NIST AI RMF, SOC 2, PCI DSS)."""
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        resp = await client.get(f"{_POLICY_URL}/packs")
+    return _passthrough(resp)
+
+
+@router.get("/policy/packs/{pack_id}")
+async def get_policy_pack(
+    pack_id: str, ctx: AuthContext = Depends(require_compliance)
+):
+    """Return one pack's full definition (overrides + rules + citations)."""
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        resp = await client.get(f"{_POLICY_URL}/packs/{pack_id}")
+    if resp.status_code == 404:
+        raise HTTPException(status_code=404, detail=f"pack '{pack_id}' not found")
+    return _passthrough(resp)
+
+
 def _serialize_policy(r) -> dict:
     config = r["config"]
     if isinstance(config, str):
@@ -483,6 +508,30 @@ class EscalationUpdate(BaseModel):
     notes: Optional[str] = None
 
 
+class EscalationAcknowledge(BaseModel):
+    notes: Optional[str] = None
+
+
+class EscalationAssign(BaseModel):
+    assignee_user_id: Optional[str] = None  # null clears assignment
+
+
+class EscalationResolve(BaseModel):
+    resolution_notes: str = Field(..., min_length=1)
+
+
+# SLA targets in minutes — info: 24h, warning: 4h, critical: 30m.
+# Used to compute time-to-acknowledge/resolve targets for the Alerts UI.
+_SLA_MINUTES = {"info": 1440, "warning": 240, "critical": 30}
+
+_ESC_COLS = (
+    "id, interaction_id, tenant_id, created_at, reason, status, severity, "
+    "reviewed_by, reviewed_at, notes, "
+    "assignee_user_id, acknowledged_at, acknowledged_by, "
+    "resolved_at, resolved_by, resolution_notes, sla_breached"
+)
+
+
 @router.get("/escalations")
 async def list_escalations(
     ctx: AuthContext = Depends(require_compliance),
@@ -493,19 +542,23 @@ async def list_escalations(
     try:
         if status_filter:
             rows = await conn.fetch(
-                "SELECT id, interaction_id, tenant_id, created_at, reason, status, "
-                "reviewed_by, reviewed_at, notes "
-                "FROM escalations WHERE tenant_id = $1 AND status = $2 "
-                "ORDER BY created_at DESC",
+                f"SELECT {_ESC_COLS} FROM escalations "
+                "WHERE tenant_id = $1 AND status = $2 ORDER BY created_at DESC",
                 ctx.tenant_id, status_filter,
             )
         else:
             rows = await conn.fetch(
-                "SELECT id, interaction_id, tenant_id, created_at, reason, status, "
-                "reviewed_by, reviewed_at, notes "
-                "FROM escalations WHERE tenant_id = $1 "
-                "ORDER BY created_at DESC",
+                f"SELECT {_ESC_COLS} FROM escalations "
+                "WHERE tenant_id = $1 ORDER BY created_at DESC",
                 ctx.tenant_id,
+            )
+        # Lazily mark SLA-breached items so the index reflects current state.
+        breached_ids = [r["id"] for r in rows if _is_sla_breached(r)]
+        if breached_ids:
+            await conn.execute(
+                "UPDATE escalations SET sla_breached = TRUE "
+                "WHERE id = ANY($1::uuid[]) AND sla_breached = FALSE",
+                breached_ids,
             )
     finally:
         await conn.close()
@@ -520,29 +573,135 @@ async def update_escalation(
     ctx: AuthContext = Depends(require_compliance),
 ):
     """Update an escalation's status and notes."""
-    try:
-        eid = uuid.UUID(escalation_id)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid escalation_id (must be UUID)")
-
+    eid = _parse_uuid(escalation_id, "escalation_id")
     conn = await asyncpg.connect(_db_dsn())
     try:
         row = await conn.fetchrow(
             "UPDATE escalations SET status = $1, notes = $2, reviewed_at = NOW() "
-            "WHERE id = $3 AND tenant_id = $4 "
-            "RETURNING id, interaction_id, tenant_id, created_at, reason, status, "
-            "reviewed_by, reviewed_at, notes",
+            f"WHERE id = $3 AND tenant_id = $4 RETURNING {_ESC_COLS}",
             body.status, body.notes, eid, ctx.tenant_id,
         )
     finally:
         await conn.close()
-
     if row is None:
         raise HTTPException(status_code=404, detail="Escalation not found")
     return _serialize_escalation(row)
 
 
+@router.post("/escalations/{escalation_id}/acknowledge")
+async def acknowledge_escalation(
+    escalation_id: str,
+    body: EscalationAcknowledge,
+    ctx: AuthContext = Depends(require_compliance),
+):
+    """Mark an escalation acknowledged by the current user. Idempotent."""
+    eid = _parse_uuid(escalation_id, "escalation_id")
+    user_uuid = _user_uuid(ctx)
+    conn = await asyncpg.connect(_db_dsn())
+    try:
+        row = await conn.fetchrow(
+            "UPDATE escalations SET "
+            "  acknowledged_at = COALESCE(acknowledged_at, NOW()), "
+            "  acknowledged_by = COALESCE(acknowledged_by, $1), "
+            "  notes = COALESCE($2, notes) "
+            f"WHERE id = $3 AND tenant_id = $4 RETURNING {_ESC_COLS}",
+            user_uuid, body.notes, eid, ctx.tenant_id,
+        )
+    finally:
+        await conn.close()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Escalation not found")
+    return _serialize_escalation(row)
+
+
+@router.post("/escalations/{escalation_id}/assign")
+async def assign_escalation(
+    escalation_id: str,
+    body: EscalationAssign,
+    ctx: AuthContext = Depends(require_compliance),
+):
+    """Assign (or unassign) an escalation to a tenant user."""
+    eid = _parse_uuid(escalation_id, "escalation_id")
+    assignee = _parse_uuid(body.assignee_user_id, "assignee_user_id") if body.assignee_user_id else None
+    conn = await asyncpg.connect(_db_dsn())
+    try:
+        if assignee is not None:
+            exists = await conn.fetchval(
+                "SELECT 1 FROM tenant_users WHERE id = $1 AND tenant_id = $2",
+                assignee, ctx.tenant_id,
+            )
+            if not exists:
+                raise HTTPException(status_code=404, detail="Assignee not in tenant")
+        row = await conn.fetchrow(
+            "UPDATE escalations SET assignee_user_id = $1 "
+            f"WHERE id = $2 AND tenant_id = $3 RETURNING {_ESC_COLS}",
+            assignee, eid, ctx.tenant_id,
+        )
+    finally:
+        await conn.close()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Escalation not found")
+    return _serialize_escalation(row)
+
+
+@router.post("/escalations/{escalation_id}/resolve")
+async def resolve_escalation(
+    escalation_id: str,
+    body: EscalationResolve,
+    ctx: AuthContext = Depends(require_compliance),
+):
+    """Mark an escalation resolved with mandatory resolution notes."""
+    eid = _parse_uuid(escalation_id, "escalation_id")
+    user_uuid = _user_uuid(ctx)
+    conn = await asyncpg.connect(_db_dsn())
+    try:
+        row = await conn.fetchrow(
+            "UPDATE escalations SET "
+            "  resolved_at = NOW(), resolved_by = $1, "
+            "  resolution_notes = $2, status = 'ACTIONED', "
+            "  acknowledged_at = COALESCE(acknowledged_at, NOW()), "
+            "  acknowledged_by = COALESCE(acknowledged_by, $1) "
+            f"WHERE id = $3 AND tenant_id = $4 RETURNING {_ESC_COLS}",
+            user_uuid, body.resolution_notes, eid, ctx.tenant_id,
+        )
+    finally:
+        await conn.close()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Escalation not found")
+    return _serialize_escalation(row)
+
+
+def _parse_uuid(raw: str, label: str) -> uuid.UUID:
+    try:
+        return uuid.UUID(raw)
+    except (ValueError, AttributeError, TypeError):
+        raise HTTPException(status_code=400, detail=f"Invalid {label} (must be UUID)")
+
+
+def _user_uuid(ctx: AuthContext) -> Optional[uuid.UUID]:
+    """ctx.user_id is a UUID for JWT auth, sentinel otherwise."""
+    if not ctx.user_id:
+        return None
+    try:
+        return uuid.UUID(ctx.user_id)
+    except (ValueError, AttributeError, TypeError):
+        return None
+
+
+def _is_sla_breached(row) -> bool:
+    """An open escalation breaches SLA if it's older than the per-severity
+    target without having been resolved (or, for unack'd ones, acknowledged)."""
+    if row["resolved_at"] is not None:
+        return False
+    if row["sla_breached"]:
+        return True
+    target_minutes = _SLA_MINUTES.get(row["severity"], 240)
+    age_seconds = (datetime.now(timezone.utc) - row["created_at"]).total_seconds()
+    return age_seconds > target_minutes * 60
+
+
 def _serialize_escalation(r) -> dict:
+    target_minutes = _SLA_MINUTES.get(r["severity"], 240)
     return {
         "id": str(r["id"]),
         "interaction_id": str(r["interaction_id"]) if r["interaction_id"] else None,
@@ -550,9 +709,18 @@ def _serialize_escalation(r) -> dict:
         "created_at": r["created_at"].isoformat() if r["created_at"] else None,
         "reason": r["reason"],
         "status": r["status"],
+        "severity": r["severity"],
         "reviewed_by": str(r["reviewed_by"]) if r["reviewed_by"] else None,
         "reviewed_at": r["reviewed_at"].isoformat() if r["reviewed_at"] else None,
         "notes": r["notes"],
+        "assignee_user_id": str(r["assignee_user_id"]) if r["assignee_user_id"] else None,
+        "acknowledged_at": r["acknowledged_at"].isoformat() if r["acknowledged_at"] else None,
+        "acknowledged_by": str(r["acknowledged_by"]) if r["acknowledged_by"] else None,
+        "resolved_at": r["resolved_at"].isoformat() if r["resolved_at"] else None,
+        "resolved_by": str(r["resolved_by"]) if r["resolved_by"] else None,
+        "resolution_notes": r["resolution_notes"],
+        "sla_breached": bool(r["sla_breached"]) or _is_sla_breached(r),
+        "sla_target_minutes": target_minutes,
     }
 
 
@@ -723,6 +891,150 @@ async def tenant_settings(
         resp = await client.put(
             f"{_TENANT_URL}/tenants/{ctx.tenant_id}/settings",
             json=body,
+        )
+    return _passthrough(resp)
+
+
+@router.get("/tenant/sso")
+async def tenant_sso_get(ctx: AuthContext = Depends(require_admin)):
+    """Return the caller tenant's SSO configuration."""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(f"{_TENANT_URL}/tenants/{ctx.tenant_id}/sso")
+    return _passthrough(resp)
+
+
+@router.put("/tenant/sso")
+async def tenant_sso_put(
+    body: dict = Body(...),
+    ctx: AuthContext = Depends(require_admin),
+):
+    """Proxy an SSO configuration update to the tenant service."""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.put(
+            f"{_TENANT_URL}/tenants/{ctx.tenant_id}/sso",
+            json=body,
+        )
+    return _passthrough(resp)
+
+
+@router.get("/auth/sso/status")
+async def sso_status():
+    """Proxy SSO deployment-status check to the auth service (unauth — safe to read)."""
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        resp = await client.get(f"{_AUTH_URL}/v1/auth/sso/status")
+    return _passthrough(resp)
+
+
+# ------------------------------------------------------------------
+# MFA proxies
+# ------------------------------------------------------------------
+# These simply forward the Authorization header (or body) to the auth
+# service. No role gate: the auth service itself verifies the access
+# token and resolves the tenant_user.
+
+
+@router.get("/auth/mfa/status")
+async def mfa_status_proxy(request: Request):
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        resp = await client.get(
+            f"{_AUTH_URL}/v1/auth/mfa/status",
+            headers={"Authorization": request.headers.get("Authorization", "")},
+        )
+    return _passthrough(resp)
+
+
+@router.post("/auth/mfa/enroll")
+async def mfa_enroll_proxy(request: Request):
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(
+            f"{_AUTH_URL}/v1/auth/mfa/enroll",
+            headers={"Authorization": request.headers.get("Authorization", "")},
+        )
+    return _passthrough(resp)
+
+
+@router.post("/auth/mfa/verify-enrollment")
+async def mfa_verify_enrollment_proxy(
+    request: Request, body: dict = Body(...)
+):
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        resp = await client.post(
+            f"{_AUTH_URL}/v1/auth/mfa/verify-enrollment",
+            headers={"Authorization": request.headers.get("Authorization", "")},
+            json=body,
+        )
+    return _passthrough(resp)
+
+
+@router.post("/auth/mfa/disable")
+async def mfa_disable_proxy(request: Request):
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        resp = await client.post(
+            f"{_AUTH_URL}/v1/auth/mfa/disable",
+            headers={"Authorization": request.headers.get("Authorization", "")},
+        )
+    return _passthrough(resp)
+
+
+@router.post("/auth/mfa/login")
+async def mfa_login_proxy(body: dict = Body(...)):
+    """Unauthenticated — caller only holds a short-lived challenge token."""
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        resp = await client.post(f"{_AUTH_URL}/v1/auth/mfa/login", json=body)
+    return _passthrough(resp)
+
+
+# ------------------------------------------------------------------
+# Session proxies (Phase 6.5)
+# ------------------------------------------------------------------
+
+
+@router.get("/auth/sessions")
+async def sessions_list_proxy(request: Request):
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        resp = await client.get(
+            f"{_AUTH_URL}/v1/auth/sessions",
+            headers={"Authorization": request.headers.get("Authorization", "")},
+        )
+    return _passthrough(resp)
+
+
+@router.delete("/auth/sessions/{jti}")
+async def sessions_revoke_proxy(jti: str, request: Request):
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        resp = await client.delete(
+            f"{_AUTH_URL}/v1/auth/sessions/{jti}",
+            headers={"Authorization": request.headers.get("Authorization", "")},
+        )
+    return _passthrough(resp)
+
+
+@router.post("/auth/sessions/revoke-all")
+async def sessions_revoke_all_proxy(request: Request):
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(
+            f"{_AUTH_URL}/v1/auth/sessions/revoke-all",
+            headers={"Authorization": request.headers.get("Authorization", "")},
+        )
+    return _passthrough(resp)
+
+
+@router.get("/auth/admin/sessions")
+async def admin_sessions_list_proxy(request: Request):
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        resp = await client.get(
+            f"{_AUTH_URL}/v1/auth/admin/sessions",
+            headers={"Authorization": request.headers.get("Authorization", "")},
+        )
+    return _passthrough(resp)
+
+
+@router.delete("/auth/admin/sessions/{jti}")
+async def admin_sessions_revoke_proxy(jti: str, request: Request):
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        resp = await client.delete(
+            f"{_AUTH_URL}/v1/auth/admin/sessions/{jti}",
+            headers={"Authorization": request.headers.get("Authorization", "")},
         )
     return _passthrough(resp)
 
@@ -932,8 +1244,226 @@ async def generate_compliance_report(
     }
 
 
+# ============================================================
+# Signing-key rotation (admin-only, dual-approval)
+# ============================================================
+
+
+class RotationProposeBody(BaseModel):
+    purpose: str = Field(..., pattern="^(row|anchor)$")
+    new_kid: str
+    new_key_material: str = Field(..., min_length=32)
+    reason: str = Field(..., min_length=1)
+
+
+class RotationActorBody(BaseModel):
+    # No body needed — actor is derived from JWT. Kept as a model so
+    # FastAPI can validate an empty request body consistently.
+    pass
+
+
+@router.get("/admin/signing-keys")
+async def list_signing_keys(ctx: AuthContext = Depends(require_admin)):
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(f"{_AUDIT_URL}/signing-keys")
+    return _passthrough(resp)
+
+
+@router.get("/admin/signing-keys/rotations")
+async def list_signing_key_rotations(
+    limit: int = Query(default=50, ge=1, le=500),
+    ctx: AuthContext = Depends(require_admin),
+):
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(
+            f"{_AUDIT_URL}/signing-keys/rotations", params={"limit": limit}
+        )
+    return _passthrough(resp)
+
+
+@router.post("/admin/signing-keys/rotations", status_code=201)
+async def propose_signing_key_rotation(
+    body: RotationProposeBody,
+    ctx: AuthContext = Depends(require_admin),
+):
+    payload = {
+        "purpose": body.purpose,
+        "new_kid": body.new_kid,
+        "new_key_material": body.new_key_material,
+        "proposed_by": ctx.user_id,
+        "reason": body.reason,
+    }
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(f"{_AUDIT_URL}/signing-keys/rotations", json=payload)
+    return _passthrough(resp)
+
+
+@router.post("/admin/signing-keys/rotations/{rotation_id}/approve")
+async def approve_signing_key_rotation(
+    rotation_id: str,
+    ctx: AuthContext = Depends(require_admin),
+):
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(
+            f"{_AUDIT_URL}/signing-keys/rotations/{rotation_id}/approve",
+            json={"actor": ctx.user_id},
+        )
+    return _passthrough(resp)
+
+
+@router.post("/admin/signing-keys/rotations/{rotation_id}/execute")
+async def execute_signing_key_rotation(
+    rotation_id: str,
+    ctx: AuthContext = Depends(require_admin),
+):
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(
+            f"{_AUDIT_URL}/signing-keys/rotations/{rotation_id}/execute",
+            json={"actor": ctx.user_id},
+        )
+    return _passthrough(resp)
+
+
+@router.post("/admin/signing-keys/rotations/{rotation_id}/cancel")
+async def cancel_signing_key_rotation(
+    rotation_id: str,
+    ctx: AuthContext = Depends(require_admin),
+):
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.post(
+            f"{_AUDIT_URL}/signing-keys/rotations/{rotation_id}/cancel",
+            json={"actor": ctx.user_id},
+        )
+    return _passthrough(resp)
+
+
 def _derive_pii_categories(pii_cfg: dict) -> list[str]:
     """Return the list of PII categories the current policy is configured to detect."""
     base = ["PERSON", "EMAIL_ADDRESS", "PHONE_NUMBER", "US_SSN", "CREDIT_CARD"]
     custom = list((pii_cfg.get("custom_patterns") or {}).keys())
     return base + custom
+
+
+# ============================================================
+# Phase 7.7 — SSE real-time violation feed
+# ============================================================
+#
+# Replaces the dashboard's 10-second polling loop. Browser connects
+# once, server holds the connection open and pushes new violation rows
+# as they land. Implementation tradeoff: we still poll the DB in the
+# background (no LISTEN/NOTIFY here yet) but the polling lives on the
+# server side, so a single tail catches every violation regardless of
+# how many dashboard tabs are open per tenant.
+#
+# Reconnect / heartbeat: every ``_SSE_HEARTBEAT_SECONDS`` we emit a
+# comment-only line ``: keepalive`` so intermediate proxies don't time
+# out the connection during quiet periods.
+
+_SSE_POLL_INTERVAL_SECONDS = 2.0
+_SSE_HEARTBEAT_SECONDS = 15.0
+
+
+def _serialize_violation_row(r: Any) -> dict:
+    return {
+        "interaction_id": str(r["interaction_id"]),
+        "tenant_id": r["tenant_id"],
+        "user_id": r["user_id"],
+        "department": r["department"],
+        "created_at": r["created_at"].isoformat() if r["created_at"] else None,
+        "action": r["enforcement_action"],
+        "reason": r["enforcement_reason"],
+        "pii_detected": r["pii_detected"],
+        "pii_entity_types": r["pii_entity_types"] or [],
+        "pii_risk_level": r["pii_risk_level"],
+        "injection_score": float(r["injection_score"]) if r["injection_score"] is not None else None,
+        "injection_type": r["injection_type"],
+        "response_violated": r["response_violated"],
+        "latency_ms": r["total_latency_ms"],
+    }
+
+
+_VIOLATION_COLS = (
+    "interaction_id, tenant_id, user_id, department, created_at, "
+    "enforcement_action, enforcement_reason, pii_detected, pii_entity_types, "
+    "pii_risk_level, injection_score, injection_type, response_violated, "
+    "total_latency_ms"
+)
+
+
+@router.get("/stream/violations")
+async def stream_violations(
+    request: Request,
+    ctx: AuthContext = Depends(require_compliance),
+):
+    """Push new violations as Server-Sent Events scoped to the caller's tenant.
+
+    Each event is ``data: <json>\\n\\n`` where ``<json>`` is the same shape
+    as a row from ``GET /api/dashboard/violations``. The feed:
+      • emits a single ``snapshot`` event with the most recent 20 rows on
+        connect so the dashboard renders immediately without a separate
+        REST call;
+      • then emits ``violation`` events for each new row as it lands;
+      • emits ``: keepalive`` comments every 15s so proxies don't drop
+        the connection during quiet periods.
+    """
+
+    async def event_gen():
+        conn = await asyncpg.connect(_db_dsn())
+        try:
+            # Snapshot — recent violations on initial connect.
+            snapshot_rows = await conn.fetch(
+                f"SELECT {_VIOLATION_COLS} FROM audit_logs "
+                "WHERE tenant_id = $1 AND enforcement_action != 'ALLOW' "
+                "ORDER BY created_at DESC LIMIT 20",
+                ctx.tenant_id,
+            )
+            payload = json.dumps(
+                [_serialize_violation_row(r) for r in snapshot_rows]
+            )
+            yield f"event: snapshot\ndata: {payload}\n\n"
+
+            # Anchor on the newest row's timestamp (or now()) so the live
+            # tail picks up every violation that lands after this point.
+            since = (
+                snapshot_rows[0]["created_at"]
+                if snapshot_rows
+                else datetime.now(timezone.utc)
+            )
+
+            last_heartbeat = datetime.now(timezone.utc)
+            while True:
+                if await request.is_disconnected():
+                    break
+                new_rows = await conn.fetch(
+                    f"SELECT {_VIOLATION_COLS} FROM audit_logs "
+                    "WHERE tenant_id = $1 AND enforcement_action != 'ALLOW' "
+                    "AND created_at > $2 ORDER BY created_at ASC LIMIT 50",
+                    ctx.tenant_id,
+                    since,
+                )
+                for r in new_rows:
+                    since = r["created_at"]
+                    yield (
+                        "event: violation\n"
+                        f"data: {json.dumps(_serialize_violation_row(r))}\n\n"
+                    )
+
+                now = datetime.now(timezone.utc)
+                if (now - last_heartbeat).total_seconds() >= _SSE_HEARTBEAT_SECONDS:
+                    yield ": keepalive\n\n"
+                    last_heartbeat = now
+
+                await asyncio.sleep(_SSE_POLL_INTERVAL_SECONDS)
+        finally:
+            await conn.close()
+
+    return StreamingResponse(
+        event_gen(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            # Disable buffering at any reverse proxy in the path (nginx).
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )

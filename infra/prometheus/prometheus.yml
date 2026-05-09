@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: "agcms"
+
+scrape_configs:
+  - job_name: "agcms"
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - "gateway:8000"
+          - "auth:8010"
+          - "tenant:8011"
+          - "pii:8001"
+          - "injection:8002"
+          - "response:8003"
+          - "policy:8004"
+          - "audit:8005"
+        labels:
+          env: "local"

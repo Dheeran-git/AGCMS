@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Optional
 
+from agcms.common.observability import init_observability
 from agcms.pii.agent import PIIAgent
 
 app = FastAPI(
@@ -9,6 +10,8 @@ app = FastAPI(
     description="PII detection and masking service",
     version="1.0.0",
 )
+
+init_observability(app, "pii")
 
 _agent = PIIAgent()
 
