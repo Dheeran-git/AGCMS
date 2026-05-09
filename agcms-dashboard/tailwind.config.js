@@ -45,7 +45,7 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['"Inter Variable"', 'SF Pro Display', '-apple-system', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'],
+        sans: ['"Geist Variable"', '"Inter Variable"', 'SF Pro Display', '-apple-system', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'],
         mono: ['"JetBrains Mono Variable"', 'ui-monospace', 'SF Mono', 'Menlo', 'Monaco', 'monospace'],
       },
       fontSize: {
