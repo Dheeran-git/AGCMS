@@ -5,9 +5,20 @@ All notable changes to the AGCMS Python SDK will be documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [0.1.0] — Unreleased
+## [0.1.1] — 2026-05-09
 
-Initial public beta.
+### Changed
+- Updated package metadata to point at the public repo and live docs:
+  homepage → `agcms-six.vercel.app`, docs → `uip-f4b0bbe5.mintlify.app`,
+  source → `github.com/Dheeran-git/AGCMS`.
+- Author switched from generic AGCMS contact to a real maintainer.
+- README rewritten with working install + run-it-yourself instructions
+  pointing at the open-source docker-compose stack.
+- Apache 2.0 LICENSE now bundled inside the wheel + sdist.
+
+## [0.1.0] — 2026-05-09
+
+Initial public beta on PyPI.
 
 ### Added
 - `AGCMSClient` and `AsyncAGCMSClient` with OpenAI-compatible
