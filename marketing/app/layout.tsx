@@ -24,6 +24,8 @@ const NAV = [
   { href: "/compliance", label: "Compliance" },
   { href: "/pricing", label: "Pricing" },
   { href: "/security", label: "Security" },
+  { href: "https://uip-f4b0bbe5.mintlify.app", label: "Docs", external: true },
+  { href: "https://github.com/Dheeran-git/AGCMS", label: "GitHub", external: true },
   { href: "/status", label: "Status" },
   { href: "/changelog", label: "Changelog" },
 ] as const;
@@ -38,11 +40,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               AGCMS
             </Link>
             <nav className="flex items-center gap-6 text-sm text-fg-muted">
-              {NAV.map((n) => (
-                <Link key={n.href} href={n.href} className="hover:text-fg-primary">
-                  {n.label}
-                </Link>
-              ))}
+              {NAV.map((n) =>
+                "external" in n && n.external ? (
+                  <a
+                    key={n.href}
+                    href={n.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-fg-primary"
+                  >
+                    {n.label}
+                  </a>
+                ) : (
+                  <Link key={n.href} href={n.href} className="hover:text-fg-primary">
+                    {n.label}
+                  </Link>
+                ),
+              )}
               <Link
                 href="/book-demo"
                 className="bg-accent hover:bg-accent-bright text-white text-sm px-3 py-1.5 rounded-md"
