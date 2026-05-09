@@ -27,12 +27,12 @@ export function BundleVerifier() {
           className="text-sm"
         />
         <a
-          href="https://app.agcms.com/trust/verify"
+          href="https://github.com/Dheeran-git/AGCMS/blob/master/tools/verify.py"
           target="_blank"
           rel="noopener noreferrer"
           className="bg-accent hover:bg-accent-bright text-white text-sm px-4 py-2 rounded-md"
         >
-          Open full verifier
+          View verifier source
         </a>
       </div>
       {name && (
