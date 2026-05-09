@@ -29,8 +29,17 @@ export default function StatusPage() {
         <h1 className="text-4xl font-semibold mb-3">System status</h1>
         <p className="text-fg-muted">
           Real-time uptime, incident history, and component-level health are
-          tracked here. A Better Stack–hosted public status page is on the
-          roadmap; the mirror below reflects the most recent probe.
+          published at{" "}
+          <a
+            href="https://agcms.betteruptime.com"
+            className="text-accent hover:text-accent-bright"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            agcms.betteruptime.com
+          </a>{" "}
+          (powered by Better Stack). The mirror below reflects the most recent
+          probe.
         </p>
       </header>
 
@@ -81,8 +90,16 @@ export default function StatusPage() {
 
       <section className="border border-border rounded-lg p-5 bg-panel text-sm text-fg-muted">
         <p>
-          Want to be paged on incidents? Wire AGCMS itself into PagerDuty / Slack
-          via{" "}
+          Want to be paged on incidents? Subscribe at{" "}
+          <a
+            href="https://agcms.betteruptime.com"
+            className="text-accent hover:text-accent-bright"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            agcms.betteruptime.com
+          </a>
+          , or wire AGCMS itself into PagerDuty / Slack via{" "}
           <Link
             href="/product"
             className="text-accent hover:text-accent-bright"
