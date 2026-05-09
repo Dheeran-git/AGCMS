@@ -1,9 +1,9 @@
-import { useLocation } from 'react-router-dom';
-import { Menu, Search, User } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Menu, Search, ShieldCheck, User } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from './ui/button';
 import { Kbd } from './ui/kbd';
-import { StatusDot } from './ui/badge';
+import { HealthPill } from './ui/pill';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -80,17 +80,24 @@ export function TopBar({ onOpenPalette }: { onOpenPalette: () => void }) {
           </div>
         </button>
 
+        {/* Public verifier — quick link to the unauthenticated wedge surface */}
+        <Link
+          to="/trust/verify"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hidden md:inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-translucent-1 border border-border-subtle text-label text-fg-secondary hover:bg-translucent-2 hover:text-fg-primary transition-colors"
+        >
+          <ShieldCheck className="h-3.5 w-3.5" />
+          Verifier
+        </Link>
+
         {/* System health */}
-        <div className="hidden md:inline-flex items-center gap-2 h-8 px-2.5 rounded-md bg-translucent-1 border border-border-subtle">
-          <StatusDot tone={isHealthy ? 'success' : 'danger'} pulsing />
-          <span className="text-label text-fg-secondary">
-            {isHealthy ? 'Healthy' : 'Degraded'}
-          </span>
-          {typeof stats?.total_requests === 'number' && (
-            <span className="text-label text-fg-subtle font-mono">
-              · {stats.total_requests.toLocaleString()} req
-            </span>
-          )}
+        <div className="hidden md:inline-flex">
+          <HealthPill
+            tone={isHealthy ? 'success' : 'danger'}
+            label={isHealthy ? 'Healthy' : 'Degraded'}
+            count={typeof stats?.total_requests === 'number' ? stats.total_requests : undefined}
+          />
         </div>
 
         {/* User menu */}
