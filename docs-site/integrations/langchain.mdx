@@ -1,0 +1,21 @@
+---
+title: "LangChain"
+description: "Use AGCMS with langchain-openai."
+---
+
+```python
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
+
+llm = ChatOpenAI(
+    model="groq:llama-3.3-70b-versatile",
+    base_url="https://api.your-tenant.agcms.com/v1",
+    api_key="agc_live_...",
+)
+
+resp = llm.invoke([HumanMessage(content="What is a Merkle root?")])
+print(resp.content)
+```
+
+Pair with LangChain callbacks to log the AGCMS interaction ID alongside each
+chain run for end-to-end traceability.

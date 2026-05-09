@@ -1,0 +1,18 @@
+---
+title: "HIPAA"
+description: "PHI handling for US healthcare workloads."
+---
+
+The HIPAA policy pack maps AGCMS controls to the HIPAA Security Rule
+(45 CFR §164.312). Apply it during onboarding or any time from
+**Settings → Policy → Apply pack → HIPAA**.
+
+| Control                        | AGCMS feature                        | Citation        |
+|--------------------------------|--------------------------------------|-----------------|
+| Audit controls                 | HMAC-signed, hash-chained audit log  | §164.312(b)     |
+| Person / entity authentication | SSO + MFA, scoped API keys           | §164.312(d)     |
+| Transmission security          | TLS 1.3, HMAC-signed webhooks        | §164.312(e)(1)  |
+| Integrity controls             | Merkle anchors to S3 Object Lock     | §164.312(c)(1)  |
+
+All PHI categories detected by the PII service (names, SSN, MRN, addresses,
+phone, email, DOB) are redacted by default under this pack.

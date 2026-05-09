@@ -1,0 +1,38 @@
+---
+title: "Verifying the chain"
+description: "Live verify endpoint + offline verifier."
+---
+
+## Live verification (in-app)
+
+```bash
+curl "$AGCMS_BASE_URL/api/v1/audit/chain/verify" \
+  -H "Authorization: Bearer $AGCMS_JWT"
+```
+
+Recomputes the chain and Merkle root for the requested period:
+
+```json
+{
+  "ok": true,
+  "rows_checked": 12345,
+  "merkle_roots_checked": 23,
+  "errors": []
+}
+```
+
+## Offline verification (auditor)
+
+```bash
+agcms verify path/to/bundle.zip
+```
+
+Or if your auditor doesn't have the SDK:
+
+```bash
+unzip bundle.zip
+python verify.py .
+```
+
+`verify.py` is a single self-contained Python file shipped *inside* every
+bundle. It uses only the standard library — no `pip install` required.

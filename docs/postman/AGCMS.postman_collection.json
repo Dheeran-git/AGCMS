@@ -1,0 +1,126 @@
+{
+  "info": {
+    "name": "AGCMS — AI Governance & Compliance Monitoring",
+    "_postman_id": "agcms-2026-04-22",
+    "description": "Hand-curated Postman collection covering the most-used AGCMS endpoints: auth, OpenAI-compatible chat, audit query, chain verification, and bundle export.\n\nVariables:\n- base_url   = https://api.your-tenant.agcms.com\n- api_key    = agc_live_...\n- jwt_token  = (auto-set by the 'Auth → Token' request)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "https://api.your-tenant.agcms.com" },
+    { "key": "api_key", "value": "agc_live_change_me" },
+    { "key": "jwt_token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{base_url}}/health", "host": ["{{base_url}}"], "path": ["health"] }
+      }
+    },
+    {
+      "name": "Auth → Token (email/password)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  const t = pm.response.json().access_token;",
+              "  if (t) pm.collectionVariables.set('jwt_token', t);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"change-me\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/api/v1/auth/token", "host": ["{{base_url}}"], "path": ["api", "v1", "auth", "token"] }
+      }
+    },
+    {
+      "name": "Models — list",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{api_key}}" }],
+        "url": { "raw": "{{base_url}}/v1/models", "host": ["{{base_url}}"], "path": ["v1", "models"] }
+      }
+    },
+    {
+      "name": "Chat completions (governed)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{api_key}}" },
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-AGCMS-User-ID", "value": "alice@corp.example" },
+          { "key": "X-AGCMS-Department", "value": "support" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"model\": \"groq:llama-3.3-70b-versatile\",\n  \"messages\": [\n    {\"role\": \"user\", \"content\": \"Summarise the EU AI Act in one sentence.\"}\n  ]\n}"
+        },
+        "url": { "raw": "{{base_url}}/v1/chat/completions", "host": ["{{base_url}}"], "path": ["v1", "chat", "completions"] }
+      }
+    },
+    {
+      "name": "Audit — list logs",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{jwt_token}}" }],
+        "url": {
+          "raw": "{{base_url}}/api/v1/audit?limit=50",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "audit"],
+          "query": [{ "key": "limit", "value": "50" }]
+        }
+      }
+    },
+    {
+      "name": "Audit — verify chain",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{jwt_token}}" }],
+        "url": {
+          "raw": "{{base_url}}/api/v1/audit/chain/verify",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "audit", "chain", "verify"]
+        }
+      }
+    },
+    {
+      "name": "Audit — export bundle",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{jwt_token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"start\": \"2026-04-01T00:00:00Z\",\n  \"end\":   \"2026-04-22T00:00:00Z\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/audit/bundle",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "audit", "bundle"]
+        }
+      }
+    },
+    {
+      "name": "OpenAPI — fetch spec (YAML)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{base_url}}/openapi.yaml", "host": ["{{base_url}}"], "path": ["openapi.yaml"] }
+      }
+    }
+  ]
+}

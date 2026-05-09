@@ -1,0 +1,51 @@
+---
+title: "OpenAI"
+description: "Drop AGCMS in front of openai.OpenAI."
+---
+
+## 3-line wrap (Python)
+
+```python
+from openai import OpenAI
+from agcms import openai_wrap
+
+client = openai_wrap(
+    OpenAI(api_key="sk-..."),
+    agcms_base_url="https://api.your-tenant.agcms.com",
+    agcms_api_key="agc_live_...",
+)
+
+client.chat.completions.create(model="gpt-4o", messages=[...])
+```
+
+`embeddings`, `files`, `audio`, etc. fall through unchanged. Only
+`chat.completions.create(...)` is rerouted through AGCMS.
+
+## 3-line wrap (TypeScript)
+
+```ts
+import OpenAI from "openai";
+import { openaiWrap } from "@agcms/sdk";
+
+const client = openaiWrap(new OpenAI({ apiKey: "sk-..." }), {
+  baseUrl: "https://api.your-tenant.agcms.com",
+  apiKey:  "agc_live_...",
+});
+```
+
+## Without an SDK (base_url override)
+
+The official `openai` client supports a `base_url` argument. Point it at
+AGCMS and use your AGCMS key in place of the OpenAI key:
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.your-tenant.agcms.com/v1",
+    api_key="agc_live_...",
+)
+```
+
+The AGCMS gateway then forwards to OpenAI using the upstream key configured
+on your tenant.

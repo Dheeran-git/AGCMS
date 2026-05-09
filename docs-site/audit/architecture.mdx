@@ -1,0 +1,37 @@
+---
+title: "Audit architecture"
+description: "Hash-chained, signed, Merkle-anchored."
+---
+
+## Per-row signing
+
+Every audit row carries:
+
+- `log_signature` — HMAC-SHA256 over the canonical row payload concatenated
+  with the previous row's signature.
+- `previous_log_hash` — the prior row's `log_signature` (per tenant).
+- `sequence_number` — strictly contiguous within a tenant (Postgres advisory
+  lock guarantees no gaps under concurrent writers).
+- `signing_key_id` — the kid of the signing key used. Lets historical rows
+  verify after key rotation.
+
+Tampering with any field, deleting a row, or reordering rows breaks the
+chain at the point of tampering — the chain verifier reports the exact
+sequence number where it fails.
+
+## Daily Merkle anchoring
+
+A nightly job builds a per-tenant Merkle tree over the day's signatures and
+signs the root with a separate `AGCMS_ANCHOR_KEY`. The signed manifest is
+written to `s3://agcms-anchors/<tenant>/<yyyy-mm-dd>.json` with **S3 Object
+Lock in Compliance mode** — even an AWS administrator cannot delete or
+modify it before retention expiry.
+
+## Why this is legally defensible
+
+1. The signature chain detects in-flight tampering of any row.
+2. Each daily Merkle root is independent evidence — tampering with rows
+   *after* the anchor is published also fails Merkle verification.
+3. Object Lock means the anchored root cannot be silently rewritten.
+4. The bundle exporter ships a self-contained Python verifier — auditors
+   never need AGCMS credentials.

@@ -1,0 +1,57 @@
+---
+title: "TypeScript SDK"
+description: "npm install @agcms/sdk"
+---
+
+## Install
+
+```bash
+npm install @agcms/sdk
+```
+
+Works in Node 18+, Deno, and modern browsers.
+
+## AGCMSClient
+
+```ts
+import { AGCMSClient } from "@agcms/sdk";
+
+const client = new AGCMSClient({
+  baseUrl: "https://api.your-tenant.agcms.com",
+  apiKey: "agc_live_...",
+  userId: "alice@corp",
+  department: "support",
+});
+
+const resp = await client.chat.completions.create({
+  model: "groq:llama-3.3-70b-versatile",
+  messages: [{ role: "user", content: "Hello!" }],
+});
+console.log(client.lastInteractionId);
+```
+
+## openaiWrap
+
+```ts
+import OpenAI from "openai";
+import { openaiWrap } from "@agcms/sdk";
+
+const client = openaiWrap(new OpenAI({ apiKey: "..." }), {
+  baseUrl: "https://api.your-tenant.agcms.com",
+  apiKey: "agc_live_...",
+});
+```
+
+## Errors
+
+```ts
+import { AGCMSError, BlockedError, RateLimitedError, AuthError } from "@agcms/sdk";
+
+try {
+  await client.chat.completions.create({ ... });
+} catch (err) {
+  if (err instanceof BlockedError) {
+    console.warn("blocked:", err.message, err.interactionId);
+  }
+}
+```

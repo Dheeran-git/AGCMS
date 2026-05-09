@@ -1,0 +1,17 @@
+---
+title: "EU AI Act"
+description: "High-risk AI system requirements."
+---
+
+The EU AI Act high-risk pack focuses on Articles 9, 10, 12, 13, and 15.
+
+| Requirement                           | AGCMS feature                                          | Article  |
+|---------------------------------------|--------------------------------------------------------|----------|
+| Risk-management system                | Per-tenant policies + escalation workflow              | Art. 9   |
+| Data and data governance              | PII redaction, prompt provenance in audit row          | Art. 10  |
+| Record-keeping (≥ 6 months)           | Hash-chained audit + 7-year Object-Lock retention      | Art. 12  |
+| Transparency and information          | Public bundle export + offline verifier                | Art. 13  |
+| Accuracy, robustness, cybersecurity   | Injection detection + signed audit chain               | Art. 15  |
+
+Tenants registered as **high-risk system operators** automatically get the
+extended retention and dual-approval purge controls.

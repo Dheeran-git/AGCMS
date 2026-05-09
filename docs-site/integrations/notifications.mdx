@@ -1,0 +1,30 @@
+---
+title: "Notifications"
+description: "Slack, PagerDuty, webhook, email, Splunk."
+---
+
+Configure providers and rules in **Settings → Integrations**.
+
+## Providers
+
+| Provider     | Required config                                           |
+|--------------|-----------------------------------------------------------|
+| Slack        | `webhook_url`                                             |
+| PagerDuty    | `routing_key` (Events API v2)                             |
+| Webhook      | `url`, optional `signing_secret` (HMAC-SHA256 in `X-AGCMS-Signature`) |
+| Email (SMTP) | `host`, `port`, `username`, `password`, `from_addr`, `to_addr` |
+| Splunk HEC   | `url`, `token`                                            |
+
+## Rules
+
+A rule pairs a trigger event with a provider and a minimum severity:
+
+| Trigger             | Fires on                                                 |
+|---------------------|----------------------------------------------------------|
+| `violation`         | A request was BLOCKED by policy.                         |
+| `escalation`        | A request was ESCALATEd to human review.                 |
+| `audit_chain_break` | The chain verifier detected an integrity failure.        |
+| `rate_limit_breach` | A tenant or IP hit a rate-limit threshold.               |
+
+The dispatcher fan-out pattern retries failed deliveries, with a delivery
+log visible in **Settings → Integrations → Recent deliveries**.

@@ -1,0 +1,80 @@
+---
+title: "Quickstart"
+description: "Send your first governed request in 5 minutes."
+---
+
+## 1. Get an API key
+
+After SSO login, go to **Settings → API Keys → New key**. Choose at least the
+`ingest` scope.
+
+```bash
+export AGCMS_BASE_URL="https://api.your-tenant.agcms.com"
+export AGCMS_API_KEY="agc_live_..."
+```
+
+## 2. Install an SDK
+
+<CodeGroup>
+```bash Python
+pip install agcms
+```
+```bash TypeScript
+npm install @agcms/sdk
+```
+```bash cURL
+# no install needed
+```
+</CodeGroup>
+
+## 3. Send a request
+
+<CodeGroup>
+```python Python
+from agcms import AGCMSClient
+
+client = AGCMSClient()    # reads AGCMS_BASE_URL + AGCMS_API_KEY from env
+resp = client.chat.completions.create(
+    model="groq:llama-3.3-70b-versatile",
+    messages=[{"role": "user", "content": "Hello!"}],
+)
+print(resp["choices"][0]["message"]["content"])
+print("interaction:", client.last_interaction_id)
+```
+
+```ts TypeScript
+import { AGCMSClient } from "@agcms/sdk";
+
+const client = new AGCMSClient({
+  baseUrl: process.env.AGCMS_BASE_URL!,
+  apiKey: process.env.AGCMS_API_KEY!,
+});
+const resp = await client.chat.completions.create({
+  model: "groq:llama-3.3-70b-versatile",
+  messages: [{ role: "user", content: "Hello!" }],
+});
+console.log(resp.choices[0].message.content);
+```
+
+```bash cURL
+curl -X POST "$AGCMS_BASE_URL/v1/chat/completions" \
+  -H "Authorization: Bearer $AGCMS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"groq:llama-3.3-70b-versatile","messages":[{"role":"user","content":"Hello!"}]}'
+```
+</CodeGroup>
+
+## 4. See it in the audit log
+
+Open the dashboard at **/audit**. Find the row whose `interaction_id` matches
+the one you just received in the response header. Click it to see PII findings,
+injection score, policy decision, and the row's signature.
+
+## 5. (Optional) Verify the audit chain offline
+
+```bash
+agcms verify path/to/exported-bundle.zip
+```
+
+You're now governed. Next: pick a [policy pack](/compliance/hipaa) for your
+framework, or [wrap your existing OpenAI client](/integrations/openai).
