@@ -42,3 +42,9 @@ agcms-injection/model/
 
 # Playwright MCP server cache (page snapshots, console logs)
 .playwright-mcp/
+
+# Next.js build output for marketing/docs sites
+marketing/.next/
+marketing/tsconfig.tsbuildinfo
+marketing/next-env.d.ts
+docs-site/.next/
