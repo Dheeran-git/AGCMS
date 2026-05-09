@@ -68,15 +68,17 @@ export function PublicVerifier() {
       </header>
 
       <main className="max-w-[1100px] mx-auto px-8 py-12">
-        <div className="mb-10">
-          <h1 className="text-h1 font-semibold tracking-tight mb-3">
-            Verify an audit bundle
+        <div className="mb-10 text-center">
+          <span className="inline-flex items-center px-3 py-1 rounded-full bg-accent/10 border border-accent/30 text-micro uppercase tracking-wider text-accent-bright mb-6">
+            Public verifier
+          </span>
+          <h1 className="text-display tracking-[-1.056px] font-[510] mb-5 max-w-3xl mx-auto leading-tight">
+            Prove your audit log<br />has not been altered.
           </h1>
-          <p className="text-body text-fg-muted max-w-2xl leading-relaxed">
-            Drop an AGCMS audit bundle ZIP below. Verification runs entirely in
-            your browser — no file contents leave this device. We check
-            per-tenant hash-chain continuity and recompute every Merkle root
-            against the published manifest.
+          <p className="text-body text-fg-muted max-w-2xl mx-auto leading-relaxed">
+            Drop an AGCMS audit bundle below. Verification runs entirely in your
+            browser — no file contents leave this device, no AGCMS credentials
+            required.
           </p>
         </div>
 
