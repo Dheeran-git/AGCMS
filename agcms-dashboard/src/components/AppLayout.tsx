@@ -1,4 +1,5 @@
 import { type ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { TooltipProvider } from './ui/tooltip';
 import { Sidebar } from './Sidebar';
@@ -11,6 +12,7 @@ import { cn } from '../lib/cn';
 export function AppLayout({ children }: { children: ReactNode }) {
   const sidebarOpen = useDashboardStore((s) => s.sidebarOpen);
   const palette = useCommandPalette();
+  const location = useLocation();
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -24,7 +26,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
         >
           <TopBar onOpenPalette={() => palette.setOpen(true)} />
           <OnboardingBanner />
-          <main className="max-w-[1400px] mx-auto px-8 py-8 animate-fade-in">
+          {/* keyed on pathname so the 320ms page-enter fires on every route change */}
+          <main
+            key={location.pathname}
+            className="max-w-[1400px] mx-auto px-8 py-8 animate-fade-in"
+          >
             {children}
           </main>
         </div>
