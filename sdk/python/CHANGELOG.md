@@ -5,6 +5,13 @@ All notable changes to the AGCMS Python SDK will be documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.1.2] — 2026-05-09
+
+### Fixed
+- Synced hardcoded `agcms.__version__` string with the package metadata
+  version. The 0.1.1 wheel reported `__version__ == "0.1.0"` because
+  `agcms/__init__.py` was not bumped along with `pyproject.toml`.
+
 ## [0.1.1] — 2026-05-09
 
 ### Changed

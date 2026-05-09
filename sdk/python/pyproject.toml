@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agcms"
-version = "0.1.1"
+version = "0.1.2"
 description = "Official Python SDK for AGCMS — AI Governance & Compliance Monitoring."
 readme = "README.md"
 requires-python = ">=3.9"
