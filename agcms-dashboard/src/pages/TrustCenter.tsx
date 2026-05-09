@@ -17,7 +17,17 @@ import {
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { TrustChain } from '../components/TrustChain';
 import { fetchEscalations, type Escalation } from '../lib/api';
+
+// Static demo blocks — illustrative only; the live chain lives on /audit.
+const DEMO_TRUST_BLOCKS = [
+  { label: '#04827', caption: 'a8f3…2b1', verified: true },
+  { label: '#04828', caption: 'd6e1…0a4', verified: true },
+  { label: '#04829', caption: '8b3a…4f7', verified: true },
+  { label: '#04830', caption: '9e2d…1b6', verified: true },
+  { label: '#04831', caption: 'pending', verified: false },
+];
 
 interface PostureItem {
   label: string;
@@ -171,6 +181,7 @@ export function TrustCenter() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-small text-fg-secondary">
+            <TrustChain blocks={DEMO_TRUST_BLOCKS} className="!p-4 !border-border-subtle" />
             <p>
               Every audit row is signed with HMAC-SHA256 and includes the previous row's
               signature, forming a per-tenant hash chain. Truncation, reordering, or
