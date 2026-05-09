@@ -97,9 +97,14 @@ export default {
           '0%': { opacity: '0', transform: 'translateY(4px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
+        'pulse-dot': {
+          '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+          '50%': { opacity: '0.45', transform: 'scale(0.85)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 320ms cubic-bezier(0.16, 1, 0.3, 1)',
+        'pulse-dot': 'pulse-dot 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite',
       },
     },
   },
