@@ -53,6 +53,10 @@
     {
       "group": "Help",
       "pages": ["faq"]
+    },
+    {
+      "group": "Changelog",
+      "pages": ["changelog/overview"]
     }
   ],
   "openapi": "openapi.yaml",
