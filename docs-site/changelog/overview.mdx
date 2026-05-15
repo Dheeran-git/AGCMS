@@ -1,0 +1,32 @@
+---
+title: "Changelog"
+description: "Product updates and announcements for AGCMS."
+---
+
+<Update label="May 15, 2026" description="v1.2.0">
+
+This week we shipped AGCMS **v1.2.0** — the largest release since launch. Phases 7 and 8 are now live, bringing onboarding, policy packs, a redesigned dashboard, the Trust Center, and official Python and TypeScript SDKs.
+
+## New features
+
+- **Onboarding wizard** — A guided first-run flow to get new workspaces from sign-up to a verified audit event in minutes.
+- **Policy packs** — Drop-in compliance presets for [HIPAA](/compliance/hipaa), [GDPR](/compliance/gdpr), [EU AI Act](/compliance/eu-ai-act), [NIST AI RMF](/compliance/nist-ai-rmf), [SOC 2](/compliance/soc2), and [PCI DSS](/compliance/pci-dss). Apply a pack to a workspace and the matching controls, retention rules, and notifications are configured for you.
+- **Notifications** — Configurable alerts for policy violations, anchor failures, and escalations, with routing to email, Slack, and webhooks. See [Notifications](/integrations/notifications).
+- **Trust Center** — A public-facing page that proves your audit log is intact, backed by the new portable [PublicVerifier](/audit/verification) and Merkle-anchored [audit bundles](/audit/bundles).
+- **TrustChain motif on the Audit page** — A live visualization of the hash chain so you can see anchor integrity at a glance.
+- **Python and TypeScript SDKs** — First-class clients for both languages. See the [Python SDK](/sdk/python) and [TypeScript SDK](/sdk/typescript) guides.
+- **Sample integrations** — Ready-to-run examples for [OpenAI](/integrations/openai), [Anthropic](/integrations/anthropic), and [LangChain](/integrations/langchain).
+- **Status page** — Live service health is now published at [agcms.betteruptime.com](https://agcms.betteruptime.com) and linked from the docs top bar.
+
+## Updates
+
+- **Dashboard redesign** — New shell with page-enter animations, a Verifier link in the top nav, and `HealthPill` / `StreamPill` indicators that surface service and stream status in real time.
+- **PublicVerifier hero** — The verifier landing page has been promoted to match the rest of the design system, making it easier for auditors to drop in a bundle and confirm integrity.
+- **Refreshed brand** — New Merkle-tree logomark and Geist typography across the product.
+- **SDK 0.1.2** — Both SDKs ship with the correct package URLs and a bundled Apache 2.0 license; `agcms.__version__` in Python is now in sync with package metadata.
+
+## Bug fixes
+
+- **Dismissible onboarding banner** — The dashboard no longer force-redirects users with incomplete onboarding. The prompt is now a banner you can dismiss and return to later.
+
+</Update>
