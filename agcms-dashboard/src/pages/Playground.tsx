@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { MessageSquare, ShieldX, Send, Sparkles } from 'lucide-react';
 import { cn } from '../lib/cn';
@@ -153,6 +154,7 @@ export function Playground() {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
 
   const scrollToBottom = () => {
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
@@ -181,6 +183,13 @@ export function Playground() {
       setMessages((prev) =>
         prev.map((m) => (m.id === id ? { ...m, response, loading: false } : m))
       );
+      // Invalidate Overview / Violations / Audit caches so the new interaction
+      // shows up the moment the user navigates to those pages.
+      void queryClient.invalidateQueries({ queryKey: ['stats'] });
+      void queryClient.invalidateQueries({ queryKey: ['timeline'] });
+      void queryClient.invalidateQueries({ queryKey: ['violations'] });
+      void queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+      void queryClient.invalidateQueries({ queryKey: ['topbar-stats'] });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Request failed';
       setMessages((prev) =>

@@ -26,6 +26,9 @@ agcms-dashboard/playwright-report/
 .env
 *.env.local
 
+# Local-only presentation draft (kept out of the repo)
+PRESENTATION.md
+
 # OS / IDE
 .DS_Store
 Thumbs.db
