@@ -46,6 +46,11 @@ agcms-injection/model/
 # Playwright MCP server cache (page snapshots, console logs)
 .playwright-mcp/
 
+# Ruflo runtime artifacts (caches + vector DB — not project code)
+.claude-flow/
+.swarm/
+ruvector.db
+
 # Next.js build output for marketing/docs sites
 marketing/.next/
 marketing/tsconfig.tsbuildinfo
