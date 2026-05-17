@@ -2,7 +2,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/agcms?color=5B8DEF&label=pip%20install%20agcms)](https://pypi.org/project/agcms/)
 [![npm](https://img.shields.io/npm/v/@agcms/sdk?color=5B8DEF&label=%40agcms%2Fsdk)](https://www.npmjs.com/package/@agcms/sdk)
-[![Tests](https://img.shields.io/badge/tests-771%20passing-22c55e)](#testing)
+[![Tests](https://img.shields.io/badge/tests-773%20passing-22c55e)](#testing)
 [![License](https://img.shields.io/badge/license-Apache--2.0-1f2937)](#license)
 
 Cryptographically signed, legally defensible audit trails across a multi-tenant live AI enforcement plane. AGCMS sits between your applications and LLM providers, detects PII leakage, blocks prompt-injection attacks, enforces compliance policy, and writes a tamper-evident audit log auditable offline by a third party with no AGCMS credentials.
@@ -178,16 +178,22 @@ unzip audit.zip && python verify.py
 ## Testing
 
 ```bash
-# Unit (no services needed) — 35 files, 633 tests
+# Unit (no services needed) — 30 files, 597 tests
 pytest tests/unit/ -q
 
-# Integration (running stack) — 5 files, 138 tests
+# Integration (running stack) — 4 files, 176 tests
 pytest tests/integration/ -q
 
-# Full suite (last green run): 771 passed, 0 failed, 2 skipped
+# Full suite (last green run): 773 passed, 0 failed, 0 skipped
 ```
 
-E2E browser smoke (`agcms-dashboard/`): 11 Playwright specs, all 13 dashboard pages.
+> **Windows note:** the injection-detection tests load ONNX Runtime + PyTorch,
+> whose native libraries can crash a shared interpreter on Windows / Python 3.13.
+> If a full `pytest tests/unit/` run errors on `test_injection_agent.py`, run it
+> in its own process — `pytest tests/unit/ --ignore=tests/unit/test_injection_agent.py`
+> followed by `pytest tests/unit/test_injection_agent.py`. Both then pass green.
+
+E2E browser smoke (`agcms-dashboard/`): 11 Playwright tests in `e2e/dashboard.spec.ts`, covering all 13 dashboard pages.
 
 Load test:
 ```bash
