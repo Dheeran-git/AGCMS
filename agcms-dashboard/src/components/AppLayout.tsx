@@ -7,12 +7,14 @@ import { TopBar } from './TopBar';
 import { CommandPalette, useCommandPalette } from './CommandPalette';
 import { OnboardingBanner } from './OnboardingBanner';
 import { useDashboardStore } from '../stores/dashboard';
+import { useThemeStore } from '../stores/theme';
 import { cn } from '../lib/cn';
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const sidebarOpen = useDashboardStore((s) => s.sidebarOpen);
   const palette = useCommandPalette();
   const location = useLocation();
+  const theme = useThemeStore((s) => s.theme);
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -39,7 +41,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
         <Toaster
           position="bottom-right"
-          theme="dark"
+          theme={theme === 'light' ? 'light' : 'dark'}
           toastOptions={{
             classNames: {
               toast: 'bg-surface border border-border text-fg-primary shadow-elev-5',
@@ -52,3 +54,4 @@ export function AppLayout({ children }: { children: ReactNode }) {
     </TooltipProvider>
   );
 }
+

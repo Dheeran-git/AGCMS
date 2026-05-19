@@ -23,8 +23,10 @@ services:
     command: redis-server --requirepass ${REDIS_PASSWORD:-secret}
     ports:
       - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-secret}
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a $${REDIS_PASSWORD:-secret} ping | grep -q PONG"]
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping | grep -q PONG"]
       interval: 5s
       timeout: 5s
       retries: 5

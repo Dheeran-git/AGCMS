@@ -45,23 +45,30 @@ Cryptographically signed, legally defensible audit trails across a multi-tenant 
 # Clone + configure
 git clone https://github.com/Dheeran-git/AGCMS.git
 cd AGCMS
-cp .env.example .env                             # set AGCMS_SIGNING_KEY + GROQ_API_KEY
+cp .env.example .env          # Fill in AGCMS_SIGNING_KEY, AGCMS_ANCHOR_KEY, GROQ_API_KEY
 
 # Bring up all 11 services
-docker compose up --build --wait
-docker compose ps                                # all healthy
+docker compose up --build -d
+docker compose ps             # all → healthy
 
-# Try it
+# Seed demo data (2 000 audit rows + 15 users + 20 escalations — instant dashboard)
+curl -s -X POST http://localhost:8000/api/v1/demo/seed \
+  -H "Authorization: Bearer agcms_test_key_for_development"
+
+# Try the AI proxy
 curl -s -X POST http://localhost:8000/v1/chat/completions \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer agcms_test_key_for_development" \
   -d '{"messages":[{"role":"user","content":"My SSN is 123-45-6789, help me write an email."}]}'
 # → SSN redacted before reaching the LLM
 
-# Dashboard
-open http://localhost:3000
+# Open the dashboard
+start http://localhost:3000
 ```
 
-Free Groq key: <https://console.groq.com>.
+> **Dev API key** (no DB lookup): `agcms_test_key_for_development`  
+> **Admin token** for management API: same key works — it bypasses DB auth.  
+> Free Groq key: <https://console.groq.com>.
 
 ---
 

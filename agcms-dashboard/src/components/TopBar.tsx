@@ -14,6 +14,8 @@ import {
 } from './ui/dropdown-menu';
 import { useDashboardStore } from '../stores/dashboard';
 import { fetchStats } from '../lib/api';
+import { ThemeToggle } from './ThemeToggle';
+
 
 const PAGE_TITLES: Record<string, string> = {
   '/': 'Overview',
@@ -91,6 +93,15 @@ export function TopBar({ onOpenPalette }: { onOpenPalette: () => void }) {
           Verifier
         </Link>
 
+        {/* Separator */}
+        <span className="hidden md:block h-4 w-px bg-border-default mx-0.5" aria-hidden="true" />
+
+        {/* Theme toggle */}
+        <ThemeToggle className="hidden md:inline-flex" />
+
+        {/* Separator */}
+        <span className="hidden md:block h-4 w-px bg-border-default mx-0.5" aria-hidden="true" />
+
         {/* System health */}
         <div className="hidden md:inline-flex">
           <HealthPill
@@ -99,6 +110,7 @@ export function TopBar({ onOpenPalette }: { onOpenPalette: () => void }) {
             count={typeof stats?.total_requests === 'number' ? stats.total_requests : undefined}
           />
         </div>
+
 
         {/* User menu */}
         <DropdownMenu>
