@@ -122,6 +122,16 @@ def _validate_injection(injection: dict) -> list[str]:
                 f"injection.block_threshold must be between 0.0 and 1.0, got {block_threshold}"
             )
 
+    ml_only_threshold = injection.get("ml_only_block_threshold")
+    if ml_only_threshold is not None:
+        if not isinstance(ml_only_threshold, (int, float)):
+            errors.append("injection.ml_only_block_threshold must be a number")
+        elif not (0.0 <= ml_only_threshold <= 1.0):
+            errors.append(
+                "injection.ml_only_block_threshold must be between 0.0 and 1.0, "
+                f"got {ml_only_threshold}"
+            )
+
     escalate_threshold = injection.get("escalate_threshold")
     if escalate_threshold is not None:
         if not isinstance(escalate_threshold, (int, float)):

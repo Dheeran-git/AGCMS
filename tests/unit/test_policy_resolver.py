@@ -37,11 +37,31 @@ def _pii(risk_level: str = "NONE", has_pii: bool = False) -> dict:
     }
 
 
-def _injection(score: float = 0.0, attack_type: str = "DIRECT") -> dict:
+def _injection(
+    score: float = 0.0,
+    attack_type: str = "DIRECT",
+    triggered_rules: list | None = None,
+) -> dict:
+    """Build a fake injection scan result.
+
+    After the rule-corroboration policy change (2026-05), BLOCK requires
+    EITHER a triggered heuristic rule above block_threshold OR a near-certain
+    pure-ML score above ml_only_block_threshold. Tests that pass `score`
+    alone are simulating a real attack pattern (rules + score), so we
+    auto-populate one triggered rule whenever the score is in the blocking
+    range. Pass triggered_rules=[] explicitly to test the ML-only path.
+    """
+    if triggered_rules is None:
+        triggered_rules = (
+            [{"name": "test_rule", "pattern": "x", "weight": 0.9}]
+            if score >= 0.65
+            else []
+        )
     return {
         "risk_score": score,
         "attack_type": attack_type,
         "is_injection": score >= 0.65,
+        "triggered_rules": triggered_rules,
     }
 
 
@@ -99,6 +119,36 @@ class TestResolverBlock:
         assert d.action == "ALLOW"
         # 0.95 is above → BLOCK
         d = r.resolve(pii_result=None, injection_result=_injection(score=0.95))
+        assert d.action == "BLOCK"
+
+    # --- Rule-corroboration (2026-05): defends against ML-only false positives ---
+
+    def test_ml_only_score_below_ml_threshold_does_not_block(self):
+        """An ML score over block_threshold but with no triggered rules must NOT block."""
+        r = _resolver()
+        d = r.resolve(
+            pii_result=None,
+            injection_result=_injection(score=0.85, triggered_rules=[]),
+        )
+        assert d.action == "ALLOW"
+
+    def test_ml_only_score_at_ml_threshold_blocks(self):
+        """A pure-ML score >= ml_only_block_threshold still blocks (near-certain)."""
+        r = _resolver()
+        d = r.resolve(
+            pii_result=None,
+            injection_result=_injection(score=0.96, triggered_rules=[]),
+        )
+        assert d.action == "BLOCK"
+
+    def test_rule_corroborated_low_score_blocks(self):
+        """A heuristic rule + score >= block_threshold blocks (real attack pattern)."""
+        r = _resolver()
+        rule = [{"name": "direct_ignore", "pattern": "ignore", "weight": 0.9}]
+        d = r.resolve(
+            pii_result=None,
+            injection_result=_injection(score=0.7, triggered_rules=rule),
+        )
         assert d.action == "BLOCK"
 
 

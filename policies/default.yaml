@@ -11,7 +11,12 @@ pii:
 
 injection:
   enabled: true
+  # block_threshold applies only when a heuristic rule also triggered
+  # (real attacks light up rules + score high). The ML model can over-fire
+  # on benign markdown / non-English text, so an uncorroborated ML score
+  # must reach ml_only_block_threshold before blocking.
   block_threshold: 0.65
+  ml_only_block_threshold: 0.95
   action_on_detection: "BLOCK"
   log_all_attempts: true
 

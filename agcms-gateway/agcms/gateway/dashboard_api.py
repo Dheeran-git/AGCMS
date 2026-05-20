@@ -7,12 +7,13 @@ import asyncio
 import os
 import time
 import uuid
+from typing import Optional
 
 import httpx
-from fastapi import APIRouter
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
 
-from agcms.gateway.router import forward_to_llm
+from agcms.gateway.router import forward_to_llm, list_providers
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
@@ -170,8 +171,12 @@ async def get_timeline(hours: int = 24):
 # Playground Chat — enriched lifecycle with governance metadata
 # ---------------------------------------------------------------------------
 
+_MAX_MESSAGE_CHARS = 8000
+
+
 class PlaygroundChatRequest(BaseModel):
-    message: str
+    message: str = Field(..., max_length=_MAX_MESSAGE_CHARS)
+    provider: Optional[str] = None
 
 
 @router.post("/playground/chat")
@@ -179,7 +184,14 @@ async def playground_chat(req: PlaygroundChatRequest):
     """Run the 13-step governance lifecycle and return full metadata."""
     total_start = time.time()
     interaction_id = str(uuid.uuid4())
-    prompt_text = req.message
+    prompt_text = req.message.strip()
+    if not prompt_text:
+        raise HTTPException(status_code=422, detail="Message must not be empty.")
+
+    # Effective provider — used for the LLM call and recorded in the audit log.
+    provider_name = (
+        req.provider or os.environ.get("AGCMS_DEFAULT_PROVIDER", "groq")
+    ).lower()
 
     # --- Steps 4 & 5: PII + Injection scan (parallel) ---
     pii_result = {"has_pii": False, "risk_level": "NONE", "entity_types": [], "entities": [], "masked_text": None}
@@ -222,6 +234,7 @@ async def playground_chat(req: PlaygroundChatRequest):
 
     # --- Steps 7-10: Enforce → LLM → Compliance ---
     llm_response_text = None
+    llm_error = None
     compliance_result = None
     llm_ms = 0.0
     compliance_ms = 0.0
@@ -233,16 +246,18 @@ async def playground_chat(req: PlaygroundChatRequest):
         else:
             messages = [{"role": "user", "content": prompt_text}]
 
-        # Forward to LLM
+        # Forward to LLM (provider chosen in the UI, or the configured default)
         llm_start = time.time()
-        llm_result = await forward_to_llm(messages=messages)
+        llm_result = await forward_to_llm(messages=messages, provider=req.provider)
         llm_ms = round((time.time() - llm_start) * 1000, 1)
 
-        # Extract response text
+        # Extract response text, or surface the provider error to the caller
         if "choices" in llm_result:
             choices = llm_result.get("choices", [])
             if choices:
                 llm_response_text = choices[0].get("message", {}).get("content", "")
+        if not llm_response_text and "error" in llm_result:
+            llm_error = str(llm_result.get("reason") or llm_result.get("error"))
 
         # Response compliance check
         if llm_response_text:
@@ -276,7 +291,7 @@ async def playground_chat(req: PlaygroundChatRequest):
                     "decision": decision,
                     "compliance_result": compliance_result,
                     "start_time": total_start,
-                    "llm_provider": "groq",
+                    "llm_provider": provider_name,
                 })
         except Exception:
             pass
@@ -292,6 +307,7 @@ async def playground_chat(req: PlaygroundChatRequest):
             "compliance": compliance_result,
         },
         "llm_response": llm_response_text,
+        "llm_error": llm_error,
         "original_text": prompt_text,
         "masked_text": masked_text,
         "timing": {
@@ -302,4 +318,17 @@ async def playground_chat(req: PlaygroundChatRequest):
             "compliance_ms": compliance_ms,
             "total_ms": total_ms,
         },
+    }
+
+
+@router.get("/playground/providers")
+async def get_playground_providers():
+    """List LLM providers and whether each one's API key is configured.
+
+    Powers the provider picker in the Playground UI so the operator can route a
+    prompt to Groq, Mistral, Gemini, or a local Ollama instance.
+    """
+    return {
+        "providers": list_providers(),
+        "default": os.environ.get("AGCMS_DEFAULT_PROVIDER", "groq").lower(),
     }

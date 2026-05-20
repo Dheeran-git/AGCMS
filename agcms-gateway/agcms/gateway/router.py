@@ -46,17 +46,24 @@ _PROVIDERS: dict[str, _ProviderConfig] = {
     "groq": _ProviderConfig(
         env_var="GROQ_API_KEY",
         endpoint="https://api.groq.com/openai/v1/chat/completions",
-        default_model="llama-3.3-70b-versatile",
+        # gpt-oss-120b: OpenAI's open-weight 120B model — the strongest model on
+        # Groq's free tier (131k context). Verified available 2026-05.
+        default_model="openai/gpt-oss-120b",
     ),
     "gemini": _ProviderConfig(
         env_var="GEMINI_API_KEY",
         endpoint="https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+        # gemini-2.5-flash: best Gemini model that is reliably usable on the free
+        # tier. gemini-2.5-pro / gemini-3-pro-preview return HTTP 429
+        # (free_tier input-token quota exhausted), so flash is the practical pick.
         default_model="gemini-2.5-flash",
     ),
     "mistral": _ProviderConfig(
         env_var="MISTRAL_API_KEY",
         endpoint="https://api.mistral.ai/v1/chat/completions",
-        default_model="mistral-small-latest",
+        # mistral-medium-latest: Mistral Medium 3 — strongest free-tier model on
+        # La Plateforme (alias of mistral-medium-2508, 131k context).
+        default_model="mistral-medium-latest",
     ),
     "ollama": _ProviderConfig(
         env_var=None,                  # no API key required
@@ -135,8 +142,10 @@ async def forward_to_llm(
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
 
-    # Ollama is local — first request loads the model (~60s); use a longer timeout
-    timeout = 90.0 if provider_name == "ollama" else 30.0
+    # Ollama is local — first request loads the model (~60s); use a longer timeout.
+    # 60s for hosted providers: detailed/long prompts on mistral-medium / gemini
+    # routinely need 30-45s to finish generating, and a 30s cap cut them off.
+    timeout = 90.0 if provider_name == "ollama" else 60.0
 
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
@@ -149,7 +158,7 @@ async def forward_to_llm(
     except httpx.TimeoutException:
         return {
             "error": "provider_timeout",
-            "reason": f"Provider '{provider_name}' timed out after 30 seconds.",
+            "reason": f"Provider '{provider_name}' timed out after {timeout:.0f} seconds.",
         }
 
     if resp.status_code != 200:

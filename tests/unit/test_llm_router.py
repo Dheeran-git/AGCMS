@@ -305,7 +305,7 @@ class TestDefaultModels:
 
                 await forward_to_llm(_MESSAGES, provider="groq")
                 payload = mock_client.post.call_args[1]["json"]
-                assert payload["model"] == "llama-3.3-70b-versatile"
+                assert payload["model"] == "openai/gpt-oss-120b"
 
     @pytest.mark.asyncio
     async def test_model_override_respected(self):
@@ -333,7 +333,7 @@ class TestDefaultModels:
 
                 await forward_to_llm(_MESSAGES, provider="mistral")
                 payload = mock_client.post.call_args[1]["json"]
-                assert payload["model"] == "mistral-small-latest"
+                assert payload["model"] == "mistral-medium-latest"
 
 
 # ==================================================================

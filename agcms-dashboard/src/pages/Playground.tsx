@@ -1,9 +1,13 @@
-import { useRef, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { MessageSquare, ShieldX, Send, Sparkles } from 'lucide-react';
 import { cn } from '../lib/cn';
-import { postPlaygroundChat, type PlaygroundResponse } from '../lib/api';
+import {
+  fetchPlaygroundProviders,
+  postPlaygroundChat,
+  type PlaygroundResponse,
+} from '../lib/api';
 import { Badge } from '../components/ui/badge';
 
 interface ChatEntry {
@@ -153,8 +157,24 @@ export function Playground() {
   const [messages, setMessages] = useState<ChatEntry[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [provider, setProvider] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
+
+  const providersQuery = useQuery({
+    queryKey: ['playground-providers'],
+    queryFn: fetchPlaygroundProviders,
+    staleTime: 5 * 60_000,
+  });
+  const availableProviders =
+    providersQuery.data?.providers.filter((p) => p.available) ?? [];
+
+  // Default the picker to the server's configured default provider once loaded.
+  useEffect(() => {
+    if (!provider && providersQuery.data) {
+      setProvider(providersQuery.data.default);
+    }
+  }, [provider, providersQuery.data]);
 
   const scrollToBottom = () => {
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
@@ -179,7 +199,7 @@ export function Playground() {
     scrollToBottom();
 
     try {
-      const response = await postPlaygroundChat(text);
+      const response = await postPlaygroundChat(text, provider || undefined);
       setMessages((prev) =>
         prev.map((m) => (m.id === id ? { ...m, response, loading: false } : m))
       );
@@ -306,9 +326,10 @@ export function Playground() {
                 {entry.response.governance.policy.action !== 'BLOCK' &&
                   !entry.response.llm_response && (
                     <div className="flex justify-start">
-                      <div className="bg-status-warning-soft border border-status-warning/30 rounded-2xl rounded-bl-md px-4 py-2 text-caption text-status-warning">
-                        Governance passed, but LLM did not return a response (check
-                        GROQ_API_KEY).
+                      <div className="bg-status-warning-soft border border-status-warning/30 rounded-2xl rounded-bl-md px-4 py-2 text-caption text-status-warning max-w-[70%]">
+                        {entry.response.llm_error
+                          ? `LLM error: ${entry.response.llm_error}`
+                          : 'Governance passed, but the LLM returned an empty response.'}
                       </div>
                     </div>
                   )}
@@ -348,9 +369,33 @@ export function Playground() {
             Send
           </button>
         </div>
-        <p className="text-label text-fg-subtle mt-2">
-          Press Enter to send, Shift+Enter for a new line.
-        </p>
+        <div className="mt-2 flex items-center justify-between gap-3">
+          <label className="flex items-center gap-2 text-label text-fg-subtle">
+            <span className="text-micro uppercase tracking-wider">Provider</span>
+            <select
+              value={provider}
+              onChange={(e) => setProvider(e.target.value)}
+              disabled={sending || availableProviders.length === 0}
+              className={cn(
+                'rounded-md border border-border bg-translucent-1 px-2 py-1',
+                'text-label text-fg-secondary',
+                'focus:outline-none focus:border-accent-bright'
+              )}
+            >
+              {availableProviders.length === 0 && (
+                <option value="">No provider configured</option>
+              )}
+              {availableProviders.map((p) => (
+                <option key={p.provider} value={p.provider}>
+                  {p.provider} · {p.default_model}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="text-label text-fg-subtle">
+            Press Enter to send, Shift+Enter for a new line.
+          </p>
+        </div>
       </div>
     </div>
   );

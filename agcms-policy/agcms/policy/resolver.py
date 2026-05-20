@@ -54,11 +54,23 @@ class PolicyResolver:
         triggered = []
 
         # --- Injection check (highest priority) ---
+        # Real prompt injections light up heuristic rules AND score very high.
+        # Pure-ML scores (no triggered rules) have been observed to false-positive
+        # on benign markdown, non-English text, and imperative phrasing
+        # ("...please remember it"), so a single tunable score threshold is
+        # not enough. We require EITHER rule corroboration above
+        # block_threshold OR a near-certain ML-only score above
+        # ml_only_block_threshold (default 0.95) before blocking.
         inj_policy = p.get("injection", {})
         if inj_policy.get("enabled", True) and injection_result:
             threshold = inj_policy.get("block_threshold", 0.65)
+            ml_only_threshold = inj_policy.get("ml_only_block_threshold", 0.95)
             score = injection_result.get("risk_score", 0.0)
-            if score >= threshold:
+            has_rules = bool(injection_result.get("triggered_rules") or [])
+            should_block = (has_rules and score >= threshold) or (
+                score >= ml_only_threshold
+            )
+            if should_block:
                 attack = injection_result.get("attack_type", "UNKNOWN")
                 triggered.append("injection")
                 # Escalate on repeated injection if configured
