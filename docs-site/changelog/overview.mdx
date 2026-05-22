@@ -3,6 +3,24 @@ title: "Changelog"
 description: "Product updates and announcements for AGCMS."
 ---
 
+<Update label="May 22, 2026">
+
+A polish week focused on the dashboard experience and reliability of the live audit feed.
+
+## New features
+
+- **Light theme** — The dashboard now ships with a light mode in addition to the existing dark theme, so you can match AGCMS to your preferred working environment.
+
+## Updates
+
+- **Reliable live violation feed** — Streaming connections for the live violation feed are now tuned for long-lived, unbuffered delivery, so events appear in the dashboard without stalls or reconnects behind common reverse proxies.
+
+## Bug fixes
+
+- **Correct verification status on demo data** — The per-row verifier on the [Audit](/audit/verification) page now correctly recognizes demo-seeded rows and reports them as **Verified** instead of **Tampered**, so first-run and sandbox workspaces no longer show misleading integrity warnings.
+
+</Update>
+
 <Update label="May 15, 2026" description="v1.2.0">
 
 This week we shipped AGCMS **v1.2.0** — the largest release since launch. Phases 7 and 8 are now live, bringing onboarding, policy packs, a redesigned dashboard, the Trust Center, and official Python and TypeScript SDKs.
