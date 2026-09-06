@@ -31,6 +31,11 @@ _PII_ECHO_PATTERNS = {
 }
 
 
+def _normalize(value: str) -> str:
+    """Strip separators so '4111 1111 1111 1111 ' equals '4111111111111111'."""
+    return re.sub(r"[\s\-()]", "", value).lower()
+
+
 class ResponseComplianceAgent:
     """Checks LLM responses for compliance violations."""
 
@@ -104,11 +109,11 @@ class ResponseComplianceAgent:
         violations = []
 
         for pii_type, pattern in _PII_ECHO_PATTERNS.items():
-            prompt_matches = set(m.group() for m in pattern.finditer(original_prompt))
+            prompt_matches = {_normalize(m.group()) for m in pattern.finditer(original_prompt)}
             if not prompt_matches:
                 continue
             for m in pattern.finditer(response_text):
-                if m.group() in prompt_matches:
+                if _normalize(m.group()) in prompt_matches:
                     violations.append(ComplianceViolation(
                         rule="PII_ECHO",
                         description=f"LLM echoed {pii_type} from the original prompt",

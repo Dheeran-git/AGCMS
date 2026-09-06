@@ -90,6 +90,7 @@ def _download_and_load(
     """Download model from HuggingFace, export to ONNX, and load."""
     try:
         from optimum.onnxruntime import ORTModelForSequenceClassification
+        from transformers import AutoTokenizer
 
         logger.info("Downloading and converting %s to ONNX …", _HF_MODEL_ID)
         ort_model = ORTModelForSequenceClassification.from_pretrained(
@@ -97,7 +98,8 @@ def _download_and_load(
         )
         os.makedirs(model_dir, exist_ok=True)
         ort_model.save_pretrained(model_dir)
-        logger.info("ONNX model saved to %s", model_dir)
+        AutoTokenizer.from_pretrained(_HF_MODEL_ID).save_pretrained(model_dir)
+        logger.info("ONNX model + tokenizer saved to %s", model_dir)
 
         # Now load using the standard path
         return _load_from_dir(model_dir, ort)

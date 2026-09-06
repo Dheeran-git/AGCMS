@@ -1,7 +1,8 @@
 # AGCMS Load Testing
 
 Framework: [Locust](https://locust.io)  
-Target: 500 req/s sustained, p95 < 2s, error rate < 1%
+Purpose: measure end-to-end gateway overhead and error rate under concurrency.
+Record results in `docs/evaluation.md` together with the machine used.
 
 ---
 

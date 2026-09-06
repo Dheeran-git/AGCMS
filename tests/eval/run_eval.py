@@ -49,6 +49,10 @@ KEYWORDS = ["ignore previous", "ignore all previous", "disregard", "jailbreak", 
             "forget your", "new instructions", "bypass", "no restrictions"]
 
 
+GOLD_TYPES = {"EMAIL", "PHONE_US", "SSN", "CREDIT_CARD", "AADHAAR", "PAN", "IBAN", "DATE_OF_BIRTH",
+              "IP_ADDRESS", "MRN", "PERSON_NAME", "IPV6_ADDRESS", "MAC_ADDRESS"}
+
+
 def load(name: str, limit: int | None) -> list[dict]:
     rows = [json.loads(l) for l in open(DATA / name, encoding="utf-8")]
     return rows[:limit] if limit else rows
@@ -80,8 +84,10 @@ def eval_pii(rows: list[dict], agent: PIIAgent, mode: str) -> dict:
             pred_flags.append(int(result.has_pii))
             if r["label"] == 1:
                 gold_spans.append(r["spans"])
+                # Entity-level scoring only covers types the gold corpora
+                # label; ORGANIZATION predictions are neither right nor wrong.
                 pred_spans.append([{"start": e.start, "end": e.end, "type": e.entity_type}
-                                   for e in result.entities])
+                                   for e in result.entities if e.entity_type in GOLD_TYPES])
     finally:
         agent._regex_scan, agent._ner_scan = regex_scan, ner_scan
     by_source = {}
