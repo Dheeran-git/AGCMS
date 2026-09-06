@@ -155,3 +155,34 @@ Median response-check latency 0.02 ms. Policy resolver: 6/6 truth-table cases co
   corpus is easy by construction; the paper should present it as a
   functional check, not a benchmark.
 
+### Fine-tuned DistilBERT vs off-the-shelf DeBERTa (run 2026-09-06)
+
+`agcms-injection/ml/train.py`, `distilbert-base-uncased`, 3 epochs, max
+length 256, batch 16, lr 2e-5, seed 42, CPU. Training rows: 2,607 (deepset
+train + jackhhao train + AGCMS template set). Both models scored by
+`tests/eval/eval_finetuned.py` on the same 378 held-out publisher test rows
+(199 injections). AdvBench excluded.
+
+| Model | P | R | F1 | FPR | median ms | p95 ms |
+|---|---|---|---|---|---|---|
+| DistilBERT fine-tuned (ours) | 0.994 | 0.899 | 0.945 | 0.006 | 58 | 182 |
+| DeBERTa protectai v2 (off the shelf) | 0.986 | 0.699 | 0.818 | 0.011 | 126 | 959 |
+
+Recall by source: DistilBERT deepset 0.733, jackhhao 0.971; DeBERTa deepset
+0.367, jackhhao 0.842.
+
+Held-out F1 per epoch during training: 0.917, 0.958, 0.945. The shipped
+checkpoint is the final epoch (no per-epoch checkpointing), so epoch 2 would
+have been marginally better; the difference is within run-to-run noise
+(an earlier identical run scored 0.904 after epoch 1 vs 0.917 here).
+
+Caveats for the paper:
+- DistilBERT trained on the publisher *train* splits of the same two
+  corpora it is tested on, so it is in-distribution; DeBERTa was not trained
+  on them. The comparison shows the value of domain fine-tuning, not that
+  DeBERTa is a weaker architecture.
+- Single seed. Multi-seed mean and standard deviation are pending a
+  decision on compute.
+- Latency is PyTorch eager on CPU for DistilBERT and ONNX Runtime for
+  DeBERTa; exporting DistilBERT to ONNX (`ml/export_onnx.py`) would lower
+  its numbers further.

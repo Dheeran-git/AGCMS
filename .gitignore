@@ -37,6 +37,7 @@ Thumbs.db
 
 # ML model cache (too large for git)
 agcms-injection/model/
+agcms-injection/ml/model/
 *.onnx
 *.ort
 
