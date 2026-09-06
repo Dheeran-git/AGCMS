@@ -40,16 +40,8 @@ agcms-injection/model/
 *.onnx
 *.ort
 
-# Claude Code memory (not project code)
-.claude/
 
-# Playwright MCP server cache (page snapshots, console logs)
-.playwright-mcp/
 
-# Ruflo runtime artifacts (caches + vector DB — not project code)
-.claude-flow/
-.swarm/
-ruvector.db
 
 # Next.js build output for marketing/docs sites
 marketing/.next/
