@@ -198,7 +198,6 @@ async def playground_chat(req: PlaygroundChatRequest):
     injection_result = {"risk_score": 0.0, "attack_type": None, "is_injection": False, "triggered_rules": []}
 
     pii_start = time.time()
-    inj_start = pii_start
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             pii_task = client.post(f"{_PII_URL}/scan", json={"text": prompt_text})

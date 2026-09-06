@@ -25,7 +25,7 @@ Auth (:8006) issues JWTs; Tenant (:8007) provisions tenants + API keys.
 |---|---|
 | `agcms-gateway` | OpenAI-compatible proxy, auth, rate limits, management API, SSE feed |
 | `agcms-pii` | 20 regex patterns + spaCy NER, masking, risk level |
-| `agcms-injection` | 20 heuristic rules across 6 attack classes + DeBERTa ONNX classifier |
+| `agcms-injection` | 20 heuristic rules across 6 attack classes + fine-tuned DistilBERT (ONNX) |
 | `agcms-response` | PII echo, system-prompt leak and restricted-topic checks on LLM output |
 | `agcms-policy` | YAML policy DSL, validator, enforcement resolver |
 | `agcms-audit` | Hash-chained HMAC audit log, per-row and whole-chain verification |
@@ -49,6 +49,22 @@ open http://localhost:3000
 
 Providers: Groq (default), Gemini, Mistral, Ollama. All speak the OpenAI
 chat-completions format; set the matching API key in `.env`.
+
+The injection classifier is trained and exported locally before the first
+build (weights are not committed):
+
+```bash
+python tests/eval/prepare_datasets.py          # corpora, incl. training rows
+python agcms-injection/ml/train.py             # DistilBERT, ~2 h on a laptop CPU
+python agcms-injection/ml/export_onnx.py       # -> agcms-injection/ml/model/onnx
+```
+
+Without the export the injection service starts in heuristic-only mode.
+
+Failure mode: by default (`AGCMS_FAIL_MODE=closed`) the gateway rejects a
+request with 503 when the PII scan, injection scan or policy service is
+unavailable, so an outage cannot let unscreened prompts through. Set
+`AGCMS_FAIL_MODE=open` to prefer availability.
 
 ## Testing
 
