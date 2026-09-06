@@ -11,8 +11,7 @@ Policy
 * ``read:audit``    — GET  /api/v1/audit/*, /api/v1/reports/*
 * ``read:policy``   — GET  /api/v1/policy
 * ``write:policy``  — PUT  /api/v1/policy, /api/v1/policy/rules/*
-* ``admin``         — all of the above + tenant/user management,
-                      key rotation, and GDPR purge.
+* ``admin``         — all of the above + tenant/user management.
 
 The helper ``scopes_for_role()`` maps traditional RBAC roles onto the
 scope set a JWT holder implicitly carries.

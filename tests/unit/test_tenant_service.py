@@ -153,8 +153,8 @@ class TestProvisionTenant:
         assert result.api_key.startswith("agcms_acme-cor_")
         assert result.plan == "starter"
         assert result.admin_email == "admin@acme.com"
-        # tenant + admin user + default policy + tenant_keys DEK insert = 4
-        assert len(fake.executes) == 4
+        # tenant + admin user + default policy = 3
+        assert len(fake.executes) == 3
 
     async def test_invalid_plan_raises(self):
         with pytest.raises(ValueError, match="Invalid plan"):

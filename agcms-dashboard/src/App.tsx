@@ -9,16 +9,11 @@ import { Audit } from './pages/Audit';
 import { Alerts } from './pages/Alerts';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
-import { PublicVerifier } from './pages/PublicVerifier';
-import { SSOComplete } from './pages/SSOComplete';
-import { Onboarding } from './pages/Onboarding';
-import { TrustCenter } from './pages/TrustCenter';
 
-function AuthenticatedRoutes() {
+function App() {
   return (
     <AppLayout>
       <Routes>
-        <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/" element={<Overview />} />
         <Route path="/violations" element={<Violations />} />
         <Route path="/playground" element={<Playground />} />
@@ -26,22 +21,11 @@ function AuthenticatedRoutes() {
         <Route path="/policy" element={<Policy />} />
         <Route path="/audit" element={<Audit />} />
         <Route path="/alerts" element={<Alerts />} />
-        <Route path="/trust" element={<TrustCenter />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppLayout>
-  );
-}
-
-function App() {
-  return (
-    <Routes>
-      <Route path="/trust/verify" element={<PublicVerifier />} />
-      <Route path="/auth/sso/complete" element={<SSOComplete />} />
-      <Route path="*" element={<AuthenticatedRoutes />} />
-    </Routes>
   );
 }
 

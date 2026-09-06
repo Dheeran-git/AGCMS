@@ -2,7 +2,7 @@
 
 Given an ordered sequence of audit-log rows for one tenant, rebuild the
 chain and report any discrepancy. Standalone from the writer so it can
-run inside the audit service, the CLI bundle verifier, or a read replica.
+run inside the audit service or against a read replica.
 
 The verifier is deterministic and side-effect-free — it does not write
 to the database — which makes it safe to run under load.
@@ -50,7 +50,7 @@ _CHAIN_ROW_FIELDS: frozenset[str] = frozenset(
 class ChainIssue:
     """One discrepancy found while replaying the chain."""
 
-    kind: str            # 'gap' | 'reorder' | 'signature' | 'link' | 'unknown_kid' | 'missing_field' | 'legacy' | 'redaction'
+    kind: str            # 'gap' | 'reorder' | 'signature' | 'link' | 'unknown_kid' | 'missing_field' | 'legacy'
     sequence_number: Optional[int]
     interaction_id: Optional[str]
     detail: str
@@ -263,14 +263,7 @@ def verify_chain(
                 )
 
         previous_seq = seq
-        # A row's "outgoing hash" for chain linkage is normally its
-        # log_signature. When the row has been tombstoned by a GDPR
-        # Art. 17 purge, pre_redaction_signature holds the ORIGINAL
-        # signature (captured before redaction) — that is what the
-        # next row's previous_log_hash was set to at the time the
-        # next row was written, so we use it for linkage continuity.
-        outgoing = row.get("pre_redaction_signature") or row.get("log_signature")
-        previous_log_hash = outgoing or previous_log_hash
+        previous_log_hash = row.get("log_signature") or previous_log_hash
         report.chain_rows_examined += 1
         report.last_sequence_number = seq
         report.last_log_signature = row.get("log_signature")
@@ -315,8 +308,7 @@ async def verify_tenant_chain(
         "pii_risk_level, injection_score, injection_type, enforcement_action, "
         "enforcement_reason, triggered_policies, response_violated, "
         "response_violations, total_latency_ms, log_signature, "
-        "previous_log_hash, sequence_number, signing_key_id, "
-        "redaction_record_id, pre_redaction_signature "
+        "previous_log_hash, sequence_number, signing_key_id "
         f"FROM audit_logs WHERE {' AND '.join(where)} "
         "ORDER BY sequence_number ASC"
     ).bindparams(**params)
@@ -350,17 +342,6 @@ def _normalize_row(row: dict) -> dict:
             row["response_violations"] = json.loads(rv)
         except Exception:
             pass
-    # Signature compatibility: the signer only includes redaction_record_id
-    # / pre_redaction_signature in the payload when they are set. So when
-    # a non-redacted row is read from DB, those keys come back as None and
-    # must be removed from the dict before verification — otherwise they
-    # would be serialized as `null` and break the HMAC recomputation.
-    if row.get("redaction_record_id") is None:
-        row.pop("redaction_record_id", None)
-    else:
-        row["redaction_record_id"] = str(row["redaction_record_id"])
-    if row.get("pre_redaction_signature") is None:
-        row.pop("pre_redaction_signature", None)
     return row
 
 

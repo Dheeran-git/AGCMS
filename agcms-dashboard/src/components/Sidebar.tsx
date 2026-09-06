@@ -9,7 +9,6 @@ import {
   Users as UsersIcon,
   BarChart3,
   Settings as SettingsIcon,
-  ShieldCheck,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '../lib/cn';
@@ -33,7 +32,6 @@ const NAV_SECTIONS: { label: string; items: NavItem[] }[] = [
       { path: '/policy', label: 'Policy', icon: FileText },
       { path: '/audit', label: 'Audit', icon: ScrollText },
       { path: '/alerts', label: 'Alerts', icon: Bell },
-      { path: '/trust', label: 'Trust Center', icon: ShieldCheck },
     ],
   },
   {

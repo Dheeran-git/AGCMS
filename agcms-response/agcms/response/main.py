@@ -2,7 +2,6 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Optional
 
-from agcms.common.observability import init_observability
 from agcms.response.agent import ResponseComplianceAgent
 
 app = FastAPI(
@@ -10,8 +9,6 @@ app = FastAPI(
     description="Response compliance checking service",
     version="1.0.0",
 )
-
-init_observability(app, "response")
 
 _agent = ResponseComplianceAgent()
 

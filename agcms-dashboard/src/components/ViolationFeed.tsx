@@ -2,8 +2,6 @@ import { formatDistanceToNow } from 'date-fns';
 import { ShieldCheck } from 'lucide-react';
 import type { Violation } from '../lib/api';
 import { Badge } from './ui/badge';
-import { FrameworkMap } from './FrameworkMap';
-import { citationsForViolation } from '../lib/citations';
 
 interface ViolationFeedProps {
   violations: Violation[];
@@ -110,18 +108,6 @@ export function ViolationFeed({ violations, loading }: ViolationFeedProps) {
               ))}
             </div>
           )}
-          {(() => {
-            const cites = citationsForViolation({
-              piiCategories: v.pii_entity_types,
-              injectionDetected: !!v.injection_type,
-            });
-            return cites.length > 0 ? (
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                <span className="text-micro text-fg-muted">Maps to:</span>
-                <FrameworkMap citations={cites} />
-              </div>
-            ) : null;
-          })()}
         </div>
       ))}
     </div>

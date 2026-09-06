@@ -9,7 +9,6 @@ from typing import Any, Optional, Tuple
 import sqlalchemy
 
 from agcms.audit.keys import REGISTRY
-from agcms.common.observability import metrics as _obs_metrics
 from agcms.db import audit_logs, database
 
 # Backward-compat export: existing tests and callers import SIGNING_KEY
@@ -88,13 +87,7 @@ class AuditLogger:
 
         entry["log_signature"] = self.sign(entry, kid=active_kid)
 
-        _write_start = time.perf_counter()
-        try:
-            await self._write(entry)
-        finally:
-            _obs_metrics.audit_chain_write.labels(tenant=tenant_id).observe(
-                time.perf_counter() - _write_start,
-            )
+        await self._write(entry)
         return entry
 
     @staticmethod
@@ -231,13 +224,6 @@ class AuditLogger:
             "sequence_number": entry["sequence_number"],
             "signing_key_id": entry["signing_key_id"],
         }
-        # Redaction columns are only populated for rows that have been
-        # tombstoned under a GDPR Art. 17 purge. At insert time they are
-        # always NULL; the redaction writer patches them later.
-        if entry.get("redaction_record_id") is not None:
-            values["redaction_record_id"] = entry["redaction_record_id"]
-        if entry.get("pre_redaction_signature") is not None:
-            values["pre_redaction_signature"] = entry["pre_redaction_signature"]
         return values
 
     # ------------------------------------------------------------------

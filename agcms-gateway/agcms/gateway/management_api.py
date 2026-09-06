@@ -356,29 +356,6 @@ async def list_policy_versions(ctx: AuthContext = Depends(require_compliance)):
     return {"versions": [_serialize_policy(r) for r in rows]}
 
 
-# ─── Policy packs (proxied to agcms-policy) ─────────────────────────────────
-
-
-@router.get("/policy/packs")
-async def list_policy_packs(ctx: AuthContext = Depends(require_compliance)):
-    """List installed policy packs (HIPAA, GDPR, EU AI Act, NIST AI RMF, SOC 2, PCI DSS)."""
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        resp = await client.get(f"{_POLICY_URL}/packs")
-    return _passthrough(resp)
-
-
-@router.get("/policy/packs/{pack_id}")
-async def get_policy_pack(
-    pack_id: str, ctx: AuthContext = Depends(require_compliance)
-):
-    """Return one pack's full definition (overrides + rules + citations)."""
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        resp = await client.get(f"{_POLICY_URL}/packs/{pack_id}")
-    if resp.status_code == 404:
-        raise HTTPException(status_code=404, detail=f"pack '{pack_id}' not found")
-    return _passthrough(resp)
-
-
 def _serialize_policy(r) -> dict:
     config = r["config"]
     if isinstance(config, str):
@@ -395,7 +372,7 @@ def _serialize_policy(r) -> dict:
 
 
 def _bump_version(current: Optional[str]) -> str:
-    """Semver patch bump: 1.0.0 → 1.0.1. Start at 1.0.0 if invalid/missing."""
+    """Semver patch bump: 1.0.0 -> 1.0.1. Start at 1.0.0 if invalid/missing."""
     if not current:
         return "1.0.0"
     parts = current.split(".")
@@ -895,150 +872,6 @@ async def tenant_settings(
     return _passthrough(resp)
 
 
-@router.get("/tenant/sso")
-async def tenant_sso_get(ctx: AuthContext = Depends(require_admin)):
-    """Return the caller tenant's SSO configuration."""
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.get(f"{_TENANT_URL}/tenants/{ctx.tenant_id}/sso")
-    return _passthrough(resp)
-
-
-@router.put("/tenant/sso")
-async def tenant_sso_put(
-    body: dict = Body(...),
-    ctx: AuthContext = Depends(require_admin),
-):
-    """Proxy an SSO configuration update to the tenant service."""
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.put(
-            f"{_TENANT_URL}/tenants/{ctx.tenant_id}/sso",
-            json=body,
-        )
-    return _passthrough(resp)
-
-
-@router.get("/auth/sso/status")
-async def sso_status():
-    """Proxy SSO deployment-status check to the auth service (unauth — safe to read)."""
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        resp = await client.get(f"{_AUTH_URL}/v1/auth/sso/status")
-    return _passthrough(resp)
-
-
-# ------------------------------------------------------------------
-# MFA proxies
-# ------------------------------------------------------------------
-# These simply forward the Authorization header (or body) to the auth
-# service. No role gate: the auth service itself verifies the access
-# token and resolves the tenant_user.
-
-
-@router.get("/auth/mfa/status")
-async def mfa_status_proxy(request: Request):
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        resp = await client.get(
-            f"{_AUTH_URL}/v1/auth/mfa/status",
-            headers={"Authorization": request.headers.get("Authorization", "")},
-        )
-    return _passthrough(resp)
-
-
-@router.post("/auth/mfa/enroll")
-async def mfa_enroll_proxy(request: Request):
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.post(
-            f"{_AUTH_URL}/v1/auth/mfa/enroll",
-            headers={"Authorization": request.headers.get("Authorization", "")},
-        )
-    return _passthrough(resp)
-
-
-@router.post("/auth/mfa/verify-enrollment")
-async def mfa_verify_enrollment_proxy(
-    request: Request, body: dict = Body(...)
-):
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        resp = await client.post(
-            f"{_AUTH_URL}/v1/auth/mfa/verify-enrollment",
-            headers={"Authorization": request.headers.get("Authorization", "")},
-            json=body,
-        )
-    return _passthrough(resp)
-
-
-@router.post("/auth/mfa/disable")
-async def mfa_disable_proxy(request: Request):
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        resp = await client.post(
-            f"{_AUTH_URL}/v1/auth/mfa/disable",
-            headers={"Authorization": request.headers.get("Authorization", "")},
-        )
-    return _passthrough(resp)
-
-
-@router.post("/auth/mfa/login")
-async def mfa_login_proxy(body: dict = Body(...)):
-    """Unauthenticated — caller only holds a short-lived challenge token."""
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        resp = await client.post(f"{_AUTH_URL}/v1/auth/mfa/login", json=body)
-    return _passthrough(resp)
-
-
-# ------------------------------------------------------------------
-# Session proxies (Phase 6.5)
-# ------------------------------------------------------------------
-
-
-@router.get("/auth/sessions")
-async def sessions_list_proxy(request: Request):
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        resp = await client.get(
-            f"{_AUTH_URL}/v1/auth/sessions",
-            headers={"Authorization": request.headers.get("Authorization", "")},
-        )
-    return _passthrough(resp)
-
-
-@router.delete("/auth/sessions/{jti}")
-async def sessions_revoke_proxy(jti: str, request: Request):
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        resp = await client.delete(
-            f"{_AUTH_URL}/v1/auth/sessions/{jti}",
-            headers={"Authorization": request.headers.get("Authorization", "")},
-        )
-    return _passthrough(resp)
-
-
-@router.post("/auth/sessions/revoke-all")
-async def sessions_revoke_all_proxy(request: Request):
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.post(
-            f"{_AUTH_URL}/v1/auth/sessions/revoke-all",
-            headers={"Authorization": request.headers.get("Authorization", "")},
-        )
-    return _passthrough(resp)
-
-
-@router.get("/auth/admin/sessions")
-async def admin_sessions_list_proxy(request: Request):
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        resp = await client.get(
-            f"{_AUTH_URL}/v1/auth/admin/sessions",
-            headers={"Authorization": request.headers.get("Authorization", "")},
-        )
-    return _passthrough(resp)
-
-
-@router.delete("/auth/admin/sessions/{jti}")
-async def admin_sessions_revoke_proxy(jti: str, request: Request):
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        resp = await client.delete(
-            f"{_AUTH_URL}/v1/auth/admin/sessions/{jti}",
-            headers={"Authorization": request.headers.get("Authorization", "")},
-        )
-    return _passthrough(resp)
-
-
 # ============================================================
 # Compliance Reports
 # ============================================================
@@ -1242,99 +1075,6 @@ async def generate_compliance_report(
         "policy_changes_30d": policy_changes_int,
         "findings": findings,
     }
-
-
-# ============================================================
-# Signing-key rotation (admin-only, dual-approval)
-# ============================================================
-
-
-class RotationProposeBody(BaseModel):
-    purpose: str = Field(..., pattern="^(row|anchor)$")
-    new_kid: str
-    new_key_material: str = Field(..., min_length=32)
-    reason: str = Field(..., min_length=1)
-
-
-class RotationActorBody(BaseModel):
-    # No body needed — actor is derived from JWT. Kept as a model so
-    # FastAPI can validate an empty request body consistently.
-    pass
-
-
-@router.get("/admin/signing-keys")
-async def list_signing_keys(ctx: AuthContext = Depends(require_admin)):
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.get(f"{_AUDIT_URL}/signing-keys")
-    return _passthrough(resp)
-
-
-@router.get("/admin/signing-keys/rotations")
-async def list_signing_key_rotations(
-    limit: int = Query(default=50, ge=1, le=500),
-    ctx: AuthContext = Depends(require_admin),
-):
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.get(
-            f"{_AUDIT_URL}/signing-keys/rotations", params={"limit": limit}
-        )
-    return _passthrough(resp)
-
-
-@router.post("/admin/signing-keys/rotations", status_code=201)
-async def propose_signing_key_rotation(
-    body: RotationProposeBody,
-    ctx: AuthContext = Depends(require_admin),
-):
-    payload = {
-        "purpose": body.purpose,
-        "new_kid": body.new_kid,
-        "new_key_material": body.new_key_material,
-        "proposed_by": ctx.user_id,
-        "reason": body.reason,
-    }
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.post(f"{_AUDIT_URL}/signing-keys/rotations", json=payload)
-    return _passthrough(resp)
-
-
-@router.post("/admin/signing-keys/rotations/{rotation_id}/approve")
-async def approve_signing_key_rotation(
-    rotation_id: str,
-    ctx: AuthContext = Depends(require_admin),
-):
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.post(
-            f"{_AUDIT_URL}/signing-keys/rotations/{rotation_id}/approve",
-            json={"actor": ctx.user_id},
-        )
-    return _passthrough(resp)
-
-
-@router.post("/admin/signing-keys/rotations/{rotation_id}/execute")
-async def execute_signing_key_rotation(
-    rotation_id: str,
-    ctx: AuthContext = Depends(require_admin),
-):
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.post(
-            f"{_AUDIT_URL}/signing-keys/rotations/{rotation_id}/execute",
-            json={"actor": ctx.user_id},
-        )
-    return _passthrough(resp)
-
-
-@router.post("/admin/signing-keys/rotations/{rotation_id}/cancel")
-async def cancel_signing_key_rotation(
-    rotation_id: str,
-    ctx: AuthContext = Depends(require_admin),
-):
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.post(
-            f"{_AUDIT_URL}/signing-keys/rotations/{rotation_id}/cancel",
-            json={"actor": ctx.user_id},
-        )
-    return _passthrough(resp)
 
 
 def _derive_pii_categories(pii_cfg: dict) -> list[str]:

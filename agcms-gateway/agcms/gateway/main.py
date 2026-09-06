@@ -15,16 +15,9 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from agcms.common.observability import init_observability, metrics
 from agcms.gateway.auth import authenticate
 from agcms.gateway.dashboard_api import router as dashboard_router
-from agcms.gateway.gdpr import router as gdpr_router
 from agcms.gateway.management_api import router as management_router
-from agcms.gateway.onboarding import router as onboarding_router
-from agcms.gateway.demo_seed import router as demo_router
-from agcms.gateway.changelog import router as changelog_router
-from agcms.gateway.notifications import notify, router as notifications_router
-from agcms.gateway.openapi_export import install as install_openapi_export
 from agcms.gateway.rate_limiter import check_global_ip_rate_limit, check_rate_limit
 from agcms.gateway.router import forward_to_llm, list_providers
 
@@ -33,8 +26,6 @@ app = FastAPI(
     description="AI Governance and Compliance Monitoring System — Gateway",
     version="1.0.0",
 )
-
-init_observability(app, "gateway")
 
 app.add_middleware(
     CORSMiddleware,
@@ -46,12 +37,6 @@ app.add_middleware(
 
 app.include_router(dashboard_router)
 app.include_router(management_router)
-app.include_router(gdpr_router)
-app.include_router(onboarding_router)
-app.include_router(demo_router)
-app.include_router(notifications_router)
-app.include_router(changelog_router)
-install_openapi_export(app)
 
 # Internal service URLs
 _PII_URL = os.environ.get("PII_SERVICE_URL", "http://pii:8001")
@@ -122,7 +107,6 @@ async def chat_completions(request: Request):
     client_ip = client_ip.split(",")[0].strip()
     ip_allowed, ip_count = await check_global_ip_rate_limit(client_ip)
     if not ip_allowed:
-        metrics.rate_limit_rejected.labels(tier="ip").inc()
         return _error_response(
             "rate_limited",
             f"Global rate limit exceeded for IP ({ip_count} requests/minute)",
@@ -145,9 +129,6 @@ async def chat_completions(request: Request):
         )
 
     tenant_id = ctx.tenant_id
-    # Tag the request for the observability middleware so per-request
-    # counters can group by tenant.
-    request.state.tenant_id = tenant_id
     # JWT carries a real user_id claim; for API-key auth we fall back to the
     # client-supplied header (preserves Phase-1 behavior for dashboard/demos).
     if ctx.auth_method == "jwt":
@@ -159,7 +140,6 @@ async def chat_completions(request: Request):
     # --- Step 3: Rate limit ---
     allowed, count = await check_rate_limit(tenant_id)
     if not allowed:
-        metrics.rate_limit_rejected.labels(tier="tenant").inc()
         return _error_response(
             "rate_limited",
             f"Rate limit exceeded ({count} requests/minute)",
@@ -180,18 +160,8 @@ async def chat_completions(request: Request):
 
     if isinstance(pii_resp, httpx.Response) and pii_resp.status_code == 200:
         pii_result = pii_resp.json()
-        for finding in (pii_result or {}).get("findings", []) or []:
-            metrics.pii_detected.labels(
-                tenant=tenant_id,
-                category=finding.get("type", "unknown"),
-            ).inc()
     if isinstance(injection_resp, httpx.Response) and injection_resp.status_code == 200:
         injection_result = injection_resp.json()
-        if (injection_result or {}).get("detected"):
-            metrics.injection_detected.labels(
-                tenant=tenant_id,
-                technique=(injection_result.get("technique") or "unknown"),
-            ).inc()
 
     # --- Step 6: Policy resolution ---
     decision = {"action": "ALLOW", "reason": None, "triggered_policies": []}
@@ -207,7 +177,6 @@ async def chat_completions(request: Request):
         pass  # Fail open — allow if policy service is down
 
     action = decision.get("action", "ALLOW")
-    metrics.enforcement_action.labels(tenant=tenant_id, action=action).inc()
 
     # --- Step 7: Enforce ---
     if action == "BLOCK":
@@ -215,11 +184,6 @@ async def chat_completions(request: Request):
         asyncio.create_task(_audit_log(
             interaction_id, tenant_id, user_id, department, body,
             pii_result, injection_result, decision, None, start_time,
-        ))
-        asyncio.create_task(_notify_violation(
-            tenant_id, "violation", "warning",
-            decision.get("reason", "Request blocked by policy"),
-            interaction_id, "BLOCK", pii_result, injection_result,
         ))
         return _error_response(
             "request_blocked",
@@ -234,11 +198,6 @@ async def chat_completions(request: Request):
             tenant_id=tenant_id,
             reason=decision.get("reason", "Escalation triggered by policy"),
             severity="critical",
-        ))
-        asyncio.create_task(_notify_violation(
-            tenant_id, "escalation", "critical",
-            decision.get("reason", "Escalation triggered by policy"),
-            interaction_id, "ESCALATE", pii_result, injection_result,
         ))
 
     # --- Step 8: Prepare messages for LLM ---
@@ -343,32 +302,6 @@ async def _create_escalation(
             await conn.close()
     except Exception:
         pass  # Fire-and-forget: do not crash the response delivery
-
-
-async def _notify_violation(
-    tenant_id: str,
-    event: str,
-    severity: str,
-    summary: str,
-    interaction_id: str,
-    action: str,
-    pii_result: dict | None,
-    injection_result: dict | None,
-) -> None:
-    """Fire a notification event into the dispatcher (fire-and-forget)."""
-    try:
-        details = {
-            "interaction_id": interaction_id,
-            "action": action,
-            "pii_categories": [
-                f.get("type") for f in (pii_result or {}).get("findings", []) or []
-                if isinstance(f, dict)
-            ],
-            "injection_detected": bool((injection_result or {}).get("detected")),
-        }
-        await notify(tenant_id, event, severity, summary, details)
-    except Exception:
-        pass  # Notifications must never break the request path
 
 
 async def _audit_log(

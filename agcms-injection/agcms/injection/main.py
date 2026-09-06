@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from agcms.common.observability import init_observability
 from agcms.injection.agent import InjectionAgent
 
 app = FastAPI(
@@ -9,8 +8,6 @@ app = FastAPI(
     description="Prompt injection classification service",
     version="2.0.0",
 )
-
-init_observability(app, "injection")
 
 _agent = InjectionAgent()
 

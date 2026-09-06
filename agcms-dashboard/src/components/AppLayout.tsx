@@ -5,7 +5,6 @@ import { TooltipProvider } from './ui/tooltip';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { CommandPalette, useCommandPalette } from './CommandPalette';
-import { OnboardingBanner } from './OnboardingBanner';
 import { useDashboardStore } from '../stores/dashboard';
 import { cn } from '../lib/cn';
 
@@ -25,7 +24,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
           )}
         >
           <TopBar onOpenPalette={() => palette.setOpen(true)} />
-          <OnboardingBanner />
           {/* keyed on pathname so the 320ms page-enter fires on every route change */}
           <main
             key={location.pathname}

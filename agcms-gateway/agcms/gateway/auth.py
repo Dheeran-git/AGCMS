@@ -27,7 +27,6 @@ from datetime import datetime, timezone
 from typing import FrozenSet, Optional, Tuple
 
 import asyncpg
-import redis.asyncio as aioredis
 from jose import JWTError, jwt
 
 from agcms.common import scopes as scope_vocab
@@ -52,61 +51,6 @@ def _jwt_secret() -> str:
 
 def _database_url() -> str:
     return os.environ.get("DATABASE_URL", "")
-
-
-# ---------------------------------------------------------------------------
-# Revocation cache (Phase 6.5)
-# ---------------------------------------------------------------------------
-#
-# Two Redis-backed revocation surfaces, both optional — on Redis failure we
-# fail open so the LLM hot path keeps working (revocation then degrades to
-# eventual-consistency via the access token's own 15-minute TTL):
-#
-#   agcms:at:blacklist:<jti>              explicit per-session revocation
-#   agcms:at:revoked_before:<tenant_user> bulk pivot; values are unix seconds
-#
-# The auth service writes both; the gateway only reads.
-#
-_redis_client: Optional[aioredis.Redis] = None
-
-
-def _get_redis() -> Optional[aioredis.Redis]:
-    global _redis_client
-    if _redis_client is not None:
-        return _redis_client
-    url = os.environ.get("REDIS_URL")
-    if not url:
-        return None
-    try:
-        _redis_client = aioredis.from_url(url, decode_responses=True)
-    except Exception as exc:  # noqa: BLE001 — fail open, don't block auth on Redis outage
-        _log.warning("gateway auth Redis init failed: %s", exc)
-        return None
-    return _redis_client
-
-
-async def _is_jwt_revoked(jti: Optional[str], tenant_user_id: Optional[str], iat: Optional[int]) -> bool:
-    """Return True if this access token has been revoked.
-
-    Checks both the per-jti blacklist and the per-user ``revoked_before`` pivot.
-    If Redis is unreachable, returns False (fail open — better to keep the
-    proxy live during an ops incident than to deny every request).
-    """
-    r = _get_redis()
-    if r is None:
-        return False
-    try:
-        if jti:
-            if await r.exists(f"agcms:at:blacklist:{jti}") == 1:
-                return True
-        if tenant_user_id and iat:
-            pivot = await r.get(f"agcms:at:revoked_before:{tenant_user_id}")
-            if pivot and iat < int(pivot):
-                return True
-    except Exception as exc:  # noqa: BLE001 — fail open
-        _log.warning("gateway auth Redis check failed: %s", exc)
-        return False
-    return False
 
 
 # ---------------------------------------------------------------------------
@@ -255,16 +199,6 @@ async def authenticate(
         ctx, payload = _try_jwt(token)
         if ctx is None or payload is None:
             return None, "Invalid or expired JWT"
-
-        # Phase 6.5: reject if this jti (or all of this user's sessions) was revoked.
-        # The auth service looks up tenant_user_id server-side, but here we only
-        # have the JWT user_id (external_id). The pivot key is keyed by the
-        # tenant_user_id UUID, which the auth service sets in the claim as
-        # ``tuid`` when the session was recorded. Fall back to external_id for
-        # older tokens that don't carry it.
-        tuid = payload.get("tuid") or payload.get("user_id")
-        if await _is_jwt_revoked(payload.get("jti"), tuid, payload.get("iat")):
-            return None, "Session has been revoked"
 
         return ctx, None
 

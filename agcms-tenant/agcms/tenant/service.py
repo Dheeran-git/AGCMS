@@ -6,23 +6,12 @@ All DB interactions go through agcms.tenant.db helpers.
 
 import hashlib
 import json
-import os
 import secrets
 import string
 from typing import Optional
 
-from agcms.common import byok as common_byok
-from agcms.common import tenant_keys as common_tenant_keys
 from agcms.tenant import db
-from agcms.tenant.schemas import (
-    ByokConfig,
-    ProvisionResponse,
-    SSOConfig,
-    TenantDetail,
-    UsageStats,
-)
-
-_VALID_BYOK_PROVIDERS = {"aws"}  # 'gcp' / 'azure' added when implemented
+from agcms.tenant.schemas import ProvisionResponse, TenantDetail, UsageStats
 
 _VALID_PLANS = {"starter", "business", "enterprise"}
 
@@ -120,9 +109,6 @@ async def provision_tenant(
                 tenant_id, json.dumps(_DEFAULT_POLICY), "1.0.0",
                 "Auto-provisioned default policy",
             )
-            # Mint + persist the tenant's DEK in the same transaction so a
-            # half-provisioned tenant can never exist without crypto keys.
-            await common_tenant_keys.mint_and_store(conn, tenant_id)
 
     return ProvisionResponse(
         tenant_id=tenant_id,
@@ -201,112 +187,6 @@ async def get_usage(tenant_id: str) -> UsageStats:
         pii_detections_today=int(pii_today),
         injection_detections_today=int(injection_today),
     )
-
-
-async def get_sso_config(tenant_id: str) -> Optional[SSOConfig]:
-    """Fetch SSO configuration for a tenant. Returns None if tenant not found."""
-    row = await db.fetch_one(
-        "SELECT workos_org_id, sso_enforced FROM tenants WHERE id = $1",
-        tenant_id,
-    )
-    if not row:
-        return None
-    return SSOConfig(
-        workos_org_id=row["workos_org_id"],
-        sso_enforced=bool(row["sso_enforced"]),
-    )
-
-
-async def update_sso_config(
-    tenant_id: str,
-    *,
-    workos_org_id: Optional[str] = None,
-    sso_enforced: Optional[bool] = None,
-) -> Optional[SSOConfig]:
-    """Update SSO configuration. Returns the new config, or None if tenant not found.
-
-    Passing an empty string for ``workos_org_id`` clears it. ``None`` leaves
-    each field unchanged.
-    """
-    row = await db.fetch_one("SELECT id FROM tenants WHERE id = $1", tenant_id)
-    if not row:
-        return None
-
-    sets = []
-    args: list = [tenant_id]
-    if workos_org_id is not None:
-        args.append(workos_org_id or None)  # empty string → NULL
-        sets.append(f"workos_org_id = ${len(args)}")
-    if sso_enforced is not None:
-        args.append(sso_enforced)
-        sets.append(f"sso_enforced = ${len(args)}")
-
-    if sets:
-        await db.execute(
-            f"UPDATE tenants SET {', '.join(sets)} WHERE id = $1",
-            *args,
-        )
-    return await get_sso_config(tenant_id)
-
-
-async def get_byok_config(tenant_id: str) -> Optional[ByokConfig]:
-    """Return the tenant's BYOK config (None when tenant not found)."""
-    row = await db.fetch_one(
-        "SELECT t.kms_key_arn, t.kms_key_provider, "
-        "       (SELECT kek_id FROM tenant_keys "
-        "        WHERE tenant_id = t.id AND is_active = TRUE LIMIT 1) AS kek_fingerprint "
-        "FROM tenants t WHERE t.id = $1",
-        tenant_id,
-    )
-    if not row:
-        return None
-    arn = row["kms_key_arn"]
-    return ByokConfig(
-        enabled=bool(arn),
-        provider=row["kms_key_provider"] if arn else None,
-        key_arn=arn,
-        kek_fingerprint=row["kek_fingerprint"],
-    )
-
-
-async def update_byok_config(
-    tenant_id: str,
-    *,
-    provider: Optional[str],
-    key_arn: Optional[str],
-    rotate_now: bool,
-) -> Optional[ByokConfig]:
-    """Set or clear the tenant's BYOK key and (optionally) rotate the DEK.
-
-    ``key_arn = ""`` disables BYOK and reverts to the platform KEK.
-    ``key_arn = None`` leaves the ARN unchanged (useful when the caller
-    only wants to flip ``rotate_now``).
-    """
-    row = await db.fetch_one("SELECT id FROM tenants WHERE id = $1", tenant_id)
-    if not row:
-        return None
-
-    if key_arn is not None:
-        normalized_arn = key_arn.strip() or None
-        normalized_provider = (provider or "aws").lower() if normalized_arn else None
-        if normalized_arn and normalized_provider not in _VALID_BYOK_PROVIDERS:
-            raise ValueError(
-                f"BYOK provider '{normalized_provider}' is not supported "
-                f"(supported: {sorted(_VALID_BYOK_PROVIDERS)})"
-            )
-        await db.execute(
-            "UPDATE tenants SET kms_key_arn = $2, kms_key_provider = $3 "
-            "WHERE id = $1",
-            tenant_id, normalized_arn, normalized_provider,
-        )
-        # Drop the stale per-tenant pin so the next encrypt re-resolves it.
-        common_byok.register_tenant_kms(tenant_id, None)
-
-    if rotate_now:
-        async with db.connection() as conn:
-            await common_tenant_keys.rotate(conn, tenant_id)
-
-    return await get_byok_config(tenant_id)
 
 
 async def update_settings(tenant_id: str, settings: dict) -> bool:

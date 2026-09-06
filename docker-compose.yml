@@ -10,8 +10,6 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/00-init.sql
-      - ./database/migrations:/docker-entrypoint-initdb.d/migrations:ro
-      - ./database/run-migrations.sh:/docker-entrypoint-initdb.d/99-run-migrations.sh
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U agcms -d agcms"]
       interval: 5s
@@ -135,7 +133,6 @@ services:
     environment:
       - DATABASE_URL=postgresql://agcms:${POSTGRES_PASSWORD:-secret}@postgres:5432/agcms
       - AGCMS_SIGNING_KEY=${AGCMS_SIGNING_KEY}
-      - AGCMS_ANCHOR_KEY=${AGCMS_ANCHOR_KEY}
     depends_on:
       postgres:
         condition: service_healthy
@@ -177,8 +174,6 @@ services:
     environment:
       - DATABASE_URL=postgresql://agcms:${POSTGRES_PASSWORD:-secret}@postgres:5432/agcms
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-dev-jwt-secret-change-me}
-      - AGCMS_KMS_BACKEND=${AGCMS_KMS_BACKEND:-local}
-      - AGCMS_KMS_LOCAL_KEY=${AGCMS_KMS_LOCAL_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy

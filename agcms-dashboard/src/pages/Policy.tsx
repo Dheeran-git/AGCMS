@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, History, Pencil, Send, ScrollText } from 'lucide-react';
+import { CheckCircle2, History, Pencil, Send } from 'lucide-react';
 import {
   fetchPolicy,
   updatePolicy,
   fetchPolicyVersions,
-  fetchPolicyPacks,
   type PolicyConfig,
 } from '../lib/api';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
@@ -14,7 +13,6 @@ import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Table, THead, TBody, Tr, Th, Td } from '../components/ui/table';
-import { FrameworkMap, frameworkLabel } from '../components/FrameworkMap';
 
 export function Policy() {
   const qc = useQueryClient();
@@ -32,11 +30,6 @@ export function Policy() {
   const versions = useQuery({
     queryKey: ['policy-versions'],
     queryFn: fetchPolicyVersions,
-  });
-
-  const packs = useQuery({
-    queryKey: ['policy-packs'],
-    queryFn: fetchPolicyPacks,
   });
 
   const deploy = useMutation({
@@ -170,58 +163,6 @@ export function Policy() {
             <pre className="bg-translucent-1 border border-border-subtle rounded-md p-4 text-label font-mono text-fg-secondary overflow-auto max-h-96 shadow-inset-recessed">
               {JSON.stringify(active?.config ?? {}, null, 2)}
             </pre>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ScrollText className="h-4 w-4 text-accent-bright" />
-            Compliance frameworks
-          </CardTitle>
-          <CardDescription>
-            Installed policy packs map every enforcement rule to a specific regulatory citation.
-            Hover any chip to see the article text.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="px-0">
-          {packs.isLoading ? (
-            <p className="px-6 py-8 text-center text-small text-fg-muted">Loading…</p>
-          ) : (packs.data?.packs ?? []).length === 0 ? (
-            <p className="px-6 py-8 text-center text-small text-fg-muted italic">
-              No packs installed.
-            </p>
-          ) : (
-            <Table>
-              <THead>
-                <Tr>
-                  <Th>Framework</Th>
-                  <Th>Pack</Th>
-                  <Th>Version</Th>
-                  <Th>Rules</Th>
-                  <Th>Citations</Th>
-                </Tr>
-              </THead>
-              <TBody>
-                {(packs.data?.packs ?? []).map((p) => (
-                  <Tr key={p.id}>
-                    <Td>
-                      <Badge variant="accent">{frameworkLabel(p.framework)}</Badge>
-                    </Td>
-                    <Td className="text-fg-primary">{p.name}</Td>
-                    <Td className="font-mono text-label text-fg-subtle">v{p.version}</Td>
-                    <Td className="text-fg-secondary">{p.rule_count}</Td>
-                    <Td>
-                      <FrameworkMap
-                        citations={p.citations}
-                        emptyHint="—"
-                      />
-                    </Td>
-                  </Tr>
-                ))}
-              </TBody>
-            </Table>
           )}
         </CardContent>
       </Card>

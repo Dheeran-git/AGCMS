@@ -5,6 +5,3 @@ python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 asyncpg==0.29.0
 redis[asyncio]==5.0.3
-workos==5.19.0
-pyotp==2.9.0
-qrcode[pil]==7.4.2
