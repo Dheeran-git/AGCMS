@@ -17,7 +17,7 @@ Client -> Gateway (:8000) -> PII (:8001) + Injection (:8002) in parallel
                           -> Policy (:8004) -> LLM provider
                           -> Response check (:8003)
                           -> Audit (:8005, HMAC-SHA256 hash chain per tenant)
-Dashboard (:3000) <- Gateway management API <- PostgreSQL (RLS) + Redis
+Dashboard (:4173) <- Gateway management API <- PostgreSQL (RLS) + Redis
 Auth (:8006) issues JWTs; Tenant (:8007) provisions tenants + API keys.
 ```
 
@@ -38,13 +38,13 @@ Auth (:8006) issues JWTs; Tenant (:8007) provisions tenants + API keys.
 cp .env.example .env            # set AGCMS_SIGNING_KEY, JWT_SECRET_KEY, GROQ_API_KEY
 docker compose up --build --wait
 
-curl -s -X POST http://localhost:8000/v1/chat/completions \
-  -H "Authorization: Bearer agcms_test_key_for_development" \
-  -H "Content-Type: application/json" \
-  -d '{"messages":[{"role":"user","content":"My SSN is 123-45-6789, draft an email."}]}'
-# SSN is redacted before the prompt reaches the LLM; the audit row records REDACT.
+# Critical PII (an SSN) is blocked by the default policy: HTTP 403, audit row records BLOCK
+curl -s -X POST http://localhost:8000/v1/chat/completions   -H "Authorization: Bearer agcms_test_key_for_development"   -H "Content-Type: application/json"   -d '{"messages":[{"role":"user","content":"My SSN is 123-45-6789, draft an email."}]}'
 
-open http://localhost:3000
+# Medium-risk PII (an email address) is redacted before the prompt reaches the LLM
+curl -s -X POST http://localhost:8000/v1/chat/completions   -H "Authorization: Bearer agcms_test_key_for_development"   -H "Content-Type: application/json"   -d '{"messages":[{"role":"user","content":"Reply to jane.doe@example.com about the invoice."}]}'
+
+open http://localhost:4173        # dashboard (host port set by AGCMS_DASHBOARD_PORT)
 ```
 
 Providers: Groq (default), Gemini, Mistral, Ollama. All speak the OpenAI

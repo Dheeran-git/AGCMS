@@ -188,7 +188,7 @@ services:
   dashboard:
     build: ./agcms-dashboard
     ports:
-      - "3000:80"
+      - "${AGCMS_DASHBOARD_PORT:-4173}:80"
     depends_on:
       gateway:
         condition: service_healthy
