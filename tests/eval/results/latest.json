@@ -1,0 +1,1005 @@
+{
+  "generated_at": "2026-09-06T13:40:51.138602+00:00",
+  "machine": {
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.12.12",
+    "cpu": "Intel64 Family 6 Model 186 Stepping 2, GenuineIntel",
+    "ml_classifier_loaded": true
+  },
+  "corpus_sizes": {
+    "pii": 1600,
+    "injection": 3505,
+    "response": 240
+  },
+  "pii": {
+    "regex": {
+      "prompt_level": {
+        "n": 1600,
+        "tp": 804,
+        "fp": 3,
+        "fn": 196,
+        "tn": 597,
+        "precision": 0.9963,
+        "recall": 0.804,
+        "f1": 0.8899,
+        "fpr": 0.005,
+        "accuracy": 0.8756
+      },
+      "entity_level": {
+        "tp": 1073,
+        "fp": 49,
+        "fn": 524,
+        "precision": 0.9563,
+        "recall": 0.6719,
+        "f1": 0.7893,
+        "per_type": {
+          "EMAIL": {
+            "tp": 148,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "CREDIT_CARD": {
+            "tp": 92,
+            "fp": 13,
+            "fn": 31,
+            "precision": 0.8762,
+            "recall": 0.748
+          },
+          "PERSON_NAME": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 375,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          "PHONE_US": {
+            "tp": 64,
+            "fp": 0,
+            "fn": 70,
+            "precision": 1.0,
+            "recall": 0.4776
+          },
+          "MRN": {
+            "tp": 91,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "IP_ADDRESS": {
+            "tp": 150,
+            "fp": 0,
+            "fn": 14,
+            "precision": 1.0,
+            "recall": 0.9146
+          },
+          "IBAN": {
+            "tp": 109,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "SSN": {
+            "tp": 87,
+            "fp": 4,
+            "fn": 8,
+            "precision": 0.956,
+            "recall": 0.9158
+          },
+          "PAN": {
+            "tp": 88,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "DATE_OF_BIRTH": {
+            "tp": 113,
+            "fp": 17,
+            "fn": 25,
+            "precision": 0.8692,
+            "recall": 0.8188
+          },
+          "AADHAAR": {
+            "tp": 81,
+            "fp": 1,
+            "fn": 0,
+            "precision": 0.9878,
+            "recall": 1.0
+          },
+          "IPV6_ADDRESS": {
+            "tp": 31,
+            "fp": 14,
+            "fn": 0,
+            "precision": 0.6889,
+            "recall": 1.0
+          },
+          "MAC_ADDRESS": {
+            "tp": 19,
+            "fp": 0,
+            "fn": 1,
+            "precision": 1.0,
+            "recall": 0.95
+          }
+        }
+      },
+      "by_source": {
+        "ai4privacy": {
+          "n": 400,
+          "tp": 230,
+          "fp": 0,
+          "fn": 170,
+          "tn": 0,
+          "precision": 1.0,
+          "recall": 0.575,
+          "f1": 0.7302,
+          "fpr": 0.0,
+          "accuracy": 0.575
+        },
+        "benign": {
+          "n": 600,
+          "tp": 0,
+          "fp": 3,
+          "fn": 0,
+          "tn": 597,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "fpr": 0.005,
+          "accuracy": 0.995
+        },
+        "faker-synthetic": {
+          "n": 600,
+          "tp": 574,
+          "fp": 0,
+          "fn": 26,
+          "tn": 0,
+          "precision": 1.0,
+          "recall": 0.9567,
+          "f1": 0.9779,
+          "fpr": 0.0,
+          "accuracy": 0.9567
+        }
+      },
+      "latency": {
+        "n": 1600,
+        "median_ms": 1.29,
+        "p95_ms": 2.5,
+        "mean_ms": 1.48
+      }
+    },
+    "ner": {
+      "prompt_level": {
+        "n": 1600,
+        "tp": 250,
+        "fp": 233,
+        "fn": 750,
+        "tn": 367,
+        "precision": 0.5176,
+        "recall": 0.25,
+        "f1": 0.3372,
+        "fpr": 0.3883,
+        "accuracy": 0.3856
+      },
+      "entity_level": {
+        "tp": 220,
+        "fp": 54,
+        "fn": 1377,
+        "precision": 0.8029,
+        "recall": 0.1378,
+        "f1": 0.2352,
+        "per_type": {
+          "EMAIL": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 148,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          "CREDIT_CARD": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 123,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          "PERSON_NAME": {
+            "tp": 220,
+            "fp": 54,
+            "fn": 155,
+            "precision": 0.8029,
+            "recall": 0.5867
+          },
+          "PHONE_US": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 134,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          "MRN": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 91,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          "IP_ADDRESS": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 164,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          "IBAN": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 109,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          "SSN": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 95,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          "PAN": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 88,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          "DATE_OF_BIRTH": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 138,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          "AADHAAR": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 81,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          "IPV6_ADDRESS": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 31,
+            "precision": 0.0,
+            "recall": 0.0
+          },
+          "MAC_ADDRESS": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 20,
+            "precision": 0.0,
+            "recall": 0.0
+          }
+        }
+      },
+      "by_source": {
+        "ai4privacy": {
+          "n": 400,
+          "tp": 173,
+          "fp": 0,
+          "fn": 227,
+          "tn": 0,
+          "precision": 1.0,
+          "recall": 0.4325,
+          "f1": 0.6038,
+          "fpr": 0.0,
+          "accuracy": 0.4325
+        },
+        "benign": {
+          "n": 600,
+          "tp": 0,
+          "fp": 233,
+          "fn": 0,
+          "tn": 367,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "fpr": 0.3883,
+          "accuracy": 0.6117
+        },
+        "faker-synthetic": {
+          "n": 600,
+          "tp": 77,
+          "fp": 0,
+          "fn": 523,
+          "tn": 0,
+          "precision": 1.0,
+          "recall": 0.1283,
+          "f1": 0.2275,
+          "fpr": 0.0,
+          "accuracy": 0.1283
+        }
+      },
+      "latency": {
+        "n": 1600,
+        "median_ms": 11.68,
+        "p95_ms": 31.52,
+        "mean_ms": 15.49
+      }
+    },
+    "full": {
+      "prompt_level": {
+        "n": 1600,
+        "tp": 912,
+        "fp": 236,
+        "fn": 88,
+        "tn": 364,
+        "precision": 0.7944,
+        "recall": 0.912,
+        "f1": 0.8492,
+        "fpr": 0.3933,
+        "accuracy": 0.7975
+      },
+      "entity_level": {
+        "tp": 1293,
+        "fp": 103,
+        "fn": 304,
+        "precision": 0.9262,
+        "recall": 0.8096,
+        "f1": 0.864,
+        "per_type": {
+          "EMAIL": {
+            "tp": 148,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "CREDIT_CARD": {
+            "tp": 92,
+            "fp": 13,
+            "fn": 31,
+            "precision": 0.8762,
+            "recall": 0.748
+          },
+          "PERSON_NAME": {
+            "tp": 220,
+            "fp": 54,
+            "fn": 155,
+            "precision": 0.8029,
+            "recall": 0.5867
+          },
+          "PHONE_US": {
+            "tp": 64,
+            "fp": 0,
+            "fn": 70,
+            "precision": 1.0,
+            "recall": 0.4776
+          },
+          "MRN": {
+            "tp": 91,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "IP_ADDRESS": {
+            "tp": 150,
+            "fp": 0,
+            "fn": 14,
+            "precision": 1.0,
+            "recall": 0.9146
+          },
+          "IBAN": {
+            "tp": 109,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "SSN": {
+            "tp": 87,
+            "fp": 4,
+            "fn": 8,
+            "precision": 0.956,
+            "recall": 0.9158
+          },
+          "PAN": {
+            "tp": 88,
+            "fp": 0,
+            "fn": 0,
+            "precision": 1.0,
+            "recall": 1.0
+          },
+          "DATE_OF_BIRTH": {
+            "tp": 113,
+            "fp": 17,
+            "fn": 25,
+            "precision": 0.8692,
+            "recall": 0.8188
+          },
+          "AADHAAR": {
+            "tp": 81,
+            "fp": 1,
+            "fn": 0,
+            "precision": 0.9878,
+            "recall": 1.0
+          },
+          "IPV6_ADDRESS": {
+            "tp": 31,
+            "fp": 14,
+            "fn": 0,
+            "precision": 0.6889,
+            "recall": 1.0
+          },
+          "MAC_ADDRESS": {
+            "tp": 19,
+            "fp": 0,
+            "fn": 1,
+            "precision": 1.0,
+            "recall": 0.95
+          }
+        }
+      },
+      "by_source": {
+        "ai4privacy": {
+          "n": 400,
+          "tp": 312,
+          "fp": 0,
+          "fn": 88,
+          "tn": 0,
+          "precision": 1.0,
+          "recall": 0.78,
+          "f1": 0.8764,
+          "fpr": 0.0,
+          "accuracy": 0.78
+        },
+        "benign": {
+          "n": 600,
+          "tp": 0,
+          "fp": 236,
+          "fn": 0,
+          "tn": 364,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "fpr": 0.3933,
+          "accuracy": 0.6067
+        },
+        "faker-synthetic": {
+          "n": 600,
+          "tp": 600,
+          "fp": 0,
+          "fn": 0,
+          "tn": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "fpr": 0.0,
+          "accuracy": 1.0
+        }
+      },
+      "latency": {
+        "n": 1600,
+        "median_ms": 10.61,
+        "p95_ms": 26.93,
+        "mean_ms": 13.62
+      }
+    }
+  },
+  "injection": {
+    "unguarded": {
+      "module_level": {
+        "n": 2985,
+        "tp": 0,
+        "fp": 0,
+        "fn": 1588,
+        "tn": 1397,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "fpr": 0.0,
+        "accuracy": 0.468
+      },
+      "policy_level": {
+        "n": 2985,
+        "tp": 0,
+        "fp": 0,
+        "fn": 1588,
+        "tn": 1397,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "fpr": 0.0,
+        "accuracy": 0.468
+      },
+      "by_source": {
+        "advbench": {
+          "n": 520,
+          "tp": 0,
+          "fp": 0,
+          "fn": 520,
+          "tn": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "fpr": 0.0,
+          "accuracy": 0.0
+        },
+        "agcms-synthetic": {
+          "n": 1017,
+          "tp": 0,
+          "fp": 0,
+          "fn": 659,
+          "tn": 358,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "fpr": 0.0,
+          "accuracy": 0.352
+        },
+        "deepset": {
+          "n": 662,
+          "tp": 0,
+          "fp": 0,
+          "fn": 263,
+          "tn": 399,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "fpr": 0.0,
+          "accuracy": 0.6027
+        },
+        "jackhhao": {
+          "n": 1306,
+          "tp": 0,
+          "fp": 0,
+          "fn": 666,
+          "tn": 640,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "fpr": 0.0,
+          "accuracy": 0.49
+        }
+      },
+      "latency": {
+        "n": 3505,
+        "median_ms": 0.0,
+        "p95_ms": 0.0,
+        "mean_ms": 0.0
+      }
+    },
+    "keyword": {
+      "module_level": {
+        "n": 2985,
+        "tp": 462,
+        "fp": 1,
+        "fn": 1126,
+        "tn": 1396,
+        "precision": 0.9978,
+        "recall": 0.2909,
+        "f1": 0.4505,
+        "fpr": 0.0007,
+        "accuracy": 0.6224
+      },
+      "policy_level": {
+        "n": 2985,
+        "tp": 462,
+        "fp": 1,
+        "fn": 1126,
+        "tn": 1396,
+        "precision": 0.9978,
+        "recall": 0.2909,
+        "f1": 0.4505,
+        "fpr": 0.0007,
+        "accuracy": 0.6224
+      },
+      "by_source": {
+        "advbench": {
+          "n": 520,
+          "tp": 2,
+          "fp": 0,
+          "fn": 518,
+          "tn": 0,
+          "precision": 1.0,
+          "recall": 0.0038,
+          "f1": 0.0077,
+          "fpr": 0.0,
+          "accuracy": 0.0038
+        },
+        "agcms-synthetic": {
+          "n": 1017,
+          "tp": 214,
+          "fp": 0,
+          "fn": 445,
+          "tn": 358,
+          "precision": 1.0,
+          "recall": 0.3247,
+          "f1": 0.4903,
+          "fpr": 0.0,
+          "accuracy": 0.5624
+        },
+        "deepset": {
+          "n": 662,
+          "tp": 7,
+          "fp": 0,
+          "fn": 256,
+          "tn": 399,
+          "precision": 1.0,
+          "recall": 0.0266,
+          "f1": 0.0519,
+          "fpr": 0.0,
+          "accuracy": 0.6133
+        },
+        "jackhhao": {
+          "n": 1306,
+          "tp": 241,
+          "fp": 1,
+          "fn": 425,
+          "tn": 639,
+          "precision": 0.9959,
+          "recall": 0.3619,
+          "f1": 0.5308,
+          "fpr": 0.0016,
+          "accuracy": 0.6738
+        }
+      },
+      "latency": {
+        "n": 3505,
+        "median_ms": 0.0,
+        "p95_ms": 0.05,
+        "mean_ms": 0.01
+      }
+    },
+    "heuristic": {
+      "module_level": {
+        "n": 2985,
+        "tp": 520,
+        "fp": 36,
+        "fn": 1068,
+        "tn": 1361,
+        "precision": 0.9353,
+        "recall": 0.3275,
+        "f1": 0.4851,
+        "fpr": 0.0258,
+        "accuracy": 0.6302
+      },
+      "policy_level": {
+        "n": 2985,
+        "tp": 474,
+        "fp": 35,
+        "fn": 1114,
+        "tn": 1362,
+        "precision": 0.9312,
+        "recall": 0.2985,
+        "f1": 0.4521,
+        "fpr": 0.0251,
+        "accuracy": 0.6151
+      },
+      "by_source": {
+        "advbench": {
+          "n": 520,
+          "tp": 0,
+          "fp": 0,
+          "fn": 520,
+          "tn": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "fpr": 0.0,
+          "accuracy": 0.0
+        },
+        "agcms-synthetic": {
+          "n": 1017,
+          "tp": 255,
+          "fp": 0,
+          "fn": 404,
+          "tn": 358,
+          "precision": 1.0,
+          "recall": 0.3869,
+          "f1": 0.558,
+          "fpr": 0.0,
+          "accuracy": 0.6028
+        },
+        "deepset": {
+          "n": 662,
+          "tp": 10,
+          "fp": 0,
+          "fn": 253,
+          "tn": 399,
+          "precision": 1.0,
+          "recall": 0.038,
+          "f1": 0.0733,
+          "fpr": 0.0,
+          "accuracy": 0.6178
+        },
+        "jackhhao": {
+          "n": 1306,
+          "tp": 255,
+          "fp": 36,
+          "fn": 411,
+          "tn": 604,
+          "precision": 0.8763,
+          "recall": 0.3829,
+          "f1": 0.5329,
+          "fpr": 0.0563,
+          "accuracy": 0.6577
+        }
+      },
+      "latency": {
+        "n": 3505,
+        "median_ms": 0.06,
+        "p95_ms": 2.06,
+        "mean_ms": 0.39
+      }
+    },
+    "ml": {
+      "module_level": {
+        "n": 2985,
+        "tp": 1204,
+        "fp": 8,
+        "fn": 384,
+        "tn": 1389,
+        "precision": 0.9934,
+        "recall": 0.7582,
+        "f1": 0.86,
+        "fpr": 0.0057,
+        "accuracy": 0.8687
+      },
+      "policy_level": {
+        "n": 2985,
+        "tp": 1159,
+        "fp": 6,
+        "fn": 429,
+        "tn": 1391,
+        "precision": 0.9948,
+        "recall": 0.7298,
+        "f1": 0.842,
+        "fpr": 0.0043,
+        "accuracy": 0.8543
+      },
+      "by_source": {
+        "advbench": {
+          "n": 520,
+          "tp": 0,
+          "fp": 0,
+          "fn": 520,
+          "tn": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "fpr": 0.0,
+          "accuracy": 0.0
+        },
+        "agcms-synthetic": {
+          "n": 1017,
+          "tp": 544,
+          "fp": 0,
+          "fn": 115,
+          "tn": 358,
+          "precision": 1.0,
+          "recall": 0.8255,
+          "f1": 0.9044,
+          "fpr": 0.0,
+          "accuracy": 0.8869
+        },
+        "deepset": {
+          "n": 662,
+          "tp": 109,
+          "fp": 4,
+          "fn": 154,
+          "tn": 395,
+          "precision": 0.9646,
+          "recall": 0.4144,
+          "f1": 0.5798,
+          "fpr": 0.01,
+          "accuracy": 0.7613
+        },
+        "jackhhao": {
+          "n": 1306,
+          "tp": 551,
+          "fp": 4,
+          "fn": 115,
+          "tn": 636,
+          "precision": 0.9928,
+          "recall": 0.8273,
+          "f1": 0.9025,
+          "fpr": 0.0063,
+          "accuracy": 0.9089
+        }
+      },
+      "latency": {
+        "n": 3505,
+        "median_ms": 253.48,
+        "p95_ms": 1799.56,
+        "mean_ms": 448.94
+      }
+    },
+    "full": {
+      "module_level": {
+        "n": 2985,
+        "tp": 1263,
+        "fp": 44,
+        "fn": 325,
+        "tn": 1353,
+        "precision": 0.9663,
+        "recall": 0.7953,
+        "f1": 0.8725,
+        "fpr": 0.0315,
+        "accuracy": 0.8764
+      },
+      "policy_level": {
+        "n": 2985,
+        "tp": 1221,
+        "fp": 41,
+        "fn": 367,
+        "tn": 1356,
+        "precision": 0.9675,
+        "recall": 0.7689,
+        "f1": 0.8568,
+        "fpr": 0.0293,
+        "accuracy": 0.8633
+      },
+      "by_source": {
+        "advbench": {
+          "n": 520,
+          "tp": 0,
+          "fp": 0,
+          "fn": 520,
+          "tn": 0,
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "fpr": 0.0,
+          "accuracy": 0.0
+        },
+        "agcms-synthetic": {
+          "n": 1017,
+          "tp": 574,
+          "fp": 0,
+          "fn": 85,
+          "tn": 358,
+          "precision": 1.0,
+          "recall": 0.871,
+          "f1": 0.9311,
+          "fpr": 0.0,
+          "accuracy": 0.9164
+        },
+        "deepset": {
+          "n": 662,
+          "tp": 110,
+          "fp": 4,
+          "fn": 153,
+          "tn": 395,
+          "precision": 0.9649,
+          "recall": 0.4183,
+          "f1": 0.5836,
+          "fpr": 0.01,
+          "accuracy": 0.7628
+        },
+        "jackhhao": {
+          "n": 1306,
+          "tp": 579,
+          "fp": 40,
+          "fn": 87,
+          "tn": 600,
+          "precision": 0.9354,
+          "recall": 0.8694,
+          "f1": 0.9012,
+          "fpr": 0.0625,
+          "accuracy": 0.9028
+        }
+      },
+      "latency": {
+        "n": 3505,
+        "median_ms": 269.44,
+        "p95_ms": 3073.05,
+        "mean_ms": 686.02
+      }
+    }
+  },
+  "response": {
+    "response_level": {
+      "n": 240,
+      "tp": 180,
+      "fp": 0,
+      "fn": 0,
+      "tn": 60,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "fpr": 0.0,
+      "accuracy": 1.0
+    },
+    "per_rule": {
+      "PII_ECHO": {
+        "n": 240,
+        "tp": 60,
+        "fp": 0,
+        "fn": 0,
+        "tn": 180,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "fpr": 0.0,
+        "accuracy": 1.0
+      },
+      "SYSTEM_PROMPT_LEAK": {
+        "n": 240,
+        "tp": 60,
+        "fp": 0,
+        "fn": 0,
+        "tn": 180,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "fpr": 0.0,
+        "accuracy": 1.0
+      },
+      "RESTRICTED_TOPIC": {
+        "n": 240,
+        "tp": 60,
+        "fp": 0,
+        "fn": 0,
+        "tn": 180,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "fpr": 0.0,
+        "accuracy": 1.0
+      }
+    },
+    "latency": {
+      "n": 240,
+      "median_ms": 0.02,
+      "p95_ms": 0.04,
+      "mean_ms": 0.03
+    }
+  },
+  "policy": {
+    "truth_table": [
+      {
+        "case": "clean",
+        "expected": "ALLOW",
+        "got": "ALLOW"
+      },
+      {
+        "case": "pii-medium",
+        "expected": "REDACT",
+        "got": "REDACT"
+      },
+      {
+        "case": "pii-critical",
+        "expected": "BLOCK",
+        "got": "BLOCK"
+      },
+      {
+        "case": "injection-rules",
+        "expected": "BLOCK",
+        "got": "BLOCK"
+      },
+      {
+        "case": "injection-ml-only-low",
+        "expected": "ALLOW",
+        "got": "ALLOW"
+      },
+      {
+        "case": "injection-ml-only-high",
+        "expected": "BLOCK",
+        "got": "BLOCK"
+      }
+    ],
+    "correct": 6,
+    "total": 6,
+    "latency": {
+      "n": 1200,
+      "median_ms": 0.0,
+      "p95_ms": 0.0,
+      "mean_ms": 0.0
+    }
+  }
+}

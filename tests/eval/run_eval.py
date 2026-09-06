@@ -22,7 +22,6 @@ import json
 import os
 import pathlib
 import platform
-import re
 import sys
 import time
 from datetime import datetime, timezone
@@ -108,47 +107,67 @@ def _keyword_baseline(text: str) -> int:
     return int(any(k in low for k in KEYWORDS))
 
 
-def eval_injection(rows: list[dict], agent: InjectionAgent, mode: str, resolver: PolicyResolver) -> dict:
-    """mode: 'full' | 'heuristic' | 'ml' | 'keyword' | 'unguarded'."""
+def eval_injection(rows: list[dict], agent: InjectionAgent, resolver: PolicyResolver) -> dict:
+    """Score every prompt once and derive all configurations from that pass.
+
+    Returns a dict keyed by config: unguarded, keyword, heuristic, ml, full.
+    The ML model is the expensive part, so it runs exactly once per prompt;
+    ``full`` = max(heuristic, ml) exactly as the agent computes it.
+    """
     session = agent._onnx_session
-    if mode == "heuristic":
-        agent._onnx_session = None
-    gold, pred_module, pred_policy, lat = [], [], [], []
+    configs = ("unguarded", "keyword", "heuristic", "ml", "full")
+    gold = []
+    pred = {c: ([], []) for c in configs}        # (module flags, policy flags)
+    lat = {c: [] for c in configs}
     try:
         for r in rows:
             text = r["text"]
-            if mode == "keyword":
-                flag, ms = timed(_keyword_baseline, text)
-                module_flag = policy_flag = flag
-            elif mode == "unguarded":
-                module_flag = policy_flag = 0
-                ms = 0.0
-            elif mode == "ml":
-                score, ms = timed(agent._ml_classify, text)
-                score = score or 0.0
-                module_flag = int(score >= 0.5)
-                decision = resolver.resolve(None, {"risk_score": score, "triggered_rules": [],
-                                                   "attack_type": None})
-                policy_flag = int(decision.action in ("BLOCK", "ESCALATE"))
-            else:
-                result, ms = timed(agent.scan, text)
-                module_flag = int(result.is_injection)
-                decision = resolver.resolve(None, result.to_dict())
-                policy_flag = int(decision.action in ("BLOCK", "ESCALATE"))
             gold.append(r["label"])
-            pred_module.append(module_flag)
-            pred_policy.append(policy_flag)
-            lat.append(ms)
+
+            kw, ms_kw = timed(_keyword_baseline, text)
+            agent._onnx_session = None
+            heur, ms_h = timed(agent.scan, text)
+            agent._onnx_session = session
+            ml_score, ms_ml = timed(agent._ml_classify, text)
+            ml_score = ml_score or 0.0
+
+            heur_dict = heur.to_dict()
+            ml_dict = {"risk_score": ml_score, "triggered_rules": [], "attack_type": None}
+            full_dict = dict(heur_dict)
+            full_dict["risk_score"] = round(max(heur.risk_score, ml_score), 3)
+
+            def flags(module_flag: int, scan: dict | None) -> tuple[int, int]:
+                if scan is None:
+                    return module_flag, module_flag
+                decision = resolver.resolve(None, scan)
+                return module_flag, int(decision.action in ("BLOCK", "ESCALATE"))
+
+            results = {
+                "unguarded": (flags(0, None), 0.0),
+                "keyword": (flags(kw, None), ms_kw),
+                "heuristic": (flags(int(heur.is_injection), heur_dict), ms_h),
+                "ml": (flags(int(ml_score >= 0.5), ml_dict), ms_ml),
+                "full": (flags(int(full_dict["risk_score"] >= 0.5), full_dict), ms_h + ms_ml),
+            }
+            for c, ((m, p), ms) in results.items():
+                pred[c][0].append(m)
+                pred[c][1].append(p)
+                lat[c].append(ms)
     finally:
         agent._onnx_session = session
-    by_source = {}
-    for src in sorted({r["source"] for r in rows}):
-        idx = [i for i, r in enumerate(rows) if r["source"] == src]
-        by_source[src] = binary_metrics([gold[i] for i in idx], [pred_module[i] for i in idx])
+
     core_idx = [i for i, r in enumerate(rows) if r["source"] != "advbench"]
-    return {"module_level": binary_metrics([gold[i] for i in core_idx], [pred_module[i] for i in core_idx]),
-            "policy_level": binary_metrics([gold[i] for i in core_idx], [pred_policy[i] for i in core_idx]),
-            "by_source": by_source, "latency": latency_summary(lat)}
+    out = {}
+    for c in configs:
+        module, policy = pred[c]
+        by_source = {}
+        for src in sorted({r["source"] for r in rows}):
+            idx = [i for i, r in enumerate(rows) if r["source"] == src]
+            by_source[src] = binary_metrics([gold[i] for i in idx], [module[i] for i in idx])
+        out[c] = {"module_level": binary_metrics([gold[i] for i in core_idx], [module[i] for i in core_idx]),
+                  "policy_level": binary_metrics([gold[i] for i in core_idx], [policy[i] for i in core_idx]),
+                  "by_source": by_source, "latency": latency_summary(lat[c])}
+    return out
 
 
 # --------------------------------------------------------------------------
@@ -226,8 +245,7 @@ def main() -> None:
                     "cpu": platform.processor(), "ml_classifier_loaded": ml_loaded},
         "corpus_sizes": {"pii": len(pii_rows), "injection": len(inj_rows), "response": len(resp_rows)},
         "pii": {m: eval_pii(pii_rows, pii_agent, m) for m in ("regex", "ner", "full")},
-        "injection": {m: eval_injection(inj_rows, inj_agent, m, resolver)
-                      for m in ("unguarded", "keyword", "heuristic", "ml", "full")},
+        "injection": eval_injection(inj_rows, inj_agent, resolver),
         "response": eval_response(resp_rows, resp_agent),
         "policy": eval_policy(resolver),
     }
