@@ -149,10 +149,16 @@ class TestNERDetection:
         assert len(person_entities) >= 1
 
     @pytest.mark.asyncio
-    async def test_detects_organization(self, agent):
+    async def test_organizations_are_not_treated_as_pii(self, agent):
+        """Organisation names are not personal data; spaCy ORG tags are ignored."""
         result = await agent.scan("She works at Goldman Sachs in New York.", EMPTY_POLICY)
-        org_entities = [e for e in result.entities if e.entity_type == "ORGANIZATION"]
-        assert len(org_entities) >= 1
+        assert not any(e.entity_type == "ORGANIZATION" for e in result.entities)
+
+    @pytest.mark.asyncio
+    async def test_person_filter_rejects_fragments(self, agent):
+        """Mixed-case or punctuated PERSON spans from spaCy are dropped."""
+        result = await agent.scan("Wie oft wird der Spiegel bei Zeit Online zitiert?", EMPTY_POLICY)
+        assert all(" zitiert" not in e.text for e in result.entities)
 
     @pytest.mark.asyncio
     async def test_ner_combined_with_regex(self, agent):

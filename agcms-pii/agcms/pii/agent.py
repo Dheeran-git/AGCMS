@@ -18,16 +18,30 @@ from agcms.pii.patterns import (
 # spaCy model toggled by env var (RULE 5 / Q2 decision)
 _SPACY_MODEL = os.environ.get("AGCMS_SPACY_MODEL", "en_core_web_sm")
 
-# NER entity types from spaCy that map to PII
+# NER entity types from spaCy that map to PII. ORG is deliberately absent:
+# an organisation name is not personal data, and the evaluation harness
+# showed spaCy tagging ORG in most benign prompts.
 _SPACY_PII_MAP = {
     "PERSON": "PERSON_NAME",
-    "ORG": "ORGANIZATION",
 }
 
 # High-risk entity types that trigger CRITICAL risk level
 _HIGH_RISK_TYPES = frozenset({
     "SSN", "CREDIT_CARD", "AADHAAR", "PAN", "IBAN", "MRN",
 })
+
+
+def _looks_like_name(text: str) -> bool:
+    """Accept only capitalised alphabetic tokens (e.g. 'Alice Johnson').
+
+    spaCy's small model labels fragments such as 'Zeit Online zitiert' or
+    'Luna:Greetings' as PERSON; requiring every token to be an alphabetic,
+    title-case word removes most of that noise at little recall cost.
+    """
+    tokens = text.strip().split()
+    if not tokens or len(text.strip()) < 2:
+        return False
+    return all(t.replace("'", "").replace("-", "").isalpha() and t[0].isupper() for t in tokens)
 
 
 class PIIAgent:
@@ -108,8 +122,7 @@ class PIIAgent:
             if pii_type is None:
                 continue
 
-            # Skip very short entities (likely noise)
-            if len(ent.text.strip()) < 2:
+            if not _looks_like_name(ent.text):
                 continue
 
             found.append(PIIEntity(

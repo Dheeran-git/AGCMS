@@ -258,20 +258,22 @@ class InjectionAgent:
             return None
 
         try:
+            # No padding: the ONNX graph has dynamic sequence length, and
+            # padding every prompt to 512 tokens costs ~10x on CPU.
             inputs = self._tokenizer(
                 text,
                 return_tensors="np",
                 truncation=True,
                 max_length=512,
-                padding="max_length",
             )
 
             # ONNX Runtime path
             import onnxruntime as ort
 
             if isinstance(self._onnx_session, ort.InferenceSession):
+                # ONNX graph declares int64 inputs; numpy tokenizers may emit int32.
                 ort_inputs = {
-                    k: v for k, v in inputs.items()
+                    k: v.astype(np.int64) for k, v in inputs.items()
                     if k in [i.name for i in self._onnx_session.get_inputs()]
                 }
                 logits = self._onnx_session.run(None, ort_inputs)[0]
