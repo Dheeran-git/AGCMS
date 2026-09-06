@@ -147,8 +147,6 @@ async def get_tenant(tenant_id: str) -> Optional[TenantDetail]:
 
 async def get_usage(tenant_id: str) -> UsageStats:
     """Return aggregated usage counts from audit_logs for the tenant."""
-    today_start = "CURRENT_DATE"
-
     requests_today = await db.fetch_val(
         "SELECT COUNT(*) FROM audit_logs WHERE tenant_id = $1 AND created_at >= CURRENT_DATE",
         tenant_id,

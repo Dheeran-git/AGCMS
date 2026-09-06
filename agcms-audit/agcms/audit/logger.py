@@ -4,7 +4,7 @@ import json
 import time
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 import sqlalchemy
 

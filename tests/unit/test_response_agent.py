@@ -37,3 +37,11 @@ def test_restricted_topic_from_policy():
     policy = {"response_compliance": {"restricted_topics": ["project titan"]}}
     result = agent.check("Project Titan ships in Q3.", None, policy)
     assert any(v.rule == "RESTRICTED_TOPIC" for v in result.violations)
+
+
+def test_pii_echo_covers_every_regex_type():
+    prompt = "My Aadhaar is 2345 6789 0123 and IBAN GB29NWBK60161331926819."
+    response = "Confirmed: Aadhaar 2345 6789 0123, IBAN GB29NWBK60161331926819."
+    result = agent.check(response, prompt, {})
+    descs = " ".join(v.description for v in result.violations if v.rule == "PII_ECHO")
+    assert "AADHAAR" in descs and "IBAN" in descs

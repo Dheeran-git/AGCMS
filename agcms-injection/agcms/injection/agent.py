@@ -1,7 +1,7 @@
 """Prompt Injection Detection Agent — heuristic rules + ML classifier.
 
 Heuristic pipeline: 20+ patterns across 6 attack categories.
-ML classifier: protectai/deberta-v3-base-prompt-injection-v2 via ONNX Runtime.
+ML classifier: fine-tuned DistilBERT (ml/train.py) via ONNX Runtime.
 Score aggregation: max(heuristic_score, ml_score).
 """
 
@@ -184,7 +184,7 @@ class InjectionAgent:
       1. Unicode normalization (homoglyph replacement, NFKC)
       2. Encoding decode (base64, hex escapes, URL encoding)
       3. Heuristic rule matching (20+ patterns across 6 categories)
-      4. ML classification (DeBERTa v3 via ONNX Runtime)
+      4. ML classification (DistilBERT via ONNX Runtime)
       5. Score aggregation — max(heuristic, ml), capped at 1.0
     """
 
@@ -250,9 +250,6 @@ class InjectionAgent:
         """Run ML classifier and return injection probability [0, 1].
 
         Returns None when the model is unavailable (graceful fallback).
-        Supports two backends:
-          - ONNX Runtime InferenceSession (preferred, fast CPU inference)
-          - HuggingFace model (fallback if ONNX export failed)
         """
         if self._onnx_session is None or self._tokenizer is None:
             return None
@@ -267,31 +264,13 @@ class InjectionAgent:
                 max_length=512,
             )
 
-            # ONNX Runtime path
-            import onnxruntime as ort
-
-            if isinstance(self._onnx_session, ort.InferenceSession):
-                # ONNX graph declares int64 inputs; numpy tokenizers may emit int32.
-                ort_inputs = {
-                    k: v.astype(np.int64) for k, v in inputs.items()
-                    if k in [i.name for i in self._onnx_session.get_inputs()]
-                }
-                logits = self._onnx_session.run(None, ort_inputs)[0]
-                probs = _softmax(logits[0])
-                # Label mapping: index 1 = INJECTION for this model
-                return float(probs[1])
-
-            # HuggingFace model fallback path
-            import torch
-
-            with torch.no_grad():
-                pt_inputs = {
-                    k: torch.tensor(v) for k, v in inputs.items()
-                }
-                output = self._onnx_session(**pt_inputs)
-                probs = torch.softmax(output.logits, dim=-1)
-                return float(probs[0][1])
-
+            names = {i.name for i in self._onnx_session.get_inputs()}
+            # ONNX graph declares int64 inputs; numpy tokenizers may emit int32.
+            ort_inputs = {k: v.astype(np.int64) for k, v in inputs.items() if k in names}
+            logits = self._onnx_session.run(None, ort_inputs)[0]
+            probs = _softmax(logits[0])
+            # Label index 1 = INJECTION (train.py labels and protectai's export agree)
+            return float(probs[1])
         except Exception:
             logger.exception("ML classification failed — falling back to heuristic")
             return None

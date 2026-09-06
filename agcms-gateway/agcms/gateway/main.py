@@ -47,6 +47,12 @@ _AUDIT_URL = os.environ.get("AUDIT_SERVICE_URL", "http://audit:8005")
 
 _DB_URL = os.environ.get("DATABASE_URL", "postgresql://agcms:secret@postgres:5432/agcms")
 
+# Governance failure mode. "closed" (default) rejects the request with 503 when
+# a scan or the policy service is unavailable, so an outage can never let
+# unscreened prompts through. "open" forwards the prompt unscreened and logs it,
+# trading governance for availability.
+_FAIL_MODE = os.environ.get("AGCMS_FAIL_MODE", "closed").lower()
+
 
 def _error_response(code: str, reason: str, interaction_id: str, status: int) -> JSONResponse:
     """RULE 7: Structured error responses."""
@@ -162,6 +168,13 @@ async def chat_completions(request: Request):
         pii_result = pii_resp.json()
     if isinstance(injection_resp, httpx.Response) and injection_resp.status_code == 200:
         injection_result = injection_resp.json()
+    if _FAIL_MODE == "closed" and (pii_result is None or injection_result is None):
+        failed = [n for n, r in (("pii", pii_result), ("injection", injection_result)) if r is None]
+        return _error_response(
+            "governance_unavailable",
+            f"Detection service unavailable ({', '.join(failed)}); request rejected (fail-closed)",
+            interaction_id, 503,
+        )
 
     # --- Step 6: Policy resolution ---
     decision = {"action": "ALLOW", "reason": None, "triggered_policies": []}
@@ -173,8 +186,16 @@ async def chat_completions(request: Request):
             })
         if policy_resp.status_code == 200:
             decision = policy_resp.json()
-    except Exception:
-        pass  # Fail open — allow if policy service is down
+        elif _FAIL_MODE == "closed":
+            raise RuntimeError(f"policy service returned {policy_resp.status_code}")
+    except Exception as exc:
+        if _FAIL_MODE == "closed":
+            return _error_response(
+                "governance_unavailable",
+                f"Policy service unavailable ({exc}); request rejected (fail-closed)",
+                interaction_id, 503,
+            )
+        # fail-open: allow if the policy service is down
 
     action = decision.get("action", "ALLOW")
 

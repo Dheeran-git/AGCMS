@@ -10,7 +10,7 @@ Endpoints:
 
 from fastapi import FastAPI, HTTPException
 
-from agcms.tenant import db, service
+from agcms.tenant import service
 from agcms.tenant.schemas import ProvisionRequest, UpdateSettingsRequest
 
 app = FastAPI(

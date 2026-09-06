@@ -6,8 +6,9 @@ publisher ``test`` rows only, so the numbers are held-out. AdvBench rows are
 excluded from both (they are harmful requests, not injections).
 
 Usage:  python agcms-injection/ml/train.py [--epochs 3] [--max-length 256]
-Output: agcms-injection/ml/model/best/   (PyTorch checkpoint + tokenizer)
-        agcms-injection/ml/model/metrics.json
+                                          [--seed 42] [--out ml/model/best]
+Output: <out>/                 PyTorch checkpoint + tokenizer
+        <out>/metrics.json     held-out metrics, seed and row counts
 """
 
 from __future__ import annotations
@@ -57,6 +58,8 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--epochs", type=int, default=3)
     ap.add_argument("--max-length", type=int, default=256)
+    ap.add_argument("--seed", type=int, default=SEED)
+    ap.add_argument("--out", type=pathlib.Path, default=MODEL_DIR / "best")
     args = ap.parse_args()
 
     train_ds, test_ds = load_splits()
@@ -72,7 +75,7 @@ def main() -> None:
     test_tok = test_ds.map(tokenize, batched=True)
 
     targs = TrainingArguments(
-        output_dir=str(MODEL_DIR / "checkpoints"),
+        output_dir=str(args.out.parent / f"checkpoints-{args.seed}"),
         num_train_epochs=args.epochs,
         per_device_train_batch_size=16,
         per_device_eval_batch_size=32,
@@ -81,7 +84,7 @@ def main() -> None:
         weight_decay=0.01,
         eval_strategy="epoch",
         save_strategy="no",
-        seed=SEED,
+        seed=args.seed,
         logging_steps=50,
         report_to="none",
         dataloader_num_workers=0,
@@ -91,14 +94,13 @@ def main() -> None:
                       compute_metrics=compute_metrics, processing_class=tokenizer)
     trainer.train()
 
-    best_dir = MODEL_DIR / "best"
-    trainer.save_model(str(best_dir))
-    tokenizer.save_pretrained(str(best_dir))
+    trainer.save_model(str(args.out))
+    tokenizer.save_pretrained(str(args.out))
 
     results = trainer.evaluate(test_tok)
-    results["train_rows"] = len(train_ds)
-    results["test_rows"] = len(test_ds)
-    (MODEL_DIR / "metrics.json").write_text(json.dumps(results, indent=2))
+    results.update({"seed": args.seed, "epochs": args.epochs, "max_length": args.max_length,
+                    "train_rows": len(train_ds), "test_rows": len(test_ds)})
+    (args.out / "metrics.json").write_text(json.dumps(results, indent=2))
     print(json.dumps(results, indent=2))
 
 

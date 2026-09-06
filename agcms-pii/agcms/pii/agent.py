@@ -8,8 +8,6 @@ import spacy
 
 from agcms.pii.models import PIIEntity, PIIScanResult
 from agcms.pii.patterns import (
-    PATTERNS,
-    PATTERNS_WITH_VALIDATORS,
     get_all_patterns,
     luhn_check,
     validate_ip_address,

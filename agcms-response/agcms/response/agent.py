@@ -1,7 +1,7 @@
 """Response Compliance Agent — checks LLM responses for policy violations.
 
 Checks:
-  1. PII echo — did the LLM repeat PII from the original prompt?
+  1. PII echo — did the LLM repeat any regex-detectable PII from the prompt?
   2. System prompt leak — did the LLM reveal system instructions?
   3. Restricted topics — did the response contain forbidden content?
 """
@@ -9,6 +9,7 @@ Checks:
 import re
 from typing import List, Optional
 
+from agcms.common.pii_patterns import get_all_patterns
 from agcms.response.models import ComplianceResult, ComplianceViolation
 
 # System prompt leak indicators
@@ -22,13 +23,9 @@ _SYSTEM_LEAK_PATTERNS = [
     ]
 ]
 
-# PII patterns to check for echo (subset of the full PII patterns)
-_PII_ECHO_PATTERNS = {
-    "SSN": re.compile(r"\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b"),
-    "EMAIL": re.compile(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"),
-    "CREDIT_CARD": re.compile(r"\b(?:\d[ \-]?){13,16}\b"),
-    "PHONE_US": re.compile(r"\b(\+1[\s\-]?)?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{4}\b"),
-}
+# Every regex-detectable PII type the PII agent knows, so an echo of any of
+# them (SSN, card, IBAN, Aadhaar, API key, ...) is caught, not just four.
+_PII_ECHO_PATTERNS = get_all_patterns()
 
 
 def _normalize(value: str) -> str:

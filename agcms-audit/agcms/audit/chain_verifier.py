@@ -10,7 +10,7 @@ to the database — which makes it safe to run under load.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Iterable, List, Optional, Sequence
+from typing import List, Optional, Sequence
 
 from agcms.audit.logger import AuditLogger
 

@@ -44,6 +44,7 @@ services:
       - MISTRAL_API_KEY=${MISTRAL_API_KEY:-}
       - OLLAMA_URL=${OLLAMA_URL:-http://ollama:11434}
       - AGCMS_DEFAULT_PROVIDER=${AGCMS_DEFAULT_PROVIDER:-groq}
+      - AGCMS_FAIL_MODE=${AGCMS_FAIL_MODE:-closed}
       - PII_SERVICE_URL=http://pii:8001
       - INJECTION_SERVICE_URL=http://injection:8002
       - RESPONSE_SERVICE_URL=http://response:8003

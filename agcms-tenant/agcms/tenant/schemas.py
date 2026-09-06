@@ -1,7 +1,7 @@
 """Pydantic schemas for the AGCMS Tenant Management Service."""
 
 from typing import Any, Optional
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 
 
 class ProvisionRequest(BaseModel):
