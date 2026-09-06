@@ -53,3 +53,6 @@ docs-site/.next/
 AGCMS Design System-handoff.zip
 design-system.zip
 agcms-design-system/
+
+# Evaluation run outputs (latest.json is committed; timestamped runs are not)
+tests/eval/results/eval_*.json
