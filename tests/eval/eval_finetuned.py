@@ -1,21 +1,28 @@
-"""Compare the fine-tuned DistilBERT with the off-the-shelf DeBERTa classifier.
+"""Compare fine-tuned DistilBERT checkpoints with the off-the-shelf DeBERTa.
 
-Both models are scored on the same held-out rows: the publisher ``test``
-splits of deepset and jackhhao (AdvBench excluded). The DeBERTa model is
-scored through the production ``InjectionAgent`` path; DistilBERT is loaded
-from ``agcms-injection/ml/model/best`` produced by ``ml/train.py``.
+All models are scored on the same held-out rows: the publisher ``test``
+splits of deepset and jackhhao (AdvBench excluded). Each model is also scored
+on the PII corpus, which contains no injections, to report the share of
+PII-bearing enterprise prompts it would flag.
 
-Usage:  python tests/eval/eval_finetuned.py
+Usage:  python tests/eval/eval_finetuned.py [--models best seed1 seed2 seed3 seed1-hn ...]
+
+``--models`` names sub-folders of ``agcms-injection/ml/model`` (default
+``best``). The DeBERTa model is scored through the production
+``InjectionAgent`` path when ``AGCMS_INJECTION_MODEL_DIR`` points at its
+ONNX export. Groups of ``seedN`` and ``seedN-hn`` models get a mean and
+standard deviation.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import pathlib
+import statistics
 import sys
 import time
 
-import numpy as np
 import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
@@ -27,60 +34,85 @@ from metrics import binary_metrics, latency_summary  # noqa: E402
 
 from agcms.injection.agent import InjectionAgent  # noqa: E402
 
-DATA = pathlib.Path(__file__).resolve().parent / "data" / "injection.jsonl"
-BEST = ROOT / "agcms-injection" / "ml" / "model" / "best"
+DATA_DIR = pathlib.Path(__file__).resolve().parent / "data"
+MODELS = ROOT / "agcms-injection" / "ml" / "model"
 RESULTS = pathlib.Path(__file__).resolve().parent / "results"
 
 
+def _torch_scorer(model_dir: pathlib.Path):
+    tok = AutoTokenizer.from_pretrained(str(model_dir))
+    model = AutoModelForSequenceClassification.from_pretrained(str(model_dir)).eval()
+
+    def score(text: str) -> float:
+        with torch.no_grad():
+            enc = tok(text, return_tensors="pt", truncation=True, max_length=256)
+            return torch.softmax(model(**enc).logits, dim=-1)[0, 1].item()
+    return score
+
+
+def _evaluate(name: str, score, test: list[dict], gold: list[int], pii_rows: list[dict]) -> dict:
+    pred, lat = [], []
+    for r in test:
+        t0 = time.perf_counter()
+        pred.append(int(score(r["text"]) >= 0.5))
+        lat.append((time.perf_counter() - t0) * 1000)
+    by_source = {}
+    for src in sorted({r["source"] for r in test}):
+        idx = [i for i, r in enumerate(test) if r["source"] == src]
+        by_source[src] = binary_metrics([gold[i] for i in idx], [pred[i] for i in idx])
+    pii_flags = {}
+    for src in sorted({r["source"] for r in pii_rows}):
+        sc = [score(r["text"]) for r in pii_rows if r["source"] == src]
+        pii_flags[src] = {"n": len(sc),
+                          "flagged_at_0_5": round(sum(x >= 0.5 for x in sc) / len(sc), 4),
+                          "flagged_at_0_95": round(sum(x >= 0.95 for x in sc) / len(sc), 4)}
+    print(f"  scored {name}")
+    return {"overall": binary_metrics(gold, pred), "by_source": by_source,
+            "latency": latency_summary(lat), "pii_prompts_flagged": pii_flags}
+
+
 def main() -> None:
-    rows = [json.loads(l) for l in open(DATA, encoding="utf-8")]
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--models", nargs="+", default=["best"],
+                    help="sub-folders of agcms-injection/ml/model")
+    args = ap.parse_args()
+
+    rows = [json.loads(l) for l in open(DATA_DIR / "injection.jsonl", encoding="utf-8")]
     test = [r for r in rows if r["split"] == "test" and r["source"] != "advbench"]
     gold = [r["label"] for r in test]
-    print(f"held-out test rows: {len(test)} ({sum(gold)} positive)")
+    pii_rows = [json.loads(l) for l in open(DATA_DIR / "pii.jsonl", encoding="utf-8")]
+    print(f"held-out test rows: {len(test)} ({sum(gold)} positive); PII prompts: {len(pii_rows)}")
 
-    tok = AutoTokenizer.from_pretrained(str(BEST))
-    model = AutoModelForSequenceClassification.from_pretrained(str(BEST)).eval()
-    ft_pred, ft_lat = [], []
-    for r in test:
-        t0 = time.perf_counter()
-        with torch.no_grad():
-            enc = tok(r["text"], return_tensors="pt", truncation=True, max_length=256)
-            prob = torch.softmax(model(**enc).logits, dim=-1)[0, 1].item()
-        ft_lat.append((time.perf_counter() - t0) * 1000)
-        ft_pred.append(int(prob >= 0.5))
+    report = {"test_rows": len(test), "models": {}}
+    for name in args.models:
+        entry = _evaluate(name, _torch_scorer(MODELS / name), test, gold, pii_rows)
+        metrics_path = MODELS / name / "metrics.json"
+        entry["training_metrics"] = json.loads(metrics_path.read_text()) if metrics_path.exists() else None
+        report["models"][name] = entry
 
     agent = InjectionAgent()
-    assert agent._onnx_session is not None, "DeBERTa classifier did not load"
-    ots_pred, ots_lat = [], []
-    for r in test:
-        t0 = time.perf_counter()
-        score = agent._ml_classify(r["text"]) or 0.0
-        ots_lat.append((time.perf_counter() - t0) * 1000)
-        ots_pred.append(int(score >= 0.5))
+    if agent._onnx_session is not None:
+        report["models"]["deberta_protectai"] = _evaluate(
+            "deberta_protectai", lambda t: agent._ml_classify(t) or 0.0, test, gold, pii_rows)
 
-    def by_source(pred):
-        out = {}
-        for src in sorted({r["source"] for r in test}):
-            idx = [i for i, r in enumerate(test) if r["source"] == src]
-            out[src] = binary_metrics([gold[i] for i in idx], [pred[i] for i in idx])
-        return out
-
-    report = {
-        "test_rows": len(test),
-        "distilbert_finetuned": {"overall": binary_metrics(gold, ft_pred), "by_source": by_source(ft_pred),
-                                 "latency": latency_summary(ft_lat), "max_length": 256},
-        "deberta_protectai": {"overall": binary_metrics(gold, ots_pred), "by_source": by_source(ots_pred),
-                              "latency": latency_summary(ots_lat), "max_length": 512},
-    }
     RESULTS.mkdir(exist_ok=True)
-    (RESULTS / "finetuned_vs_offtheshelf.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
-    print("| Model | P | R | F1 | FPR | median ms | p95 ms |")
+    (RESULTS / "classifier_comparison.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+
+    print("\n| Model | P | R | F1 | FPR | PII prompts flagged >=0.95 (faker / ai4privacy) | median ms |")
     print("|---|---|---|---|---|---|---|")
-    for name in ("distilbert_finetuned", "deberta_protectai"):
-        m, l = report[name]["overall"], report[name]["latency"]
-        print(f"| {name} | {m['precision']} | {m['recall']} | {m['f1']} | {m['fpr']} | {l['median_ms']} | {l['p95_ms']} |")
-    for name in ("distilbert_finetuned", "deberta_protectai"):
-        print(name, {k: (v["recall"], v["fpr"]) for k, v in report[name]["by_source"].items()})
+    for name, m in report["models"].items():
+        o, l, pf = m["overall"], m["latency"], m["pii_prompts_flagged"]
+        fk = pf.get("faker-synthetic", {}).get("flagged_at_0_95")
+        ai = pf.get("ai4privacy", {}).get("flagged_at_0_95")
+        print(f"| {name} | {o['precision']} | {o['recall']} | {o['f1']} | {o['fpr']} | {fk} / {ai} | {l['median_ms']} |")
+
+    groups: dict[str, list[float]] = {}
+    for name, m in report["models"].items():
+        if name.startswith("seed"):
+            groups.setdefault("hard-negatives" if name.endswith("-hn") else "baseline", []).append(m["overall"]["f1"])
+    for key, f1s in groups.items():
+        if len(f1s) > 1:
+            print(f"{key}: F1 mean {statistics.mean(f1s):.4f} sd {statistics.stdev(f1s):.4f} over {len(f1s)} seeds")
 
 
 if __name__ == "__main__":

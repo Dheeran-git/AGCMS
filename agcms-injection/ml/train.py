@@ -6,7 +6,7 @@ publisher ``test`` rows only, so the numbers are held-out. AdvBench rows are
 excluded from both (they are harmful requests, not injections).
 
 Usage:  python agcms-injection/ml/train.py [--epochs 3] [--max-length 256]
-                                          [--seed 42] [--out ml/model/best]
+                                          [--seed 42] [--out ml/model/best] [--hard-negatives]
 Output: <out>/                 PyTorch checkpoint + tokenizer
         <out>/metrics.json     held-out metrics, seed and row counts
 """
@@ -34,10 +34,15 @@ BASE_MODEL = "distilbert-base-uncased"
 SEED = 42
 
 
-def load_splits() -> tuple[Dataset, Dataset]:
+HARD_NEG = DATA.parent / "injection_hard_negatives.jsonl"
+
+
+def load_splits(hard_negatives: bool = False) -> tuple[Dataset, Dataset]:
     rows = [json.loads(l) for l in open(DATA, encoding="utf-8")]
     rows = [r for r in rows if r["source"] != "advbench"]
     train = [r for r in rows if r["split"] == "train"]
+    if hard_negatives:
+        train += [json.loads(l) for l in open(HARD_NEG, encoding="utf-8")]
     test = [r for r in rows if r["split"] == "test"]
     to_ds = lambda rs: Dataset.from_dict({"text": [r["text"] for r in rs],
                                           "label": [r["label"] for r in rs]})
@@ -60,9 +65,11 @@ def main() -> None:
     ap.add_argument("--max-length", type=int, default=256)
     ap.add_argument("--seed", type=int, default=SEED)
     ap.add_argument("--out", type=pathlib.Path, default=MODEL_DIR / "best")
+    ap.add_argument("--hard-negatives", action="store_true",
+                    help="add tests/eval/data/injection_hard_negatives.jsonl (PII-bearing benign prompts) to training")
     args = ap.parse_args()
 
-    train_ds, test_ds = load_splits()
+    train_ds, test_ds = load_splits(hard_negatives=args.hard_negatives)
     print(f"train={len(train_ds)} test={len(test_ds)}")
 
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
@@ -99,6 +106,7 @@ def main() -> None:
 
     results = trainer.evaluate(test_tok)
     results.update({"seed": args.seed, "epochs": args.epochs, "max_length": args.max_length,
+                    "hard_negatives": args.hard_negatives,
                     "train_rows": len(train_ds), "test_rows": len(test_ds)})
     (args.out / "metrics.json").write_text(json.dumps(results, indent=2))
     print(json.dumps(results, indent=2))

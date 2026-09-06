@@ -21,6 +21,10 @@ PII (entity spans):
   benign negatives                    prompts labelled 0 from the injection
                                       sources, used for the false-positive rate
 
+Injection hard negatives (training only, never evaluated):
+  pii-hard-negative                   600 PII-bearing benign prompts, Faker seed
+                                      4242 with templates disjoint from the eval set
+
 Response (LLM output compliance):
   synthetic                           240 prompt/response pairs
 
@@ -134,7 +138,19 @@ def build_pii(benign_texts: list[str]) -> list[dict]:
     return rows
 
 
+def build_hard_negatives() -> list[dict]:
+    """PII-bearing benign prompts for injection-classifier training only.
+
+    Different Faker seed and disjoint templates from the PII evaluation set,
+    labelled 0 (not an injection). Never used for evaluation.
+    """
+    rows = pii_synth.generate(600, seed=4242, templates=pii_synth.TRAIN_TEMPLATES)
+    return [{"text": r["text"], "label": 0, "source": "pii-hard-negative", "split": "train"}
+            for r in rows]
+
+
 def main() -> None:
+    _write("injection_hard_negatives.jsonl", build_hard_negatives())
     injection = build_injection()
     _write("injection.jsonl", injection)
     benign = [r["text"] for r in injection if r["label"] == 0 and r["source"] != "agcms-synthetic"]

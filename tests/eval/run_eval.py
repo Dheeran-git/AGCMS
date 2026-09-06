@@ -170,6 +170,20 @@ def eval_injection(rows: list[dict], agent: InjectionAgent, resolver: PolicyReso
     return out
 
 
+def eval_ml_on_pii_prompts(pii_rows: list[dict], agent: InjectionAgent) -> dict:
+    """Share of PII-bearing (non-injection) prompts the ML layer scores as an
+    injection, at the module threshold (0.5) and the policy's ML-only block
+    threshold (0.95). The injection corpus's benign rows carry almost no PII,
+    so this is the hard-negative check the headline FPR misses."""
+    out = {}
+    for src in sorted({r["source"] for r in pii_rows}):
+        scores = [agent._ml_classify(r["text"]) or 0.0 for r in pii_rows if r["source"] == src]
+        out[src] = {"n": len(scores),
+                    "flagged_at_0_5": round(sum(x >= 0.5 for x in scores) / len(scores), 4),
+                    "flagged_at_0_95": round(sum(x >= 0.95 for x in scores) / len(scores), 4)}
+    return out
+
+
 # --------------------------------------------------------------------------
 # Response compliance
 # --------------------------------------------------------------------------
@@ -246,6 +260,7 @@ def main() -> None:
         "corpus_sizes": {"pii": len(pii_rows), "injection": len(inj_rows), "response": len(resp_rows)},
         "pii": {m: eval_pii(pii_rows, pii_agent, m) for m in ("regex", "ner", "full")},
         "injection": eval_injection(inj_rows, inj_agent, resolver),
+        "ml_on_pii_prompts": eval_ml_on_pii_prompts(pii_rows, inj_agent) if ml_loaded else {},
         "response": eval_response(resp_rows, resp_agent),
         "policy": eval_policy(resolver),
     }
@@ -275,6 +290,11 @@ def render_markdown(r: dict) -> str:
     lines += ["", "## Injection recall by source (full config)", "", "| Source | n | recall | FPR |", "|---|---|---|---|"]
     for src, m in r["injection"]["full"]["by_source"].items():
         lines.append(f"| {src} | {m['n']} | {m['recall']} | {m['fpr']} |")
+    if r.get("ml_on_pii_prompts"):
+        lines += ["", "## ML classifier on PII-bearing prompts (no injections present)", "",
+                  "| Source | n | flagged >=0.5 | flagged >=0.95 |", "|---|---|---|---|"]
+        for src, m in r["ml_on_pii_prompts"].items():
+            lines.append(f"| {src} | {m['n']} | {m['flagged_at_0_5']} | {m['flagged_at_0_95']} |")
     resp = r["response"]
     lines += ["", "## Response compliance", "", "| Rule | P | R | F1 |", "|---|---|---|---|"]
     for k, m in resp["per_rule"].items():

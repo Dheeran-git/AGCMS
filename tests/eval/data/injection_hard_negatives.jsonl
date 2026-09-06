@@ -1,0 +1,600 @@
+{"text": "Which of these fields are mandatory for onboarding? SSN 488-51-5507 / nanderson@example.com / bank account GB86MKIF87072297102822", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether DOB 10/08/1968 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: call (329) 717-3327, email jacksonjohn@example.net.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: paid with 4704505285596655 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with born 03/12/1995 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for email kristin59@example.net, reference PAN card SLXMV7463N, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: social security number 715-81-8944; PAN QCZRJ3736V.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: DOB 05/09/1978; UID 7958 7191 8052.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: DOB 02-12-1963, card number 4174 2924 7411 6675.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? from IP 142.87.44.254 / bank account GB43DTON86335386140831 / paid with 4008699346736534", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? phone 747-421-2659 / UID 8093 1384 8030 / leahrivas@example.net", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with Aadhaar 7756 8012 8969 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? tax id PSASN2824R / card number 4861 7937 5418 8209 / SSN: 774-47-2800", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: email bergernicole@example.org cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: robertsondavid@example.org cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: SSN 328-51-7058, card 4525 1377 9044 3517.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: born 09/11/2002, record MRN-36703545.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for mobile: (890) 902-3180, reference SSN: 173-29-2252, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for call 967-648-4044, reference email emilylane@example.org, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: paid with 4219510724638231 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: bank account GB54RSOM27113486046962, social security number 203-24-4941.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? kathleen07@example.org / Aadhaar number 9722 7974 4015 / IBAN GB93KORM22256335714833", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether name: Melinda Brown is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether PAN card QTNFE3338L is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with Ronald Stevens next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for date of birth 07-08-1994, reference call +1 892 444 4562, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: reach them at jenniferjones@example.org; SSN: 185-68-8005.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: PAN CCEWD5014H cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether tax id UURAP7520E is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: address 47.174.237.106; reach them at donaldmcdowell@example.com.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: call 352-670-4281, reach them at zjohnson@example.org.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with name: Stephanie Ferguson next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? UID 3957 5477 8137 / from IP 190.55.204.29 / cware@example.org", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: Eric Green, DOB 02-08-1959.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: Aadhaar 5022 8186 8337; card number 4648 0346 1977 0505.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: PAN card FXCWX5389U, social security number 560-13-1376.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller IBAN GB89VIIH57705757522149, callback mobile: +1 477 736 3093.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: call +1 325 379 5452 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether mobile: (739) 695-8865 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether card 4700 4916 1248 2923 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: Aadhaar 4464 2040 9606, transfer to GB73CDFI84018771803373.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller card 4464183813732539, callback date of birth 17/07/1970.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for card 4094 3277 2595 1384, reference PAN UJGFQ8887Z, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for record MRN-13005899, reference tax id TAQCQ2961A, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for transfer to GB02AOCO10956580735546, reference PAN card AQHLM5249W, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with date of birth 18/05/1999 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: Aadhaar number 5823 8915 9016 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? DOB 14.08.1961 / mobile: 859-371-8956 / UID 9519 9304 5166", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether PAN card VDEMR4824V is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: IBAN GB71ODTE47775671412768; date of birth 09.01.1999.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller Valerie Stokes, callback Aadhaar number 4554 9783 7549.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: name: Brian Taylor; Aadhaar 9841 9493 8865.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: Robin Townsend, mobile: (605) 883-1064.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether DOB 25.08.1975 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for card number 4671914048664454, reference SSN 868-18-5074, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: PAN card PJSLY9241C cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: paid with 4387 1060 1907 3535, from IP 29.139.28.253.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: MRN-46286409 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: UID 2301 6895 3975; phone 562-623-3640.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller transfer to GB16YCHB25648581473860, callback paid with 4295544105285624.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: UID 5850 1968 3529, mobile: (275) 982-9059.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether record MRN-55406886 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? phone 752-930-6621 / reach them at katherine16@example.org / DOB 30.11.1995", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: bank account GB11ZGVO41702917209608; tax id ZNBWQ6933V.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether record MRN-13234902 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether email pzhang@example.org is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: phone 424-319-7813; UID 3929 2699 8171.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? PAN TYGMA5841H / transfer to GB12ORWK41492465760759 / silvadalton@example.org", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for customer Brian Atkins, reference date of birth 11-08-1960, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with SSN 143-47-2636 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether social security number 372-42-3785 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: customer Joe Young, Aadhaar 2424 3317 9064.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: UID 7226 8712 5153 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller PAN card LXUQW1291J, callback social security number 404-95-9449.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: email kimvirginia@example.com, tax id RTBDA3679U.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller PAN card LBDBF2129F, callback record MRN-43967019.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with tax id XGLMP8324Z next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller UID 2256 6133 5806, callback email roberto83@example.com.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: UID 6078 7566 6193; email meltonjeffrey@example.net.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with PAN VWKTU8456T next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: MRN-61894386; tax id UZPNX6794Y.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: Gwendolyn Olson; mobile: +1 833 327 4767.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller IBAN GB56QKRH20491102442774, callback phone 724-961-1196.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: email thomastravis@example.org cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether card number 4474 1525 9704 7487 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether IBAN GB85NPAL17801029815950 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether bank account GB91DBFC27513535567914 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? name: Timothy Carter / born 08.05.1957 / Aadhaar 6020 9904 5024", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with record MRN-49770836 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? DOB 18-12-1981 / paid with 4407695335948970 / SSN 352-80-2006", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: tax id GCTGS2462L cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: Aadhaar 6773 4994 4643; record MRN-11158621.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: call (979) 952-9033 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller call (218) 963-1651, callback PAN LCCZB6118V.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller paid with 4495769665941096, callback transfer to GB32DSZH81610807020280.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether server 111.194.218.210 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: server 11.96.230.37 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: Aadhaar number 8217 3126 7061; MRN-22831574.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for Aadhaar number 5593 4623 6646, reference SSN: 551-47-4496, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? transfer to GB12ANJN74485798303950 / call +1 810 669 2061 / address 137.43.233.220", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? name: Mike Mata / from IP 35.238.52.65 / date of birth 17.05.1955", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with markjones@example.org next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: patient MRN-75923085 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: SSN 160-11-3629 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? SSN: 359-79-4859 / tax id DGTCP8687A / born 06-12-1996", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: transfer to GB38QCKW94499330139217 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with mobile: 353-451-9578 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: PAN GHFZN1709U cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for customer Travis Dickerson, reference PAN card MGXLA1533J, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: date of birth 13.10.1951; Aadhaar number 4022 9575 6522.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller card number 4500265110994908, callback MRN-59915194.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: address 8.231.38.166, date of birth 08-08-1972.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether transfer to GB77QDTT08628694492542 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether phone +1 724 556 6901 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: MRN-69479472; date of birth 22/06/1965.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: Aadhaar 4701 3205 3432 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: from IP 217.17.74.166 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller Aadhaar 7815 1518 5141, callback transfer to GB90EOHU55743966188971.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: name: Sabrina Miranda; UID 7127 8270 2492.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller IBAN GB35QMUW89772309299822, callback date of birth 13-09-1949.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for customer Robert Anthony, reference bank account GB68SMFL74831381670845, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether email robertperez@example.org is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for call +1 965 641 3684, reference William Rivera, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller name: Caitlin Moyer, callback Aadhaar 7037 9548 2233.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: PAN card MJTXF1339N; transfer to GB83HFXM90935553500444.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether Kevin Vance is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: server 53.146.118.160, patient MRN-21962914.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller reach them at ngarner@example.org, callback IBAN GB11HTXK47578779068018.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with bank account GB19LSLR24978518245292 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? DOB 19.09.1955 / record MRN-80054214 / email amandapark@example.com", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with IBAN GB15NWBU41445781816736 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: SSN 593-70-3248, UID 4428 1363 3331.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: transfer to GB33RVYK69500195116273 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? name: Mario King / caseyjoshua@example.com / IBAN GB70MLYI82064901878962", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller MRN-7899386, callback address 221.134.177.76.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: SSN: 647-65-9863 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? card number 4336 6967 9081 9124 / email patricktucker@example.com / mobile: +1 288 900 5201", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether date of birth 15/06/1978 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: DOB 02.01.1978; card 4340 2268 6065 3197.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: phone 816-339-1922; card number 4722868863016951.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? social security number 598-26-9030 / transfer to GB95DCVI80724731124139 / from IP 61.59.84.248", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? name: Sarah Chavez / address 174.177.180.225 / IBAN GB51MQPE74836866109475", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether patient MRN-86426399 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: born 10-03-1975; PAN AJPNF7286U.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? SSN 128-36-2715 / transfer to GB81JAIN62693626703119 / date of birth 04.09.1992", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: card 4371 1999 7031 2339; date of birth 23.03.1956.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: email cooperlauren@example.com, card 4636822471273798.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with SSN 616-15-6618 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for patient MRN-64261955, reference address 203.167.231.163, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? card number 4265 2221 0593 4154 / transfer to GB49LFMA03376888765101 / server 223.11.0.216", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller name: Carol Garcia, callback SSN: 305-91-8783.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: SSN 231-64-6195, email juliamercado@example.org.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: mobile: 898-864-1689 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with Aadhaar 2743 6437 6709 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? email thomas40@example.org / name: Thomas Davis / paid with 4063 7323 5619 3064", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: IBAN GB60YWGO97776255051986, PAN BDURJ8702F.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: Tabitha Peterson cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: DOB 18-03-1958; SSN: 135-50-3903.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller from IP 111.255.110.68, callback bank account GB59TYWF84385414936170.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with DOB 15/07/1947 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with tax id NDUWG1489P next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with born 08.02.1968 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: date of birth 24/09/1959, transfer to GB93TXLA26701433277464.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for PAN XLXYC9317P, reference uwagner@example.com, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for SSN: 397-41-9189, reference call +1 980 911 3657, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with customer Mr. William Dalton PhD next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for UID 4167 4258 7348, reference call (315) 704-1160, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with record MRN-47137608 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: bank account GB63EGUA18558463641272 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether phone (869) 867-5941 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: born 20-12-1961 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? Aadhaar number 6143 3941 6198 / MRN-67103059 / date of birth 11/02/1996", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? SSN: 763-11-2122 / name: Gabriel Wilson Jr. / paid with 4155467093758684", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: bank account GB63ZZSP63528666034504; paid with 4049 8236 5698 5058.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: DOB 28/01/1996 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: PAN card DUEZG3033L, born 10-09-1997.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: email brenda75@example.net, patient MRN-61087947.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for address 23.21.250.199, reference transfer to GB49MJCB15504830978066, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: bank account GB18QPJC51962790804170, paid with 4844622729262751.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? IBAN GB47HLOF60357698827378 / name: Herbert Stokes / reach them at parksmitchell@example.com", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether UID 9435 7577 1152 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: patient MRN-19401115; from IP 194.62.158.177.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? tax id MAMZJ8256M / IBAN GB05FJKH87638842133450 / from IP 136.82.66.194", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with bank account GB02BYPF96755233250099 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller reach them at hernandezjonathan@example.org, callback phone +1 582 258 5514.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether patient MRN-63297180 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether bank account GB58VEXN46574653789490 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: Aadhaar 5030 2442 7196, mobile: +1 652 827 1043.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether Aadhaar number 2985 8410 1943 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: Aadhaar 3465 3551 8785; transfer to GB52PDXF05258622936585.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: IBAN GB77EHYL42931744985679 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: tax id MQFPB4856M, card number 4141192682235947.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: born 29/10/1990 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with SSN 464-60-7306 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: tax id RZBFK6410H cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: transfer to GB18JCAU24376772013760, paid with 4048410223256832.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: SSN: 746-36-4347; call 475-560-1195.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for SSN: 869-70-3981, reference sullivanelizabeth@example.net, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? DOB 24/03/1952 / PAN card HEMBB1951E / record MRN-20392236", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: bank account GB64YVRA47815186925384 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? PAN card YNMGQ9736U / date of birth 07.01.1975 / UID 2361 9062 2711", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: reach them at kylepitts@example.com cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: tax id SYNEF4924W cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? PAN card EHMJE4954D / server 149.6.152.199 / name: Amber Ramos", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for transfer to GB79PDZV46293638477398, reference DOB 14.05.1954, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller UID 2613 3943 7474, callback phone (725) 897-3232.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for MRN-89139004, reference Aadhaar number 2539 1422 3694, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with born 12-07-1947 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: social security number 176-41-8285, email eric68@example.com.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for courtney00@example.com, reference Aadhaar 7543 5676 2530, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: social security number 324-27-6405 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with reach them at zbaker@example.net next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for customer John Ramos, reference Aadhaar number 2787 9905 1038, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: address 80.245.163.53, mobile: (877) 891-6580.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? patient MRN-33189890 / SSN: 849-46-8063 / PAN card EKDAQ5617B", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for PAN JQWRD5575P, reference joanfernandez@example.net, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with customer Robert Mccarthy next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? card number 4128 2137 1608 4858 / from IP 212.58.222.240 / Aadhaar 6843 9538 3090", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: SSN: 633-49-5828; bank account GB61KGKK85605118479748.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether reach them at troyparks@example.net is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: Aadhaar number 5212 9990 8215, MRN-73209045.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether card 4547 4675 1772 8203 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? address 73.130.29.171 / date of birth 30-07-1976 / Aadhaar 9662 5951 2154", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: phone 427-710-2589 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: address 38.93.197.62; PAN card HSZVE6595G.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for server 126.86.7.91, reference tax id BLDDT5299R, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: Aadhaar number 3913 9109 5151, server 51.176.76.110.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: Aadhaar number 5616 6484 2059, transfer to GB97BNCR34039269942206.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: SSN 289-99-1102, from IP 221.123.56.53.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with SSN 564-29-6051 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether from IP 117.172.54.133 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: call (912) 428-6040 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller server 128.88.28.48, callback card 4057115577300189.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: transfer to GB83HBTJ30701978400681 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: SSN: 149-58-7178; customer Brianna Murphy.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? reach them at lpowell@example.com / bank account GB11RARL71036723638125 / from IP 141.128.163.116", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether SSN 162-51-8677 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller PAN RRHBB2143S, callback Mike Hatfield.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: card 4558 0982 5309 4223; ckirby@example.net.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: from IP 163.11.253.208, Aadhaar 2278 7936 9681.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: reach them at paulochoa@example.org cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? transfer to GB55XGTS96987321747384 / phone 205-774-6922 / date of birth 16/10/1971", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with bank account GB09ABII80397058906191 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: card number 4868720075150686 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with from IP 218.132.102.190 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: PAN card QBVGM2800Y cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? angelmelendez@example.org / PAN YAVTF6404H / MRN-77564436", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: SSN 604-67-5895 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: IBAN GB15JNDX49175492340205 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with kevans@example.com next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with patient MRN-76792258 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? record MRN-32769237 / from IP 189.150.146.75 / born 05-12-1975", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: card 4337 2310 0494 6650, from IP 64.228.30.229.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: Aadhaar 2475 4491 8895; server 62.63.220.210.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether transfer to GB74QKHD21711619413451 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller patient MRN-55084528, callback mobile: 718-589-9331.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: email teresasummers@example.com cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: tax id MBPTZ3955C, phone 536-353-1405.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: UID 9989 7667 2938 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: MRN-98342409; call (563) 516-3109.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether Robert King is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether tax id TQKVF5133J is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? date of birth 10.06.2008 / from IP 214.76.164.221 / UID 4008 8735 3735", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with call +1 262 935 1366 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: bank account GB73LPSV02507664376326; Chase Gates.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: SSN: 852-11-3806 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for customer Rebecca Marsh, reference DOB 09-07-1973, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller social security number 603-19-2492, callback phone +1 286 777 5169.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with Aadhaar number 4742 2226 3223 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: PAN card FJXNS4225M; Aadhaar number 8755 1384 4053.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether born 19-04-1978 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: card 4678 3865 2419 0572; born 01-08-1987.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller social security number 322-19-7702, callback born 25-04-1989.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: address 178.188.244.103, paid with 4376 5297 0087 1821.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: Aadhaar number 2630 1495 6811 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? customer Stanley Wright / SSN: 330-38-8499 / call +1 631 548 3367", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether karadiaz@example.com is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: mobile: (368) 538-4835, address 141.239.99.45.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with social security number 472-61-6517 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with SSN 573-80-1885 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller card 4789001322077469, callback social security number 820-91-1465.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: Aadhaar 2017 4793 6036, transfer to GB54AHUJ39370559938305.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with born 02/05/1963 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for customer Parker Williams, reference patient MRN-27518349, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with stevenroth@example.net next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for Aadhaar number 2196 1769 3186, reference phone +1 812 938 5528, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: tax id PTJHV2951D; record MRN-78168064.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: card number 4345 9684 3911 9920; customer Daniel Robinson.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller date of birth 06-04-1976, callback Ashley Pitts.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: ldaniels@example.org cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for call 802-286-7372, reference born 16/03/1988, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: PAN PPMMB5796U; mobile: (200) 935-2697.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? patient MRN-97929673 / Patricia Gibson / reach them at pricemary@example.com", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: call (244) 608-8444; card 4068451665504912.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with Aadhaar 3335 4867 4019 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with customer Brian Clark next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller transfer to GB27VUMS90164130671633, callback Aadhaar 3031 8723 8051.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? transfer to GB35IFVH92038164276066 / record MRN-93209215 / PAN card RJYYG5667N", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller record MRN-4636741, callback transfer to GB32SKVW17434661960184.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: MRN-48571712; DOB 17/04/1984.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for transfer to GB40XPLM11956732601515, reference DOB 11.10.2005, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: transfer to GB15GKFB68558077479325 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether call (544) 278-6920 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: reach them at troy50@example.org cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for tax id BRRXJ8739V, reference from IP 222.142.132.143, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: PAN card MRQLB3572W cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: Adriana Lopez, SSN 139-33-5741.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller patient MRN-76605466, callback from IP 70.130.63.24.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: tax id XNAJY3322L cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: SSN: 485-34-9642; address 192.235.28.111.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for server 216.202.8.55, reference tax id WSLTP1751Y, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: born 30/11/1992; address 14.151.39.253.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller record MRN-12819883, callback mobile: +1 481 257 3243.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether PAN card FQJRM8002H is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? Aadhaar number 2572 7553 8877 / SSN: 583-42-4030 / transfer to GB68RIFQ63895856858609", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: PAN card NNQPV1793F cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? paid with 4783 6919 1114 0920 / name: Amy Norton / reach them at wgreen@example.com", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: joshuacarpenter@example.com, card 4616777429256671.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for from IP 181.174.183.162, reference transfer to GB68NMGG04284670380158, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with DOB 23-05-1972 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller reach them at nunezmisty@example.com, callback PAN card KAVLZ5273P.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? phone 749-468-9219 / Aadhaar number 4608 5852 9120 / tax id TQUKZ7997D", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether card number 4291 0574 0954 6785 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: name: Barbara Manning cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with card number 4850 5847 5879 4610 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: SSN: 260-43-5737; name: Rebecca Lewis.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: name: Robin Martinez, SSN: 400-66-1844.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller IBAN GB28UJHH70788422244947, callback PAN card TDXPB1121X.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? transfer to GB42YYVE54799016528160 / name: James Simmons / patient MRN-60465512", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for Joseph Gibson, reference PAN PWSYJ1271W, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: email icolon@example.com, card number 4268 4017 0325 5900.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether card 4514 0884 0495 3909 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: dyerangel@example.org; address 191.225.42.86.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: vwallace@example.org; Aadhaar 4889 4956 1070.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether Sharon King is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? MRN-50659314 / gjones@example.net / born 07/04/1949", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: record MRN-9502213; transfer to GB29YQZK72512181180057.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether server 40.103.93.120 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: SSN: 178-32-2828, PAN card WDCSA1715M.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller customer Kimberly Baker, callback email matthewsrobert@example.com.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: server 202.100.249.25, DOB 30.03.1980.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: bank account GB25IWNF24065787774902; patient MRN-88129583.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with server 70.204.124.14 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? SSN: 120-65-6836 / name: Samantha Castaneda / Aadhaar number 7408 9152 8731", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: record MRN-23437218; email hughestammy@example.net.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller transfer to GB05ZYYF26732635414696, callback from IP 173.63.150.246.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? SSN 255-63-8949 / MRN-18516417 / Herbert Ho", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for UID 7208 5776 7977, reference call (617) 707-2951, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for UID 3486 2110 7075, reference tax id XGWYS1874B, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: IBAN GB23KFCY58380084621434; SSN: 377-37-5172.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller mobile: 718-616-9260, callback MRN-63989113.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for name: Angel Osborne, reference Aadhaar 3626 5623 3357, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: DOB 05-09-1984 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller born 19.02.1980, callback call +1 586 788 4726.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: DOB 21/05/1973, name: Lauren Golden.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: transfer to GB28KUJN34923275017194; customer Michael Nunez.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? server 142.216.106.229 / patient MRN-12132049 / bank account GB53AIIM69689651867632", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: IBAN GB88QQRI95283066390130, paid with 4872201283480656.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: patient MRN-21163119; tax id ZGAWP7292H.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether mobile: (935) 407-1094 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: SSN: 142-23-3929, Jesus Bishop.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: server 121.241.232.193; reach them at kyle33@example.net.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? born 13/09/1995 / email caitlin73@example.org / MRN-32730977", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: from IP 80.149.90.57; card number 4978812954330591.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: DOB 26/01/2002, paid with 4501 5550 4755 1527.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: UID 8692 8911 9694; record MRN-13340569.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for UID 3663 1509 6123, reference paid with 4733320572926671, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: PAN card CWZLM6235A, reach them at grantgarrett@example.com.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for PAN card MXZZF2791Y, reference mobile: (434) 880-4214, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: james08@example.net cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for date of birth 20.06.1964, reference social security number 252-59-7814, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: social security number 276-90-8436 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: card number 4196678488669317; chambersmanuel@example.org.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: mobile: 836-635-7768 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: server 177.202.55.184; name: Donna Brown.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with phone 325-888-6905 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for customer Charles Young, reference brandidaniels@example.net, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: phone 672-341-4857; paid with 4612103066375829.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: IBAN GB90LQNL58047180483868 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: call 245-453-1837 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with date of birth 13-02-1982 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: PAN card SPMXM9769A cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: mobile: +1 900 236 5974, from IP 133.33.153.46.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? from IP 178.179.26.10 / customer Edgar Johnston / IBAN GB76OTYU24969109603639", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for from IP 130.111.251.98, reference SSN: 527-82-5783, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: patient MRN-37829198, SSN 810-62-2959.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? diane63@example.org / card number 4779 4935 1713 8283 / IBAN GB30ZCGT39965039874178", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether Aadhaar 7379 3397 7967 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether phone +1 662 648 5354 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for mobile: (287) 449-9516, reference DOB 10/05/1968, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with MRN-78666922 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for debbie19@example.net, reference paid with 4520309769253574, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: UID 5653 9754 6458, mobile: (581) 861-3339.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: PAN BHBUR7537U, social security number 452-34-6833.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? phone (525) 900-5440 / server 132.134.49.247 / name: Devin Johnson", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether card 4037183111729151 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with call +1 969 299 2786 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: MRN-12479475 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? address 179.199.73.194 / SSN: 707-25-3829 / Sue Webster", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with phone (383) 386-4992 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for server 23.38.235.5, reference born 06-09-1951, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? social security number 183-47-4159 / card number 4230 2858 7776 6239 / UID 9129 5546 9815", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: DOB 26/01/1996 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: reach them at sydney43@example.com; card number 4794 8882 7104 0347.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller record MRN-98421447, callback reach them at john71@example.net.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: from IP 2.231.142.51, social security number 610-98-9537.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller card 4782378713381735, callback customer Brenda Cowan DDS.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: card number 4961 7330 7721 6724, server 200.32.96.81.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller MRN-10790059, callback IBAN GB70YOTY22505312630736.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with reach them at desparza@example.org next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: SSN: 535-70-3436, mobile: 886-209-1518.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: SSN 483-15-6124 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller SSN 338-11-8666, callback bank account GB47XWDB35547138243753.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: phone (450) 959-2910, born 09-11-1973.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: date of birth 13/12/1987; mobile: 386-488-4825.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for name: Jason Hanson, reference card number 4729486625871408, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: date of birth 22.04.1966, social security number 386-93-9809.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? social security number 849-67-2840 / PAN card AKEPA9051K / from IP 119.220.232.14", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: tax id DKDWH8549N; Aadhaar number 9504 8064 5956.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with SSN: 720-51-2265 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with address 145.204.173.44 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: transfer to GB24KIDJ13766479329519 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: record MRN-24886540, card 4892 6793 2021 2529.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: tax id EHDXS6173K cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with address 84.53.129.171 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with card number 4389330757414630 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for date of birth 03/04/1965, reference Aadhaar number 4169 7600 5092, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller Aadhaar 2700 7539 9219, callback DOB 28-06-1950.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with from IP 153.139.61.67 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? reach them at thomashood@example.org / transfer to GB82RBZV60685026666985 / from IP 191.132.11.13", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: transfer to GB05AZFH92647510038192 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? bank account GB60HJGW14611544289493 / name: Alyssa Miller / address 31.39.99.181", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: email bcochran@example.com, social security number 682-33-7765.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: PAN card BAGTC4035H, call 410-920-2689.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller mobile: (490) 898-5357, callback PAN UKUHR1434C.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether call 684-639-8890 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with address 208.238.97.240 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether SSN 357-33-9708 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller call (410) 353-6973, callback card 4428 3113 3252 4468.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for transfer to GB04CWQR56543479059782, reference PAN card JGKRV1763Z, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: address 219.73.130.30, social security number 479-55-8325.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? Jillian Gutierrez / born 28-10-1990 / abush@example.com", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with social security number 179-67-4051 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller server 180.219.83.46, callback IBAN GB06COFJ18662737400488.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: paid with 4805 0249 0261 1879, born 20/07/1957.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether from IP 211.39.23.6 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for reach them at leslieparker@example.com, reference SSN: 733-15-3963, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? customer Danielle George / phone +1 688 378 7634 / record MRN-85718247", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for Logan Cervantes, reference UID 4906 5068 5458, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether Aadhaar number 4332 8670 3812 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for Karina Clay, reference address 208.134.179.200, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether transfer to GB40MUJL01653755241109 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: PAN CNLHQ7110L; reach them at dmartin@example.com.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller call (781) 827-7719, callback reach them at sandrabarnett@example.net.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: social security number 528-59-8423, Aadhaar 4738 5228 6955.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller paid with 4667 6545 2137 2714, callback DOB 11/06/1952.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: tax id AGUHT3497Y; Aadhaar 7025 7599 1075.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: mobile: 502-791-9339; card 4540393829999604.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: call +1 924 928 9539; address 105.28.42.21.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: server 111.192.76.249, social security number 560-55-9125.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: kleinkevin@example.net, PAN card BFJUF1019Z.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: born 15.04.2007, name: Kelly Alvarez.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for Kristina Stone, reference social security number 461-18-4050, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with mobile: +1 480 892 8640 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? SSN 449-31-6472 / Jerry Kelly / address 195.251.212.190", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: paid with 4705024929057776, born 05/05/1980.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether email vturner@example.net is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with tax id VXBBR7123N next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with from IP 12.169.213.102 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether UID 5850 8741 5069 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether transfer to GB42LZCF78314796228525 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: PAN card GUEUG7488V, date of birth 29/06/1962.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: DOB 28.05.1953 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with call 643-903-9145 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: SSN 668-81-9185 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: PAN QLWRU4313C cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: from IP 223.171.93.218; SSN 303-84-4880.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with Aadhaar number 9243 7476 1674 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with UID 8377 8851 2442 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: bank account GB22URBJ80018359007568; SSN 777-18-5946.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with customer Robert Todd next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: phone +1 536 447 3813 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: card number 4047973806889973 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: DOB 02/04/1967; address 136.82.249.136.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? SSN 600-35-3351 / call (650) 266-7728 / tax id SNEVK5872M", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: SSN: 374-98-5310; paid with 4697 2279 2831 6974.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether record MRN-53288426 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for card 4582288732575799, reference transfer to GB66GCGQ48223931346053, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: PAN card BBHYS7106L, record MRN-92526910.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with IBAN GB04JYWP19462414283921 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? bank account GB85KHFS02304478139621 / PAN card WZQNY9260C / Aadhaar number 9482 3037 4833", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether tax id FDLTZ1601W is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: date of birth 10-10-2006, MRN-83103311.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? Aadhaar 6821 1797 7560 / customer Lisa Freeman / transfer to GB39TEYC71998605862944", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: reach them at denise42@example.org cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: record MRN-65458779; born 30/11/1963.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for MRN-7716766, reference UID 9240 1067 7070, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller record MRN-21164020, callback born 04-10-1992.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with Aadhaar 9662 4776 3277 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: address 176.102.65.4; DOB 05-03-2006.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with born 05.02.1983 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: patient MRN-49192073, Aadhaar 5782 3294 8467.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: mobile: +1 697 551 2315, date of birth 06-10-1983.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller paid with 4961 5364 3897 5908, callback reach them at sanchezholly@example.net.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for UID 6403 5651 6105, reference from IP 222.156.21.5, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller transfer to GB69WEWG63665944768151, callback timothyjohnson@example.org.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for call 938-460-6284, reference reach them at sparksleslie@example.net, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? from IP 7.160.240.255 / PAN card BKKKL1542Q / call 437-512-3904", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: patient MRN-45801304, SSN 844-65-3618.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: server 185.149.122.19, DOB 10.05.1995.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? customer Lisa Phillips / tax id EVZDG9884M / social security number 869-92-2234", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: UID 5142 2603 8785, record MRN-69884339.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: SSN 669-95-5204; mobile: (581) 362-6593.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? DOB 20-02-2006 / PAN card VPLSD7202Q / SSN: 131-66-6735", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for DOB 13/11/2001, reference PAN FGCVE1459C, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for SSN: 562-51-1350, reference server 164.143.78.29, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for Aadhaar number 4028 2378 2093, reference reach them at xchapman@example.org, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for customer Jennifer Contreras, reference SSN 749-53-5805, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: PAN UVAWT4322Q; date of birth 28-12-1993.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: card number 4079 9497 7334 8590 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: SSN 290-54-3473; from IP 128.67.68.137.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for name: Joseph Bolton, reference card number 4205 7343 2299 4871, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for mobile: 632-653-7721, reference born 17.05.1980, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with IBAN GB28KHHO97879457271717 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with patient MRN-6423513 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: date of birth 07-10-1978; paid with 4918 5813 0687 5487.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: mobile: +1 559 463 5724, PAN BCGME5201Q.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with call (583) 445-6770 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: card 4492 1609 9510 4568; paul85@example.net.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? UID 2574 4943 2983 / PAN VJDMY7015B / server 82.139.122.82", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: email kevin07@example.com; address 111.133.22.28.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: SSN 742-76-3295, mobile: 611-621-9753.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: Aadhaar 5942 3112 6314, DOB 13-07-1973.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: SSN: 591-64-7348 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller mobile: (500) 522-1488, callback social security number 242-17-8319.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? call +1 805 728 6102 / born 22.08.2002 / vharper@example.net", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: address 213.29.125.11; social security number 879-32-1891.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: portermargaret@example.net cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller date of birth 08/03/2004, callback IBAN GB50PLYU06592929138581.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for call (439) 842-5665, reference social security number 332-93-8062, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? name: David Reyes / paid with 4883942184152533 / DOB 26-08-1990", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller DOB 04.05.1973, callback Aadhaar 3874 2822 7046.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with UID 3265 8347 2750 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller DOB 18-09-1978, callback reach them at rebecca24@example.org.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: transfer to GB24TNKQ16740755753223, mobile: (555) 742-6543.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller Charles Rojas, callback server 74.58.4.39.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: DOB 04.03.1968 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: paid with 4875048954039114, orivera@example.org.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for Aadhaar number 3516 9410 1531, reference transfer to GB59VUKU41457990837059, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: name: Christine Ashley cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller card 4282 5231 5363 7758, callback westrobert@example.com.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: customer Robert Ray cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: email ronaldlittle@example.net; bank account GB40BVZJ73582871554488.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: born 27-03-1949; patient MRN-34796339.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: social security number 137-42-4203, card number 4352472315353646.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with mobile: +1 487 253 6703 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: UID 5556 8366 9326; address 21.46.214.139.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: bank account GB95DCZU64598131894155; record MRN-20173077.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller paid with 4074083721821667, callback PAN card NEDPV1821G.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: DOB 15.01.1982; PAN DTSRM5500A.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: MRN-5015340, from IP 167.133.205.145.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with mobile: +1 864 579 7819 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with call (654) 522-9439 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: SSN: 159-70-6293; UID 3543 5833 1156.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether social security number 800-70-1530 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller Diane Walters, callback SSN 192-43-9836.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for PAN DPHRR5285B, reference reach them at zanderson@example.org, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? social security number 256-42-9211 / transfer to GB40PAEW27696112450220 / Aadhaar number 8985 8500 8678", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? Aadhaar number 4100 4483 8362 / record MRN-69736389 / IBAN GB26OLNC70984957482920", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with social security number 489-62-3440 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether server 176.199.219.248 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? call 555-586-7104 / bank account GB28VDON38251234063659 / SSN 574-99-4482", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? mobile: +1 732 969 2418 / patient MRN-42647425 / date of birth 14-03-1973", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? address 193.108.50.102 / customer Kathleen Murphy / transfer to GB37ODDO40315034271170", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller record MRN-36996941, callback PAN card ATGTB1954E.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether Aadhaar 7730 9816 7977 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? transfer to GB18NEMO61958508183527 / born 26/06/2002 / Aadhaar number 9541 9002 6209", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? bank account GB36UZHY73039854628804 / UID 8994 6460 2536 / server 201.126.165.53", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller record MRN-60473916, callback phone 293-387-9211.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller card 4303 0892 4062 6472, callback Aadhaar 9043 4078 1496.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller MRN-93445044, callback Jennifer Green.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: plara@example.org; transfer to GB98BIWG59531405944867.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: PAN card ZBNMH6997D; richard72@example.org.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with hallcrystal@example.com next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for card number 4216 9036 4753 1885, reference Aadhaar 5682 2167 4997, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? IBAN GB04PLIZ03798060315631 / call +1 572 786 9580 / SSN 441-10-3003", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller PAN QEQGV5907Y, callback ghull@example.org.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for card 4424075834002794, reference name: Benjamin Pearson, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Confirm the shipping details we have on file: card 4148155016377407; server 118.70.193.40.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Can you check whether UID 6953 6183 1204 is already in the CRM before I add it?", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Log a ticket: IBAN GB63ENIE48497776496437 cannot access the portal, escalate to tier 2.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for reach them at kimberly23@example.org, reference PAN HBGJZ5425J, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: transfer to GB51EMNE50846162565646, PAN card WUYZF7810D.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Prepare a refund for from IP 170.217.165.150, reference date of birth 29/01/1951, and notify the customer.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller card 4197819958668863, callback transfer to GB16TVYS19540083800240.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Rewrite this note for the case file: caller holly60@example.net, callback server 147.130.53.78.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Please schedule a follow-up with patient MRN-55010284 next Tuesday.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: Aadhaar number 5285 2399 2686, date of birth 02-08-1990.", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Which of these fields are mandatory for onboarding? tax id ZYZSX9977N / record MRN-11601098 / date of birth 26/03/1954", "label": 0, "source": "pii-hard-negative", "split": "train"}
+{"text": "Anonymise this snippet for the training deck: date of birth 25/02/2004, card 4989 7566 6484 5140.", "label": 0, "source": "pii-hard-negative", "split": "train"}

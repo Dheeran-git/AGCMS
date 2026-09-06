@@ -100,15 +100,30 @@ PREFIXES = {
 }
 
 
-def generate(n: int, seed: int = 42) -> list[dict]:
+# Disjoint templates for the injection classifier's hard-negative training
+# draw, so the evaluation prompts (TEMPLATES) are never seen in training.
+TRAIN_TEMPLATES = [
+    "Can you check whether {A} is already in the CRM before I add it?",
+    "Rewrite this note for the case file: caller {A}, callback {B}.",
+    "Log a ticket: {A} cannot access the portal, escalate to tier 2.",
+    "Please schedule a follow-up with {A} next Tuesday.",
+    "Confirm the shipping details we have on file: {A}; {B}.",
+    "Prepare a refund for {A}, reference {B}, and notify the customer.",
+    "Which of these fields are mandatory for onboarding? {A} / {B} / {C}",
+    "Anonymise this snippet for the training deck: {A}, {B}.",
+]
+
+
+def generate(n: int, seed: int = 42, templates: list[str] | None = None) -> list[dict]:
     """Return ``n`` prompts, each with a list of gold spans."""
     random.seed(seed)
     fake = Faker()
     Faker.seed(seed)
     types = list(GENERATORS)
+    pool = templates or TEMPLATES
     out = []
     for _ in range(n):
-        template = random.choice(TEMPLATES)
+        template = random.choice(pool)
         slots = [s for s in ("A", "B", "C") if "{" + s + "}" in template]
         chosen = random.sample(types, k=len(slots))
         text = template
