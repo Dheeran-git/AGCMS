@@ -89,11 +89,27 @@ class TestResolveAllow:
 class TestResolveBlock:
     def test_injection_above_threshold_blocks(self, policy: httpx.Client):
         r = policy.post("/resolve", json={
-            "injection_result": {"risk_score": 0.9, "attack_type": "DIRECT", "is_injection": True},
+            "injection_result": {"risk_score": 0.9, "attack_type": "DIRECT", "is_injection": True,
+                                 "triggered_rules": [{"name": "direct_ignore", "pattern": "ignore all previous instructions", "weight": 0.9}]},
         })
         assert r.status_code == 200
         assert r.json()["action"] == "BLOCK"
         assert "injection" in r.json()["triggered_policies"]
+
+    def test_ml_only_score_below_095_allows(self, policy: httpx.Client):
+        """An uncorroborated ML score must reach ml_only_block_threshold (0.95)."""
+        r = policy.post("/resolve", json={
+            "injection_result": {"risk_score": 0.9, "attack_type": None, "is_injection": True,
+                                 "triggered_rules": []},
+        })
+        assert r.json()["action"] == "ALLOW"
+
+    def test_ml_only_score_above_095_blocks(self, policy: httpx.Client):
+        r = policy.post("/resolve", json={
+            "injection_result": {"risk_score": 0.97, "attack_type": None, "is_injection": True,
+                                 "triggered_rules": []},
+        })
+        assert r.json()["action"] == "BLOCK"
 
     def test_critical_pii_blocks_default(self, policy: httpx.Client):
         r = policy.post("/resolve", json={
@@ -105,14 +121,16 @@ class TestResolveBlock:
 
     def test_injection_at_threshold_blocks(self, policy: httpx.Client):
         r = policy.post("/resolve", json={
-            "injection_result": {"risk_score": 0.65, "attack_type": "JAILBREAK", "is_injection": True},
+            "injection_result": {"risk_score": 0.65, "attack_type": "JAILBREAK", "is_injection": True,
+                                 "triggered_rules": [{"name": "direct_ignore", "pattern": "ignore all previous instructions", "weight": 0.9}]},
         })
         assert r.status_code == 200
         assert r.json()["action"] == "BLOCK"
 
     def test_custom_block_threshold(self, policy: httpx.Client):
         r = policy.post("/resolve", json={
-            "injection_result": {"risk_score": 0.8, "attack_type": "DIRECT", "is_injection": True},
+            "injection_result": {"risk_score": 0.8, "attack_type": "DIRECT", "is_injection": True,
+                                 "triggered_rules": [{"name": "direct_ignore", "pattern": "ignore all previous instructions", "weight": 0.9}]},
             "policy": {
                 "injection": {"enabled": True, "block_threshold": 0.90},
                 "pii": {"enabled": True},
@@ -124,14 +142,16 @@ class TestResolveBlock:
 
     def test_block_reason_contains_score(self, policy: httpx.Client):
         r = policy.post("/resolve", json={
-            "injection_result": {"risk_score": 0.85, "attack_type": "DIRECT", "is_injection": True},
+            "injection_result": {"risk_score": 0.85, "attack_type": "DIRECT", "is_injection": True,
+                                 "triggered_rules": [{"name": "direct_ignore", "pattern": "ignore all previous instructions", "weight": 0.9}]},
         })
         reason = r.json().get("reason", "")
         assert "0.85" in reason
 
     def test_block_reason_contains_attack_type(self, policy: httpx.Client):
         r = policy.post("/resolve", json={
-            "injection_result": {"risk_score": 0.9, "attack_type": "JAILBREAK", "is_injection": True},
+            "injection_result": {"risk_score": 0.9, "attack_type": "JAILBREAK", "is_injection": True,
+                                 "triggered_rules": [{"name": "direct_ignore", "pattern": "ignore all previous instructions", "weight": 0.9}]},
         })
         reason = r.json().get("reason", "")
         assert "JAILBREAK" in reason
@@ -210,7 +230,8 @@ class TestResolveEscalate:
 
     def test_injection_blocks_when_below_escalate_threshold(self, policy: httpx.Client):
         r = policy.post("/resolve", json={
-            "injection_result": {"risk_score": 0.75, "attack_type": "DIRECT", "is_injection": True},
+            "injection_result": {"risk_score": 0.75, "attack_type": "DIRECT", "is_injection": True,
+                                 "triggered_rules": [{"name": "direct_ignore", "pattern": "ignore", "weight": 0.9}]},
             "policy": {
                 "pii": {"enabled": True},
                 "injection": {

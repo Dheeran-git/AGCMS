@@ -186,3 +186,31 @@ Caveats for the paper:
 - Latency is PyTorch eager on CPU for DistilBERT and ONNX Runtime for
   DeBERTa; exporting DistilBERT to ONNX (`ml/export_onnx.py`) would lower
   its numbers further.
+
+### Classifier false positives on PII-bearing enterprise prompts (2026-09-07)
+
+The injection eval's benign rows come from jailbreak corpora and contain
+almost no PII. Scoring the PII corpus (which contains no injections) through
+both classifiers exposes a weakness the headline FPR hides. Share of prompts
+scored at or above each threshold (0.95 is the default ML-only block point):
+
+| Prompt set | n | DistilBERT >=0.5 | DistilBERT >=0.95 | DeBERTa >=0.5 | DeBERTa >=0.95 |
+|---|---|---|---|---|---|
+| Faker PII prompts | 600 | 0.057 | 0.023 | 0.157 | 0.112 |
+| ai4privacy PII rows | 400 | 0.130 | 0.065 | 0.200 | 0.170 |
+| benign (no PII) | 600 | 0.002 | 0.002 | 0.008 | 0.008 |
+
+Typical false positives are imperative enterprise requests that carry PII,
+such as "Extract the key facts: James Lewis / matthew64@example.com" (0.996)
+or "confirm your SSN ... and DOB ... for the ICU record" (0.97). The
+fine-tuned model is 3 to 5 times better than the off-the-shelf DeBERTa on
+this set, but 2 to 6% of legitimate PII-bearing prompts would still be
+blocked as injections under the default policy. The integration test
+`test_ssn_blocked_critical` fails for exactly this reason: the prompt is
+blocked, but as an injection (score 1.00) rather than as critical PII.
+
+Root cause: none of the training sources contain PII-bearing benign prompts,
+so the model has never seen "instruction + personal data" labelled benign.
+Remedy under consideration: add generated PII-bearing benign prompts (a
+separate Faker draw from the evaluation set) to the training rows as hard
+negatives and retrain.
