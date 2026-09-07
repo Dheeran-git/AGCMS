@@ -7,6 +7,13 @@ release has a fixed `YYYY-MM-DD` date once cut.
 ## [Unreleased] — scope reset to the CHTR proposal
 
 ### Changed
+- ROLEPLAY heuristic rules are advisory: recorded in `triggered_rules` and
+  `attack_type` but they no longer raise the risk score alone; the classifier
+  decides. Removes the 6 % held-out false-positive rate from "pretend to be"
+  prompts.
+- CI runs on `master`, Python 3.12, installs `agcms-common`, builds service
+  images from the repo root; Kubernetes dashboard service targets port 80;
+  Playwright suite targets port 4173.
 - Injection classifier: off-the-shelf DeBERTa replaced by a DistilBERT
   fine-tuned on the publisher train splits with PII-bearing hard negatives
   (held-out F1 0.958 +- 0.007 over 3 seeds vs 0.818; PII-prompt false

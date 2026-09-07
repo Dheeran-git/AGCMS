@@ -93,10 +93,13 @@ for the paper's headline.
 | keyword | 0.978 | 0.226 | 0.367 | 0.006 |
 | heuristic | 0.833 | 0.276 | 0.415 | 0.062 |
 | ml | 1.000 | 0.920 | 0.958 | 0.000 |
-| full (shipped) | 0.943 | 0.920 | 0.931 | 0.062 |
+| full, all 20 rules blocking | 0.943 | 0.920 | 0.931 | 0.062 |
+| heuristic, ROLEPLAY advisory | 1.000 | 0.126 | 0.223 | 0.000 |
+| full, ROLEPLAY advisory (shipped) | 1.000 | 0.920 | 0.958 | 0.000 |
 
-Recall by source, full config: agcms-synthetic 1.000, deepset 0.935,
-jackhhao 0.987 (FPR 0.056), advbench 0.471.
+Recall by source, shipped config: agcms-synthetic 1.000, deepset 0.935,
+jackhhao 0.987 (FPR 0.002), advbench 0.471. Full-corpus F1 0.991, FPR 0.001,
+median 41 ms.
 
 #### ML classifier on PII-bearing prompts (no injections present)
 
@@ -108,19 +111,25 @@ jackhhao 0.987 (FPR 0.056), advbench 0.471.
 
 #### Reading the numbers
 
-- **Held-out F1 rises from 0.873 to 0.931** for the shipped configuration
-  and from 0.860 to 0.958 for the classifier alone, against the same
-  DeBERTa-era numbers on the full corpus. Median injection latency falls
-  from 269 ms to 39 ms (ONNX DistilBERT, no fixed padding).
-- **The heuristic layer now costs more than it adds.** On held-out rows the
-  classifier alone has FPR 0 and F1 0.958; adding the 20 regex rules
-  contributes no extra recall and raises FPR to 6.2 % through the ROLEPLAY
-  rules on jackhhao benign prompts, pulling F1 down to 0.931. With the
-  DeBERTa model the heuristics were worth +0.013 F1; with the fine-tuned
-  model they are worth -0.027. The paper should report this as the ablation
-  result it is; whether to keep the rules (interpretable, sub-millisecond,
-  useful when the ML model is disabled) is a design choice to state, not a
-  bug.
+- **Held-out F1 rises from 0.873 to 0.958** for the shipped configuration
+  and from 0.860 to 0.958 for the classifier alone, against the DeBERTa-era
+  numbers on the full corpus. Median injection latency falls from 269 ms to
+  39 to 41 ms (ONNX DistilBERT, no fixed padding); p95 was 615 ms on an idle
+  CPU and 992 ms when the harness shared the CPU with a Docker build.
+- **The ROLEPLAY rules cost more than they added, so they are now advisory.**
+  With all 20 rules blocking, the held-out combination scored F1 0.931 at
+  6.2 % FPR: the classifier alone already reaches 0.958 at 0 % FPR, and the
+  four ROLEPLAY rules added no recall while firing on jackhhao benign prompts
+  such as "Pretend to be Elle Woods" (35 of 36 heuristic false positives).
+  Since 2026-09-07 those rules are still matched and recorded in
+  `triggered_rules` / `attack_type` for the audit row, but they no longer
+  raise the risk score on their own; a roleplay prompt is blocked only when
+  the classifier agrees (policy: rules fired and score >= 0.65). The shipped
+  configuration now matches the classifier alone (F1 0.958, FPR 0) and keeps
+  the other 16 rules as an interpretable, sub-millisecond layer and as the
+  fallback when the ML model is disabled. Heuristic-only recall drops from
+  0.276 to 0.126 on held-out rows, which quantifies how much of the old rule
+  layer's recall came from roleplay phrasing.
 - **PII-prompt false positives are gone.** 0 of 1,200 PII-bearing benign
   prompts and 0 of 600 plain benign prompts reach the 0.95 block threshold
   (yesterday: 2.3 %, 6.5 %, 0.2 %). Only 3 of 400 ai4privacy rows cross 0.5.
@@ -131,6 +140,28 @@ jackhhao 0.987 (FPR 0.056), advbench 0.471.
 - **deepset recall 0.935 on the full corpus, 0.78 on its held-out rows**
   (see the multi-seed section): the German half of deepset remains the
   hardest part of the test set.
+
+#### Gateway under concurrency (Locust, 2026-09-07)
+
+`tests/load/locustfile.py`, 10 users, spawn rate 2/s, 60 s, against the
+Docker stack on the same laptop; live Groq backend; default tenant policy
+(60 requests per minute).
+
+| Endpoint | requests | failures | median ms | p95 ms | max ms |
+|---|---|---|---|---|---|
+| POST /v1/chat/completions (all) | 1,155 | 0 | 52 | 190 | 5,406 |
+| GET /api/dashboard/stats | 117 | 0 | 130 | 240 | 605 |
+| GET /health | 122 | 0 | 7 | 19 | 38 |
+
+Gateway status codes for the completions: 1,095 x 429 (tenant rate limit),
+19 x 200 (reached the LLM), 17 x 403 (blocked), 24 x 502 (provider error).
+Exactly 60 requests per minute passed the limiter, as configured. So this
+run measures the gateway's auth, rate-limit and error path at 23 req/s
+(median 52 ms, no failures, no crashes), not the scan pipeline under load:
+the per-module scan latencies above are the governance-overhead numbers.
+Raising the tenant limit would move the bottleneck to the provider's
+free-tier quota rather than to AGCMS. Raw CSVs: `tests/load/results/`
+(ignored by git).
 
 ### Run 2026-09-06 (commit 781c565)
 

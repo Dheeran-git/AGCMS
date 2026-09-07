@@ -282,7 +282,7 @@ spec:
         - name: dashboard
           image: ghcr.io/OWNER/REPO/agcms-dashboard:latest
           ports:
-            - containerPort: 3000
+            - containerPort: 80
           resources:
             requests:
               memory: "64Mi"
@@ -293,7 +293,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /
-              port: 3000
+              port: 80
             initialDelaySeconds: 5
             periodSeconds: 10
 ---
@@ -306,5 +306,5 @@ spec:
   selector:
     app: dashboard
   ports:
-    - port: 3000
-      targetPort: 3000
+    - port: 80
+      targetPort: 80

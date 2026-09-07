@@ -25,7 +25,7 @@ Auth (:8006) issues JWTs; Tenant (:8007) provisions tenants + API keys.
 |---|---|
 | `agcms-gateway` | OpenAI-compatible proxy, auth, rate limits, management API, SSE feed |
 | `agcms-pii` | 20 regex patterns + spaCy NER, masking, risk level |
-| `agcms-injection` | 20 heuristic rules across 6 attack classes + fine-tuned DistilBERT (ONNX) |
+| `agcms-injection` | fine-tuned DistilBERT (ONNX) + 20 heuristic rules across 6 attack classes (ROLEPLAY rules advisory) |
 | `agcms-response` | PII echo, system-prompt leak and restricted-topic checks on LLM output |
 | `agcms-policy` | YAML policy DSL, validator, enforcement resolver |
 | `agcms-audit` | Hash-chained HMAC audit log, per-row and whole-chain verification |
@@ -71,6 +71,7 @@ unavailable, so an outage cannot let unscreened prompts through. Set
 ```bash
 pytest tests/unit/                 # no services needed
 pytest tests/integration/          # needs `docker compose up`
+cd agcms-dashboard && npx playwright test   # dashboard e2e, needs the stack on :4173
 locust -f tests/load/locustfile.py --host=http://localhost:8000
 ```
 
@@ -93,7 +94,7 @@ ai4privacy plus benign negatives:
 | Injection | heuristics only | 0.833 | 0.276 | 0.415 | 0.062 | 0.3 ms |
 | Injection | off-the-shelf DeBERTa | 0.986 | 0.699 | 0.818 | 0.011 | 126 ms |
 | Injection | fine-tuned DistilBERT (3 seeds) | 1.000 | 0.923 | 0.959 +- 0.007 | 0.002 | 39 ms |
-| Injection | heuristics + DistilBERT (shipped) | 0.943 | 0.920 | 0.931 | 0.062 | 39 ms |
+| Injection | heuristics + DistilBERT (shipped) | 1.000 | 0.920 | 0.958 | 0.000 | 41 ms |
 | PII (entity level) | regex only | 0.956 | 0.672 | 0.789 | | 1.3 ms |
 | PII (entity level) | regex + spaCy (shipped) | 0.926 | 0.810 | 0.864 | | 10.6 ms |
 

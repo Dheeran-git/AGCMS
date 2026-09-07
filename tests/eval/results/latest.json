@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-07T06:03:27.829160+00:00",
+  "generated_at": "2026-09-07T06:28:54.350624+00:00",
   "machine": {
     "platform": "Windows-11-10.0.26200-SP0",
     "python": "3.12.12",
@@ -166,9 +166,9 @@
       },
       "latency": {
         "n": 1600,
-        "median_ms": 1.24,
-        "p95_ms": 2.57,
-        "mean_ms": 1.5
+        "median_ms": 1.22,
+        "p95_ms": 3.13,
+        "mean_ms": 1.55
       }
     },
     "ner": {
@@ -325,9 +325,9 @@
       },
       "latency": {
         "n": 1600,
-        "median_ms": 11.58,
-        "p95_ms": 35.27,
-        "mean_ms": 16.01
+        "median_ms": 13.04,
+        "p95_ms": 35.67,
+        "mean_ms": 17.73
       }
     },
     "full": {
@@ -484,9 +484,9 @@
       },
       "latency": {
         "n": 1600,
-        "median_ms": 10.29,
-        "p95_ms": 26.44,
-        "mean_ms": 13.19
+        "median_ms": 14.22,
+        "p95_ms": 33.03,
+        "mean_ms": 17.63
       }
     }
   },
@@ -675,46 +675,46 @@
       "latency": {
         "n": 3505,
         "median_ms": 0.02,
-        "p95_ms": 0.17,
-        "mean_ms": 0.06
+        "p95_ms": 0.19,
+        "mean_ms": 0.07
       }
     },
     "heuristic": {
       "module_level": {
         "n": 2985,
-        "tp": 520,
-        "fp": 36,
-        "fn": 1068,
-        "tn": 1361,
-        "precision": 0.9353,
-        "recall": 0.3275,
-        "f1": 0.4851,
-        "fpr": 0.0258,
-        "accuracy": 0.6302
+        "tp": 348,
+        "fp": 1,
+        "fn": 1240,
+        "tn": 1396,
+        "precision": 0.9971,
+        "recall": 0.2191,
+        "f1": 0.3593,
+        "fpr": 0.0007,
+        "accuracy": 0.5843
       },
       "policy_level": {
         "n": 2985,
-        "tp": 474,
-        "fp": 35,
-        "fn": 1114,
-        "tn": 1362,
-        "precision": 0.9312,
-        "recall": 0.2985,
-        "f1": 0.4521,
-        "fpr": 0.0251,
-        "accuracy": 0.6151
+        "tp": 299,
+        "fp": 0,
+        "fn": 1289,
+        "tn": 1397,
+        "precision": 1.0,
+        "recall": 0.1883,
+        "f1": 0.3169,
+        "fpr": 0.0,
+        "accuracy": 0.5682
       },
       "held_out": {
         "n": 378,
-        "tp": 55,
-        "fp": 11,
-        "fn": 144,
-        "tn": 168,
-        "precision": 0.8333,
-        "recall": 0.2764,
-        "f1": 0.4151,
-        "fpr": 0.0615,
-        "accuracy": 0.5899
+        "tp": 25,
+        "fp": 0,
+        "fn": 174,
+        "tn": 179,
+        "precision": 1.0,
+        "recall": 0.1256,
+        "f1": 0.2232,
+        "fpr": 0.0,
+        "accuracy": 0.5397
       },
       "by_source": {
         "advbench": {
@@ -731,46 +731,46 @@
         },
         "agcms-synthetic": {
           "n": 1017,
-          "tp": 255,
+          "tp": 219,
           "fp": 0,
-          "fn": 404,
+          "fn": 440,
           "tn": 358,
           "precision": 1.0,
-          "recall": 0.3869,
-          "f1": 0.558,
+          "recall": 0.3323,
+          "f1": 0.4989,
           "fpr": 0.0,
-          "accuracy": 0.6028
+          "accuracy": 0.5674
         },
         "deepset": {
           "n": 662,
-          "tp": 10,
+          "tp": 8,
           "fp": 0,
-          "fn": 253,
+          "fn": 255,
           "tn": 399,
           "precision": 1.0,
-          "recall": 0.038,
-          "f1": 0.0733,
+          "recall": 0.0304,
+          "f1": 0.059,
           "fpr": 0.0,
-          "accuracy": 0.6178
+          "accuracy": 0.6148
         },
         "jackhhao": {
           "n": 1306,
-          "tp": 255,
-          "fp": 36,
-          "fn": 411,
-          "tn": 604,
-          "precision": 0.8763,
-          "recall": 0.3829,
-          "f1": 0.5329,
-          "fpr": 0.0563,
-          "accuracy": 0.6577
+          "tp": 121,
+          "fp": 1,
+          "fn": 545,
+          "tn": 639,
+          "precision": 0.9918,
+          "recall": 0.1817,
+          "f1": 0.3071,
+          "fpr": 0.0016,
+          "accuracy": 0.5819
         }
       },
       "latency": {
         "n": 3505,
-        "median_ms": 0.26,
-        "p95_ms": 9.91,
-        "mean_ms": 1.81
+        "median_ms": 0.24,
+        "p95_ms": 11.19,
+        "mean_ms": 2.07
       }
     },
     "ml": {
@@ -862,47 +862,47 @@
       },
       "latency": {
         "n": 3505,
-        "median_ms": 39.11,
-        "p95_ms": 608.07,
-        "mean_ms": 147.25
+        "median_ms": 40.66,
+        "p95_ms": 967.13,
+        "mean_ms": 199.15
       }
     },
     "full": {
       "module_level": {
         "n": 2985,
         "tp": 1562,
-        "fp": 36,
+        "fp": 1,
         "fn": 26,
-        "tn": 1361,
-        "precision": 0.9775,
+        "tn": 1396,
+        "precision": 0.9994,
         "recall": 0.9836,
-        "f1": 0.9805,
-        "fpr": 0.0258,
-        "accuracy": 0.9792
+        "f1": 0.9914,
+        "fpr": 0.0007,
+        "accuracy": 0.991
       },
       "policy_level": {
         "n": 2985,
-        "tp": 1547,
-        "fp": 35,
-        "fn": 41,
-        "tn": 1362,
-        "precision": 0.9779,
-        "recall": 0.9742,
-        "f1": 0.976,
-        "fpr": 0.0251,
-        "accuracy": 0.9745
+        "tp": 1546,
+        "fp": 0,
+        "fn": 42,
+        "tn": 1397,
+        "precision": 1.0,
+        "recall": 0.9736,
+        "f1": 0.9866,
+        "fpr": 0.0,
+        "accuracy": 0.9859
       },
       "held_out": {
         "n": 378,
         "tp": 183,
-        "fp": 11,
+        "fp": 0,
         "fn": 16,
-        "tn": 168,
-        "precision": 0.9433,
+        "tn": 179,
+        "precision": 1.0,
         "recall": 0.9196,
-        "f1": 0.9313,
-        "fpr": 0.0615,
-        "accuracy": 0.9286
+        "f1": 0.9581,
+        "fpr": 0.0,
+        "accuracy": 0.9577
       },
       "by_source": {
         "advbench": {
@@ -944,21 +944,21 @@
         "jackhhao": {
           "n": 1306,
           "tp": 657,
-          "fp": 36,
+          "fp": 1,
           "fn": 9,
-          "tn": 604,
-          "precision": 0.9481,
+          "tn": 639,
+          "precision": 0.9985,
           "recall": 0.9865,
-          "f1": 0.9669,
-          "fpr": 0.0563,
-          "accuracy": 0.9655
+          "f1": 0.9924,
+          "fpr": 0.0016,
+          "accuracy": 0.9923
         }
       },
       "latency": {
         "n": 3505,
-        "median_ms": 39.38,
-        "p95_ms": 615.27,
-        "mean_ms": 149.05
+        "median_ms": 41.0,
+        "p95_ms": 991.86,
+        "mean_ms": 201.22
       }
     }
   },
@@ -1032,9 +1032,9 @@
     },
     "latency": {
       "n": 240,
-      "median_ms": 0.07,
-      "p95_ms": 0.15,
-      "mean_ms": 0.08
+      "median_ms": 0.11,
+      "p95_ms": 0.21,
+      "mean_ms": 0.13
     }
   },
   "policy": {

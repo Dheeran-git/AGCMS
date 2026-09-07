@@ -7,7 +7,7 @@ export default defineConfig({
   timeout: 30_000,
   reporter: 'list',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: process.env.AGCMS_DASHBOARD_URL || 'http://localhost:4173',
     headless: true,
     screenshot: 'only-on-failure',
     video: 'off',

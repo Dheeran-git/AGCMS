@@ -37,7 +37,10 @@ Thumbs.db
 
 # ML model cache (too large for git)
 agcms-injection/model/
-agcms-injection/ml/model/
+agcms-injection/ml/model/*
+!agcms-injection/ml/model/onnx/
+agcms-injection/ml/model/onnx/*
+!agcms-injection/ml/model/onnx/.gitkeep
 *.onnx
 *.ort
 
@@ -57,3 +60,4 @@ agcms-design-system/
 
 # Evaluation run outputs (latest.json is committed; timestamped runs are not)
 tests/eval/results/eval_*.json
+tests/load/results/

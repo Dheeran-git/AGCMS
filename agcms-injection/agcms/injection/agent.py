@@ -25,9 +25,18 @@ logger = logging.getLogger(__name__)
 
 _RULES: List[Tuple[str, str, re.Pattern, float]] = []
 
+# Categories whose rules are recorded in triggered_rules but do not raise the
+# risk score on their own. ROLEPLAY phrasing ("pretend to be Elle Woods") is
+# common in benign prompts; the classifier decides, the rule only explains.
+_ADVISORY_CATEGORIES = {"ROLEPLAY"}
+
 
 def _add(name: str, category: str, pattern: str, weight: float):
     _RULES.append((name, category, re.compile(pattern, re.IGNORECASE), weight))
+
+
+def _category_of(rule_name: str) -> Optional[str]:
+    return next((cat for name, cat, _, _ in _RULES if name == rule_name), None)
 
 
 # Category: DIRECT — explicit instruction override
@@ -224,21 +233,14 @@ class InjectionAgent:
         if not triggered and ml_score is None:
             return InjectionScanResult()
 
-        heuristic_score = max(r.weight for r in triggered) if triggered else 0.0
+        scoring = [r.weight for r in triggered if _category_of(r.name) not in _ADVISORY_CATEGORIES]
+        heuristic_score = max(scoring) if scoring else 0.0
         if ml_score is not None:
             final_score = max(heuristic_score, ml_score)
         else:
             final_score = heuristic_score
 
-        # Determine primary attack type from highest-weight rule
-        attack_type = None
-        if triggered:
-            best_rule = max(triggered, key=lambda r: r.weight)
-            # Extract category from the rule name via lookup
-            for name, category, _, _ in _RULES:
-                if name == best_rule.name:
-                    attack_type = category
-                    break
+        attack_type = _category_of(max(triggered, key=lambda r: r.weight).name) if triggered else None
 
         return InjectionScanResult(
             risk_score=min(final_score, 1.0),
