@@ -32,10 +32,7 @@ jobs:
 
       - name: Run unit tests
         env:
-          AGCMS_SIGNING_KEY: test-signing-key-for-unit-tests
-          DATABASE_URL: postgresql://agcms:secret@localhost:5432/agcms
-          AGCMS_ML_ENABLED: "false"
-          JWT_SECRET_KEY: test-jwt-secret
+          AGCMS_ML_ENABLED: "false"   # no ONNX weights in CI; tests/conftest.py sets the other defaults
         run: |
           pytest tests/unit/ -v --tb=short \
             --junitxml=unit-results.xml \
