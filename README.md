@@ -55,8 +55,8 @@ build (weights are not committed):
 
 ```bash
 python tests/eval/prepare_datasets.py          # corpora, incl. training rows
-python agcms-injection/ml/train.py             # DistilBERT, ~2 h on a laptop CPU
-python agcms-injection/ml/export_onnx.py       # -> agcms-injection/ml/model/onnx
+python agcms-injection/ml/train.py --hard-negatives --out agcms-injection/ml/model/seed2-hn --seed 2   # ~2 h on a laptop CPU
+python agcms-injection/ml/export_onnx.py --src agcms-injection/ml/model/seed2-hn --dst agcms-injection/ml/model/onnx
 ```
 
 Without the export the injection service starts in heuristic-only mode.
@@ -82,22 +82,26 @@ the full run errors.
 
 All accuracy, latency, ablation and baseline numbers come from the harness
 under `tests/eval/` and are recorded with the machine used in
-`docs/evaluation.md`. Headline results from the 2026-09-06 run on a laptop
-CPU (3,505 injection prompts from deepset, jackhhao and the AGCMS template
-set; 1,600 PII prompts from Faker and ai4privacy plus benign negatives):
+`docs/evaluation.md`. Headline results from the 2026-09-07 run on a laptop
+CPU. Injection rows are the 378 held-out publisher test rows the classifier
+never saw (199 injections); PII rows are 1,600 prompts from Faker and
+ai4privacy plus benign negatives:
 
 | Module | Config | Precision | Recall | F1 | FPR | median latency |
 |---|---|---|---|---|---|---|
-| Injection | keyword baseline | 0.998 | 0.291 | 0.451 | 0.001 | 0 ms |
-| Injection | heuristics only | 0.935 | 0.328 | 0.485 | 0.026 | 0.06 ms |
-| Injection | DeBERTa only | 0.993 | 0.758 | 0.860 | 0.006 | 253 ms |
-| Injection | heuristics + DeBERTa (shipped) | 0.966 | 0.795 | 0.873 | 0.032 | 269 ms |
+| Injection | keyword baseline | 0.978 | 0.226 | 0.367 | 0.006 | 0.02 ms |
+| Injection | heuristics only | 0.833 | 0.276 | 0.415 | 0.062 | 0.3 ms |
+| Injection | off-the-shelf DeBERTa | 0.986 | 0.699 | 0.818 | 0.011 | 126 ms |
+| Injection | fine-tuned DistilBERT (3 seeds) | 1.000 | 0.923 | 0.959 +- 0.007 | 0.002 | 39 ms |
+| Injection | heuristics + DistilBERT (shipped) | 0.943 | 0.920 | 0.931 | 0.062 | 39 ms |
 | PII (entity level) | regex only | 0.956 | 0.672 | 0.789 | | 1.3 ms |
 | PII (entity level) | regex + spaCy (shipped) | 0.926 | 0.810 | 0.864 | | 10.6 ms |
 
-The response-compliance checks score 1.0 on the synthetic response set, which
-is a functional check rather than a benchmark. See `docs/evaluation.md` for
-per-source and per-type breakdowns and the caveats.
+The classifier flags 0 of 1,200 PII-bearing benign prompts at the block
+threshold after training with PII hard negatives. The response-compliance
+checks score 1.0 on the synthetic response set, which is a functional check
+rather than a benchmark. See `docs/evaluation.md` for per-source and per-type
+breakdowns, the multi-seed table and the caveats.
 
 ## Repository layout
 

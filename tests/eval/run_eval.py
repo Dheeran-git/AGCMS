@@ -27,7 +27,7 @@ import time
 from datetime import datetime, timezone
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-for svc in ("pii", "injection", "response", "policy"):
+for svc in ("common", "pii", "injection", "response", "policy"):
     sys.path.insert(0, str(ROOT / f"agcms-{svc}"))
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 os.environ.setdefault("AGCMS_DEFAULT_POLICY", str(ROOT / "policies" / "default.yaml"))
@@ -157,6 +157,8 @@ def eval_injection(rows: list[dict], agent: InjectionAgent, resolver: PolicyReso
         agent._onnx_session = session
 
     core_idx = [i for i, r in enumerate(rows) if r["source"] != "advbench"]
+    # Publisher test splits only: the rows the fine-tuned classifier never saw.
+    held_idx = [i for i in core_idx if rows[i].get("split") == "test"]
     out = {}
     for c in configs:
         module, policy = pred[c]
@@ -166,6 +168,7 @@ def eval_injection(rows: list[dict], agent: InjectionAgent, resolver: PolicyReso
             by_source[src] = binary_metrics([gold[i] for i in idx], [module[i] for i in idx])
         out[c] = {"module_level": binary_metrics([gold[i] for i in core_idx], [module[i] for i in core_idx]),
                   "policy_level": binary_metrics([gold[i] for i in core_idx], [policy[i] for i in core_idx]),
+                  "held_out": binary_metrics([gold[i] for i in held_idx], [module[i] for i in held_idx]),
                   "by_source": by_source, "latency": latency_summary(lat[c])}
     return out
 
@@ -287,6 +290,11 @@ def render_markdown(r: dict) -> str:
     for m in ("unguarded", "keyword", "heuristic", "ml", "full"):
         a, b, l = r["injection"][m]["module_level"], r["injection"][m]["policy_level"], r["injection"][m]["latency"]
         lines.append(f"| {m} | {a['precision']} | {a['recall']} | {a['f1']} | {a['fpr']} | {b['f1']} | {l['median_ms']} |")
+    lines += ["", "## Injection detection, held-out publisher test rows only (never used in training)", "",
+              "| Config | n | P | R | F1 | FPR |", "|---|---|---|---|---|---|"]
+    for m in ("keyword", "heuristic", "ml", "full"):
+        h = r["injection"][m]["held_out"]
+        lines.append(f"| {m} | {h['n']} | {h['precision']} | {h['recall']} | {h['f1']} | {h['fpr']} |")
     lines += ["", "## Injection recall by source (full config)", "", "| Source | n | recall | FPR |", "|---|---|---|---|"]
     for src, m in r["injection"]["full"]["by_source"].items():
         lines.append(f"| {src} | {m['n']} | {m['recall']} | {m['fpr']} |")

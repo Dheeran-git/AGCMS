@@ -57,13 +57,80 @@ Requirements beyond the service dependencies: `datasets`, `faker`,
 | Injection `unguarded` | never flags (baseline: no governance layer) |
 | Injection `keyword` | 13 literal jailbreak phrases, no normalisation (baseline) |
 | Injection `heuristic` | 20 regex rules with unicode/base64/hex/URL normalisation |
-| Injection `ml` | DeBERTa classifier alone (`protectai/deberta-v3-base-prompt-injection-v2`) |
+| Injection `ml` | classifier alone: fine-tuned DistilBERT since 2026-09-07 (`protectai/deberta-v3-base-prompt-injection-v2` in the 2026-09-06 run) |
 | Injection `full` | max(heuristic, ml), the shipped configuration |
 
 ## Results
 
 Results are appended below by the maintainer after each run, together with
 the machine description printed in the JSON report.
+
+### Run 2026-09-07 (commit c5b6867, shipped DistilBERT classifier)
+
+Machine: same laptop as below, CPU only, fine-tuned DistilBERT ONNX
+classifier (seed 2, hard negatives) loaded via `AGCMS_INJECTION_MODEL_DIR`.
+Corpus sizes unchanged. PII, response and policy numbers are unchanged from
+the 2026-09-06 run (same code paths); only the injection tables differ.
+
+#### Injection detection, full corpus (AdvBench excluded)
+
+The `ml` and `full` rows here are partly in-sample: 2,607 of the 2,985
+scored rows are the classifier's training rows. Use the held-out table below
+for the paper's headline.
+
+| Config | P | R | F1 | FPR | Policy-level F1 | median ms | p95 ms |
+|---|---|---|---|---|---|---|---|
+| unguarded | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.0 | 0.0 |
+| keyword | 0.998 | 0.291 | 0.451 | 0.001 | 0.451 | 0.02 | |
+| heuristic | 0.935 | 0.328 | 0.485 | 0.026 | 0.452 | 0.26 | |
+| ml | 1.000 | 0.984 | 0.992 | 0.000 | 0.987 | 39.1 | 608 |
+| full | 0.978 | 0.984 | 0.981 | 0.026 | 0.976 | 39.4 | 615 |
+
+#### Injection detection, held-out publisher test rows only (n=378, 199 injections)
+
+| Config | P | R | F1 | FPR |
+|---|---|---|---|---|
+| keyword | 0.978 | 0.226 | 0.367 | 0.006 |
+| heuristic | 0.833 | 0.276 | 0.415 | 0.062 |
+| ml | 1.000 | 0.920 | 0.958 | 0.000 |
+| full (shipped) | 0.943 | 0.920 | 0.931 | 0.062 |
+
+Recall by source, full config: agcms-synthetic 1.000, deepset 0.935,
+jackhhao 0.987 (FPR 0.056), advbench 0.471.
+
+#### ML classifier on PII-bearing prompts (no injections present)
+
+| Source | n | flagged >=0.5 | flagged >=0.95 |
+|---|---|---|---|
+| faker-synthetic | 600 | 0.000 | 0.000 |
+| ai4privacy | 400 | 0.008 | 0.000 |
+| benign | 600 | 0.000 | 0.000 |
+
+#### Reading the numbers
+
+- **Held-out F1 rises from 0.873 to 0.931** for the shipped configuration
+  and from 0.860 to 0.958 for the classifier alone, against the same
+  DeBERTa-era numbers on the full corpus. Median injection latency falls
+  from 269 ms to 39 ms (ONNX DistilBERT, no fixed padding).
+- **The heuristic layer now costs more than it adds.** On held-out rows the
+  classifier alone has FPR 0 and F1 0.958; adding the 20 regex rules
+  contributes no extra recall and raises FPR to 6.2 % through the ROLEPLAY
+  rules on jackhhao benign prompts, pulling F1 down to 0.931. With the
+  DeBERTa model the heuristics were worth +0.013 F1; with the fine-tuned
+  model they are worth -0.027. The paper should report this as the ablation
+  result it is; whether to keep the rules (interpretable, sub-millisecond,
+  useful when the ML model is disabled) is a design choice to state, not a
+  bug.
+- **PII-prompt false positives are gone.** 0 of 1,200 PII-bearing benign
+  prompts and 0 of 600 plain benign prompts reach the 0.95 block threshold
+  (yesterday: 2.3 %, 6.5 %, 0.2 %). Only 3 of 400 ai4privacy rows cross 0.5.
+- **AdvBench recall is now 0.47** (was 0). The fine-tuned model has learned
+  that harmful-request phrasing correlates with jailbreak prompts in its
+  training corpora. This is still not injection detection; the slice stays
+  excluded from every headline and the paper should note the leakage.
+- **deepset recall 0.935 on the full corpus, 0.78 on its held-out rows**
+  (see the multi-seed section): the German half of deepset remains the
+  hardest part of the test set.
 
 ### Run 2026-09-06 (commit 781c565)
 
@@ -181,8 +248,7 @@ Caveats for the paper:
   corpora it is tested on, so it is in-distribution; DeBERTa was not trained
   on them. The comparison shows the value of domain fine-tuning, not that
   DeBERTa is a weaker architecture.
-- Single seed. Multi-seed mean and standard deviation are pending a
-  decision on compute.
+- Single seed (42). The multi-seed runs below supersede this table.
 - Latency is PyTorch eager on CPU for DistilBERT and ONNX Runtime for
   DeBERTa; exporting DistilBERT to ONNX (`ml/export_onnx.py`) would lower
   its numbers further.
@@ -211,6 +277,49 @@ blocked, but as an injection (score 1.00) rather than as critical PII.
 
 Root cause: none of the training sources contain PII-bearing benign prompts,
 so the model has never seen "instruction + personal data" labelled benign.
-Remedy under consideration: add generated PII-bearing benign prompts (a
-separate Faker draw from the evaluation set) to the training rows as hard
-negatives and retrain.
+Remedy, applied below: add generated PII-bearing benign prompts (a separate
+Faker draw with disjoint templates, `--hard-negatives`) to the training rows
+and retrain.
+
+### Multi-seed runs and hard negatives (2026-09-07)
+
+Same recipe as above, seeds 1, 2, 3. "Hard-neg" runs add 600 PII-bearing
+benign prompts (`tests/eval/data/injection_hard_negatives.jsonl`, Faker seed
+4242, `TRAIN_TEMPLATES`, disjoint from the evaluation templates) to the 2,607
+training rows. All models scored by `tests/eval/eval_finetuned.py` on the
+same 378 held-out rows; PII-prompt columns are the share of prompts scored
+>= 0.95 (the ML-only block threshold) on the Faker (n=600) and ai4privacy
+(n=400) PII sets, which contain no injections.
+
+| Model | Train rows | P | R | F1 | FPR | PII flagged: Faker | ai4privacy |
+|---|---|---|---|---|---|---|---|
+| seed 1 | 2,607 | 0.984 | 0.930 | 0.956 | 0.017 | 0.010 | 0.038 |
+| seed 2 | 2,607 | 0.995 | 0.925 | 0.958 | 0.006 | 0.017 | 0.045 |
+| seed 3 | 2,607 | 1.000 | 0.925 | 0.961 | 0.000 | 0.003 | 0.023 |
+| **baseline mean +- sd** | | | | **0.958 +- 0.002** | | | |
+| seed 1 hard-neg | 3,207 | 1.000 | 0.935 | 0.966 | 0.000 | 0.000 | 0.003 |
+| seed 2 hard-neg (shipped) | 3,207 | 1.000 | 0.920 | 0.958 | 0.000 | 0.000 | 0.000 |
+| seed 3 hard-neg | 3,207 | 0.995 | 0.915 | 0.953 | 0.006 | 0.000 | 0.005 |
+| **hard-neg mean +- sd** | | | | **0.959 +- 0.007** | | | |
+| DeBERTa protectai v2 | - | 0.986 | 0.699 | 0.818 | 0.011 | 0.112 | 0.170 |
+
+Held-out F1 per epoch: seed 1 0.854 / 0.953 / 0.956; seed 2 0.929 / 0.956 /
+0.958; seed 3 0.934 / 0.959 / 0.961; hard-neg seed 1 0.904 / 0.956 / 0.966;
+seed 2 0.930 / 0.969 / 0.958; seed 3 0.939 / 0.942 / 0.953. Epoch-1 scores
+vary by up to 0.08 across seeds; by epoch 3 the spread is 0.005.
+
+Reading the numbers:
+- Hard negatives do not change injection F1 (0.958 vs 0.959, inside one
+  standard deviation) but remove the PII-prompt false positives almost
+  entirely: 0 of 600 Faker prompts and 0 to 4 of 400 ai4privacy rows at the
+  block threshold, against 2 to 27 and 9 to 26 for the baseline seeds. The
+  integration prompt "My SSN is 123-45-6789, help me file taxes" drops from
+  0.998 (seed 42) to 0.115 (seed 1 hard-neg), so it is now handled by the
+  PII path rather than blocked as an injection.
+- Recall, not precision, is the limit: every fine-tuned seed misses 13 to 17
+  of the 199 held-out injections, almost all from deepset (recall 0.75 to
+  0.82) rather than jackhhao (0.97 to 0.99).
+- The shipped model is the median hard-negative seed by F1 (seed 2),
+  exported to ONNX with `ml/export_onnx.py --src ml/model/seed2-hn`.
+- Latency in this table is PyTorch eager on a CPU also running other jobs
+  and is not comparable to the ONNX serving numbers in the results section.

@@ -94,7 +94,7 @@ async def forward_to_llm(
         model:       Model override (uses provider default if omitted).
         temperature: Sampling temperature.
         max_tokens:  Max tokens in response.
-        provider:    Provider name ('groq', 'mistral', 'together', 'ollama').
+        provider:    Provider name ('groq', 'gemini', 'mistral', 'ollama').
                      Defaults to AGCMS_DEFAULT_PROVIDER env var, then 'groq'.
 
     Returns:

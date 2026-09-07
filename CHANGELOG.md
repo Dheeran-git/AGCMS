@@ -6,6 +6,17 @@ release has a fixed `YYYY-MM-DD` date once cut.
 
 ## [Unreleased] — scope reset to the CHTR proposal
 
+### Changed
+- Injection classifier: off-the-shelf DeBERTa replaced by a DistilBERT
+  fine-tuned on the publisher train splits with PII-bearing hard negatives
+  (held-out F1 0.958 +- 0.007 over 3 seeds vs 0.818; PII-prompt false
+  positives at the block threshold 0 % vs 11 to 17 %). Weights ship as ONNX
+  inside the image; no runtime model download.
+- Gateway fails closed by default (`AGCMS_FAIL_MODE=closed`): 503 when a
+  scan or policy service is unavailable.
+- Response echo check covers all 20 PII types and normalises spacing.
+- Dashboard host port moved to 4173 (Windows reserves 3000-range ports).
+
 ### Removed
 - Marketing site, Mintlify docs site, Python/TypeScript SDKs, sample
   integrations, Terraform, Helm, Grafana/Prometheus, sealed/external secrets.
