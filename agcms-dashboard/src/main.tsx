@@ -5,6 +5,20 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import './index.css'
 
+// ── Bootstrap theme before first paint (prevents FOUC) ───────────────────────
+;(function () {
+  try {
+    const stored = JSON.parse(localStorage.getItem('agcms-theme') ?? '{}')
+    const theme: string = stored?.state?.theme ?? 'dark'
+    if (theme === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light')
+      document.documentElement.style.colorScheme = 'light'
+    }
+  } catch {
+    // ignore — stay dark
+  }
+})()
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -23,3 +37,4 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </QueryClientProvider>
   </React.StrictMode>,
 )
+

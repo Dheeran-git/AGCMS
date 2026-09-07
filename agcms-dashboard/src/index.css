@@ -12,6 +12,10 @@ html {
   font-feature-settings: 'cv01', 'ss03';
   background-color: var(--bg-canvas);
   color-scheme: dark;
+  /* smooth token transitions when theme switches */
+  transition:
+    background-color 220ms ease,
+    color 220ms ease;
 }
 
 body {
@@ -20,14 +24,35 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  transition:
+    background-color 220ms ease,
+    color 220ms ease;
+}
+
+/* Every element's bg / border / color transitions smoothly */
+*,
+*::before,
+*::after {
+  transition-property: background-color, border-color, color, box-shadow, opacity;
+  transition-duration: 200ms;
+  transition-timing-function: ease;
+}
+
+/* But NOT transforms/opacity for animated components (keep snappy) */
+.animate-fade-in,
+.animate-pulse-dot,
+[data-radix-popper-content-wrapper],
+[data-state],
+svg {
+  transition: none;
 }
 
 ::selection {
-  background-color: rgba(113, 112, 255, 0.3);
+  background-color: rgba(94, 106, 210, 0.25);
   color: var(--fg-primary);
 }
 
-/* Scrollbar — thin, muted */
+/* Scrollbar — dark mode */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -42,6 +67,15 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.12);
+}
+
+/* Scrollbar — light mode */
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.10);
+  border: 2px solid var(--bg-canvas);
+}
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.18);
 }
 
 /* Focus visible — keyboard only */
@@ -77,3 +111,14 @@ kbd {
 .animate-pulse-dot {
   animation: agcms-pulse-dot 2.2s ease-in-out infinite;
 }
+
+/* ─── Theme Toggle Button ────────────────────────────────────────────────────── */
+@keyframes knob-to-light {
+  from { transform: translateX(0px); }
+  to   { transform: translateX(20px); }
+}
+@keyframes knob-to-dark {
+  from { transform: translateX(20px); }
+  to   { transform: translateX(0px); }
+}
+
