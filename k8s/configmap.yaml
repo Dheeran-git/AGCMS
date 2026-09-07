@@ -12,8 +12,10 @@ data:
   AUDIT_SERVICE_URL: "http://audit:8005"
   AUTH_SERVICE_URL: "http://auth:8006"
   TENANT_SERVICE_URL: "http://tenant:8007"
-  # Groq endpoint
-  GROQ_BASE_URL: "https://api.groq.com/openai/v1"
+  # LLM routing (keys live in agcms-secrets)
+  AGCMS_DEFAULT_PROVIDER: "gemini"
+  AGCMS_PROVIDER_ORDER: "gemini,groq,openrouter,ollama"
+  AGCMS_FAILOVER: "true"
   # spaCy model toggle (en_core_web_sm in dev, en_core_web_trf in prod)
   AGCMS_SPACY_MODEL: "en_core_web_trf"
   # ML injection classifier

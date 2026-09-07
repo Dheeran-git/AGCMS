@@ -163,6 +163,37 @@ Raising the tenant limit would move the bottleneck to the provider's
 free-tier quota rather than to AGCMS. Raw CSVs: `tests/load/results/`
 (ignored by git).
 
+#### Governance pipeline under concurrency (Locust, governance-only mix, 2026-09-07)
+
+Same stack, tenant and per-IP limits raised to 100,000 rpm for the run,
+`AGCMS_LOAD_MIX=governance`: every prompt is blocked (critical PII or
+injection), so each request runs auth, PII scan, injection scan with the
+ONNX classifier, policy resolution and the signed audit write, and returns
+403 without an LLM call. 60 s per level, spawn rate 5/s, 0 failures at every
+level.
+
+| Concurrent users | requests | throughput req/s | p50 ms | p90 ms | p95 ms | p99 ms |
+|---|---|---|---|---|---|---|
+| 10 | 1,022 | 17.2 | 440 | 560 | 620 | 760 |
+| 25 | 914 | 15.4 | 1,400 | 1,700 | 1,900 | 2,200 |
+| 50 | 962 | 16.2 | 2,700 | 3,200 | 3,200 | 3,300 |
+
+Reading the numbers:
+- **Throughput is flat at about 16 to 17 governed requests per second** from
+  10 users upward, and median latency grows linearly with concurrency
+  (440 ms, 1.4 s, 2.7 s). That is a saturated single-core pipeline with
+  requests queueing, not a failure: no request errored or timed out.
+- **The classifier is the ceiling.** Single-request cost is about 40 ms of
+  ONNX inference plus 20 ms of PII scan and service hops; one uvicorn worker
+  per container on a laptop CPU gives roughly 1000 / 60 = 17 req/s. The
+  containers are single-process; scaling the injection service horizontally
+  (or a GPU) is the obvious lever and is not evaluated here.
+- **Compare with the single-request figures** (median 41 ms classifier,
+  10 ms PII): the per-request overhead of governance is tens of
+  milliseconds; the seconds seen at 25 and 50 users are queueing on one
+  machine. The paper should present both.
+- Raw CSVs in `tests/load/results/gov_u{10,25,50}_*.csv` (ignored by git).
+
 ### Run 2026-09-06 (commit 781c565)
 
 Machine: Windows-11-10.0.26200-SP0, Intel64 Family 6 Model 186 Stepping 2, GenuineIntel, Python 3.12.12, CPU only, DeBERTa ONNX classifier loaded. Corpus sizes: PII 1600, injection 3505, response 240.

@@ -335,7 +335,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--base", default="http://localhost:8000",
                     help="Gateway base URL (default: http://localhost:8000)")
-    ap.add_argument("--provider", help="Single provider (groq/mistral/gemini/ollama)")
+    ap.add_argument("--provider", help="Single provider (gemini/groq/openrouter/ollama)")
     ap.add_argument("--category", help="Filter by category substring (e.g. injection, pii, edge)")
     ap.add_argument("--smoke", action="store_true",
                     help="Run a 25-prompt representative subset (fast)")

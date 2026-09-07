@@ -13,8 +13,18 @@ from typing import Optional, Tuple
 import redis.asyncio as aioredis
 
 _REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379")
-_DEFAULT_RPM = 60         # per-tenant default
-_GLOBAL_IP_RPM = 200      # per-IP ceiling (across all tenants)
+_ENV_RPM = os.environ.get("AGCMS_TENANT_RPM", "")                  # operator override
+_DEFAULT_RPM = int(_ENV_RPM) if _ENV_RPM else 60                    # per-tenant fallback
+_GLOBAL_IP_RPM = int(os.environ.get("AGCMS_GLOBAL_IP_RPM", "200"))  # per-IP, all tenants
+
+
+def tenant_rpm(policy: Optional[dict]) -> int:
+    """Per-tenant limit: AGCMS_TENANT_RPM if set, else the policy's
+    rate_limits.requests_per_minute, else 60."""
+    if _ENV_RPM:
+        return int(_ENV_RPM)
+    value = ((policy or {}).get("rate_limits") or {}).get("requests_per_minute")
+    return int(value) if value else 60
 
 _redis: Optional[aioredis.Redis] = None
 

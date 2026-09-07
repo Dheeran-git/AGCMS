@@ -36,6 +36,11 @@ _CANONICAL_POLICY = {
         "requests_per_minute": 60,
         "requests_per_day": 10000,
     },
+    "audit": {
+        "retention_days": 365,
+        "export_formats": ["json", "csv"],
+        "pii_in_logs": False,
+    },
 }
 
 

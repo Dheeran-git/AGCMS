@@ -42,6 +42,35 @@ _ALGO = "HS256"
 API_KEY = "agcms_test_key_for_development"
 TENANT_ID = "default"
 
+# Users created below carry these external_id prefixes; DELETE /users only
+# deactivates, so the rows are removed directly at module teardown.
+_TEST_USER_PREFIXES = ("int-test-", "dup-", "del-", "delinactive-")
+_DB_URL = os.environ.get(
+    "AGCMS_TEST_DATABASE_URL",
+    f"postgresql://agcms:{os.environ.get('POSTGRES_PASSWORD', 'secret')}@localhost:5433/agcms",
+)
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _remove_test_users():
+    yield
+    import asyncio
+    import asyncpg
+
+    async def purge():
+        conn = await asyncpg.connect(_DB_URL)
+        try:
+            await conn.execute(
+                "DELETE FROM tenant_users WHERE tenant_id = $1 AND "
+                "(external_id LIKE 'int-test-%' OR external_id LIKE 'dup-%' "
+                "OR external_id LIKE 'del-%' OR external_id LIKE 'delinactive-%')",
+                TENANT_ID,
+            )
+        finally:
+            await conn.close()
+
+    asyncio.run(purge())
+
 
 def _make_jwt(role: str, user_id: str = None) -> str:
     """Mint a local JWT with the given role for the default tenant."""

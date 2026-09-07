@@ -15,7 +15,7 @@ In scope: the gateway, PII, injection, response, policy, audit, auth and
 tenant services, the database schema, and the React dashboard in this repo.
 
 Out of scope: the third-party LLM providers the gateway proxies to (Groq,
-Gemini, Mistral, Ollama), and deployments where the operator changed the
+Gemini, Groq, OpenRouter, Ollama), and deployments where the operator changed the
 shipped defaults.
 
 ## Secrets

@@ -90,8 +90,28 @@ async def generate_compliance_report(
             ctx.tenant_id,
         )
 
+        # Providers that actually answered, and PII types actually seen, in the period
+        provider_rows = await conn.fetch(
+            "SELECT llm_provider, COUNT(*) AS n FROM audit_logs "
+            "WHERE tenant_id = $1 AND created_at >= NOW() - INTERVAL '30 days' "
+            "AND enforcement_action IN ('ALLOW', 'REDACT', 'ESCALATE') "
+            "GROUP BY llm_provider ORDER BY n DESC",
+            ctx.tenant_id,
+        )
+        category_rows = await conn.fetch(
+            "SELECT DISTINCT unnest(pii_entity_types) AS t FROM audit_logs "
+            "WHERE tenant_id = $1 AND created_at >= NOW() - INTERVAL '30 days' "
+            "AND pii_detected = TRUE ORDER BY t",
+            ctx.tenant_id,
+        )
+
     finally:
         await conn.close()
+
+    providers_used = [r["llm_provider"] for r in provider_rows if r["llm_provider"] not in (None, "none")]
+    categories_seen = [r["t"] for r in category_rows if r["t"]]
+    # Every hosted provider in the chain is outside the EU; only local Ollama is not a transfer.
+    hosted = [p for p in providers_used if p != "ollama"]
 
     # Parse active policy config
     active_config: dict = {}
@@ -101,6 +121,8 @@ async def generate_compliance_report(
 
     inj_cfg = active_config.get("injection", {})
     pii_cfg = active_config.get("pii", {})
+    retention_days = (active_config.get("audit") or {}).get("retention_days")
+    retention_label = f"{retention_days} days" if retention_days else "not set in policy"
 
     total_requests = int(agg["total_requests"] or 0)
     total_pii = int(agg["total_pii"] or 0)
@@ -138,13 +160,20 @@ async def generate_compliance_report(
             },
             {
                 "check": "Retention policy defined",
-                "status": "pass",
-                "detail": "Audit logs retained for 90 days (partitioned table)",
+                "status": "pass" if retention_days else "warning",
+                "detail": (f"Audit logs retained for {retention_label} (policy audit.retention_days; monthly partitions)"
+                           if retention_days else "Policy has no audit.retention_days; set it to declare the retention period"),
             },
             {
                 "check": "Cross-border data transfer",
-                "status": "pass",
-                "detail": "All LLM calls routed to Groq (US) — no EU adequacy decision required for controller-to-processor",
+                "status": "warning" if hosted else "pass",
+                "detail": (
+                    f"Prompts forwarded to hosted providers outside the EU in this period: {', '.join(hosted)}. "
+                    "Controller-to-processor transfer; a DPA / SCCs with each provider is required."
+                    if hosted else
+                    "No prompts forwarded to hosted providers in this period"
+                    + (" (local Ollama only)" if providers_used else "")
+                ),
             },
         ]
         return {
@@ -157,9 +186,10 @@ async def generate_compliance_report(
             "pii_redacted": pii_redacted,
             "pii_blocked": pii_blocked,
             "pii_escalated": pii_escalated,
-            "data_categories_processed": _derive_pii_categories(pii_cfg),
-            "cross_border_transfers": False,
-            "retention_policy": "90 days",
+            "data_categories_processed": categories_seen or _derive_pii_categories(pii_cfg),
+            "llm_providers_used": providers_used,
+            "cross_border_transfers": bool(hosted),
+            "retention_policy": retention_label,
             "findings": findings,
         }
 
@@ -178,7 +208,7 @@ async def generate_compliance_report(
         {
             "check": "Prompt injection detection",
             "status": "pass" if inj_enabled else "fail",
-            "detail": f"Heuristic + ML (DeBERTa) detector — enabled={inj_enabled}, "
+            "detail": f"Heuristic rules + fine-tuned DistilBERT classifier — enabled={inj_enabled}, "
                       f"block_threshold={inj_cfg.get('block_threshold', 'n/a')}",
         },
         {
@@ -204,7 +234,7 @@ async def generate_compliance_report(
         "system_name": "AGCMS",
         "risk_classification": "Limited Risk",
         "injection_detection_enabled": inj_enabled,
-        "injection_detection_method": "Heuristic rules + DeBERTa ML classifier (ONNX)",
+        "injection_detection_method": "Heuristic rules + fine-tuned DistilBERT classifier (ONNX)",
         "human_oversight_escalations": esc_total,
         "pending_escalations": esc_pending,
         "resolved_escalations": esc_resolved,
@@ -216,6 +246,6 @@ async def generate_compliance_report(
 
 def _derive_pii_categories(pii_cfg: dict) -> list[str]:
     """Return the list of PII categories the current policy is configured to detect."""
-    base = ["PERSON", "EMAIL_ADDRESS", "PHONE_NUMBER", "US_SSN", "CREDIT_CARD"]
+    base = ["PERSON_NAME", "EMAIL", "PHONE_US", "SSN", "CREDIT_CARD", "AADHAAR", "PAN", "IBAN"]
     custom = list((pii_cfg.get("custom_patterns") or {}).keys())
     return base + custom

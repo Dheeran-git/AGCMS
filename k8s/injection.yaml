@@ -26,7 +26,7 @@ spec:
               memory: "768Mi"
               cpu: "500m"
             limits:
-              memory: "1536Mi"   # ONNX DeBERTa model ~400MB
+              memory: "1536Mi"   # ONNX DistilBERT model ~260MB
               cpu: "1000m"
           readinessProbe:
             httpGet:

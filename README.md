@@ -27,7 +27,7 @@ Auth (:8006) issues JWTs; Tenant (:8007) provisions tenants + API keys.
 | `agcms-pii` | 20 regex patterns + spaCy NER, masking, risk level |
 | `agcms-injection` | fine-tuned DistilBERT (ONNX) + 20 heuristic rules across 6 attack classes (ROLEPLAY rules advisory) |
 | `agcms-response` | PII echo, system-prompt leak and restricted-topic checks on LLM output |
-| `agcms-policy` | YAML policy DSL, validator, enforcement resolver |
+| `agcms-policy` | policy DSL, validator, enforcement resolver; the gateway passes the tenant's active policy row (Postgres, deployed from the dashboard) on every request |
 | `agcms-audit` | Hash-chained HMAC audit log, per-row and whole-chain verification |
 | `agcms-auth` / `agcms-tenant` | JWT issuance, tenant provisioning, RBAC roles |
 | `agcms-dashboard` | Overview, Violations, Playground, Policy, Audit, Alerts, Users, Reports, Settings |
@@ -47,8 +47,13 @@ curl -s -X POST http://localhost:8000/v1/chat/completions   -H "Authorization: B
 open http://localhost:4173        # dashboard (host port set by AGCMS_DASHBOARD_PORT)
 ```
 
-Providers: Groq (default), Gemini, Mistral, Ollama. All speak the OpenAI
-chat-completions format; set the matching API key in `.env`.
+Providers, in failover order: Gemini `gemini-3.8-flash` (default), Groq
+`openai/gpt-oss-120b`, OpenRouter `nvidia/nemotron-3-ultra-550b-a55b:free`,
+local Ollama `llama3.2:3b`. All speak the OpenAI chat-completions format; set
+the matching API keys in `.env`. When a provider errors or has no key the
+gateway retries the already-sanitised prompt on the next one and records the
+provider that answered in the audit row (`AGCMS_FAILOVER=false` disables
+this; `AGCMS_PROVIDER_ORDER` changes the order).
 
 The injection classifier is trained and exported locally before the first
 build (weights are not committed):
@@ -64,7 +69,10 @@ Without the export the injection service starts in heuristic-only mode.
 Failure mode: by default (`AGCMS_FAIL_MODE=closed`) the gateway rejects a
 request with 503 when the PII scan, injection scan or policy service is
 unavailable, so an outage cannot let unscreened prompts through. Set
-`AGCMS_FAIL_MODE=open` to prefer availability.
+`AGCMS_FAIL_MODE=open` to prefer availability. The per-tenant rate limit
+comes from the active policy's `rate_limits.requests_per_minute` (60 in the
+default policy; `AGCMS_TENANT_RPM` overrides it), plus 200 requests per
+minute per client IP (`AGCMS_GLOBAL_IP_RPM`).
 
 ## Testing
 

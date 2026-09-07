@@ -3,7 +3,7 @@
  *
  * Prerequisites:
  *   - Docker stack running: docker compose up -d --wait
- *   - Dashboard served on http://localhost:3000  (nginx inside container)
+ *   - Dashboard served on http://localhost:4173  (nginx inside container, host port AGCMS_DASHBOARD_PORT)
  *   - Gateway on http://localhost:8000
  *
  * Each test navigates to a page and verifies:

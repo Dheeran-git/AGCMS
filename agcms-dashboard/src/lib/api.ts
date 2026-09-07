@@ -124,6 +124,9 @@ export interface PlaygroundResponse {
   };
   llm_response: string | null;
   llm_error: string | null;
+  llm_provider: string | null;
+  llm_model: string | null;
+  llm_attempts: Array<{ provider: string; error: string; reason: string }>;
   original_text: string;
   masked_text: string | null;
   timing: {

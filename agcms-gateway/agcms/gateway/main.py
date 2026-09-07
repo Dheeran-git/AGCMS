@@ -18,8 +18,9 @@ from fastapi.responses import JSONResponse
 from agcms.gateway.auth import authenticate
 from agcms.gateway.dashboard_api import router as dashboard_router
 from agcms.gateway.management_api import router as management_router
-from agcms.gateway.rate_limiter import check_global_ip_rate_limit, check_rate_limit
-from agcms.gateway.router import forward_to_llm, list_providers
+from agcms.gateway.rate_limiter import check_global_ip_rate_limit, check_rate_limit, tenant_rpm
+from agcms.gateway.router import forward_to_llm, list_providers, pop_routing
+from agcms.gateway.tenant_policy import active_policy
 
 app = FastAPI(
     title="AGCMS Proxy Gateway",
@@ -143,8 +144,18 @@ async def chat_completions(request: Request):
         user_id = request.headers.get("X-AGCMS-User-ID", "anonymous")
     department = request.headers.get("X-AGCMS-Department")
 
-    # --- Step 3: Rate limit ---
-    allowed, count = await check_rate_limit(tenant_id)
+    # --- Step 3: Rate limit (limit comes from the tenant's active policy) ---
+    try:
+        tenant_policy = await active_policy(tenant_id)
+    except Exception as exc:
+        if _FAIL_MODE == "closed":
+            return _error_response(
+                "governance_unavailable",
+                f"Policy lookup failed ({exc}); request rejected (fail-closed)",
+                interaction_id, 503,
+            )
+        tenant_policy = None
+    allowed, count = await check_rate_limit(tenant_id, rpm_limit=tenant_rpm(tenant_policy))
     if not allowed:
         return _error_response(
             "rate_limited",
@@ -183,6 +194,7 @@ async def chat_completions(request: Request):
             policy_resp = await client.post(f"{_POLICY_URL}/resolve", json={
                 "pii_result": pii_result,
                 "injection_result": injection_result,
+                "policy": tenant_policy,
             })
         if policy_resp.status_code == 200:
             decision = policy_resp.json()
@@ -237,11 +249,13 @@ async def chat_completions(request: Request):
         provider=body.get("provider"),
     )
 
+    routing = pop_routing(llm_response)
+
     # Check for LLM errors
     if "error" in llm_response and "choices" not in llm_response:
         asyncio.create_task(_audit_log(
             interaction_id, tenant_id, user_id, department, body,
-            pii_result, injection_result, decision, None, start_time,
+            pii_result, injection_result, decision, None, start_time, routing,
         ))
         return _error_response(
             llm_response.get("error", "llm_error"),
@@ -266,13 +280,15 @@ async def chat_completions(request: Request):
     # --- Step 11: Audit log (fire-and-forget, RULE 6) ---
     asyncio.create_task(_audit_log(
         interaction_id, tenant_id, user_id, department, body,
-        pii_result, injection_result, decision, compliance_result, start_time,
+        pii_result, injection_result, decision, compliance_result, start_time, routing,
     ))
 
     # --- Step 12: Deliver response ---
     return JSONResponse(
         content=llm_response,
-        headers={"X-AGCMS-Interaction-ID": interaction_id},
+        headers={"X-AGCMS-Interaction-ID": interaction_id,
+                 "X-AGCMS-Provider": routing.get("provider") or "",
+                 "X-AGCMS-Failovers": str(len(routing.get("attempts") or []))},
     )
 
 
@@ -336,11 +352,15 @@ async def _audit_log(
     decision: dict | None,
     compliance_result: dict | None,
     start_time: float,
+    routing: dict | None = None,
 ):
     """Send audit log entry to the audit service (fire-and-forget)."""
+    routing = routing or {}
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
             await client.post(f"{_AUDIT_URL}/log", json={
+                "llm_provider": routing.get("provider") or "none",
+                "llm_model": routing.get("model"),
                 "interaction_id": interaction_id,
                 "tenant_id": tenant_id,
                 "user_id": user_id,

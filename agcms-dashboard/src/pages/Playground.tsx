@@ -148,6 +148,13 @@ function GovernancePanel({ response }: { response: PlaygroundResponse }) {
         <span>llm {timing.llm_ms}ms</span>
         {timing.compliance_ms > 0 && <span>compliance {timing.compliance_ms}ms</span>}
         <span className="text-fg-secondary">total {timing.total_ms}ms</span>
+        {response.llm_provider && (
+          <span className="text-fg-secondary">
+            via {response.llm_provider} · {response.llm_model}
+            {response.llm_attempts.length > 0 &&
+              ` (failed over from ${response.llm_attempts.map((a) => a.provider).join(', ')})`}
+          </span>
+        )}
       </div>
     </div>
   );

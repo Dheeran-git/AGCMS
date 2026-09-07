@@ -102,7 +102,7 @@ function AssigneePicker({
       className="h-8 rounded-md bg-translucent-2 border border-border text-caption text-fg-primary px-2 focus-visible:outline-none focus-visible:shadow-focus"
     >
       <option value="">— Unassigned —</option>
-      {users.map((u) => (
+      {users.filter((u) => u.is_active || u.id === esc.assignee_user_id).map((u) => (
         <option key={u.id} value={u.id} className="bg-surface">
           {u.email || u.external_id}
         </option>

@@ -106,8 +106,9 @@ async def export_audit_logs(
     try:
         rows = await conn.fetch(
             "SELECT interaction_id, tenant_id, user_id, department, created_at, "
-            "enforcement_action, enforcement_reason, pii_detected, pii_risk_level, "
-            "injection_score, total_latency_ms "
+            "enforcement_action, enforcement_reason, pii_detected, pii_entity_types, "
+            "pii_risk_level, injection_score, injection_type, response_violated, "
+            "total_latency_ms "
             "FROM audit_logs WHERE tenant_id = $1 "
             "ORDER BY created_at DESC LIMIT $2",
             ctx.tenant_id, limit,

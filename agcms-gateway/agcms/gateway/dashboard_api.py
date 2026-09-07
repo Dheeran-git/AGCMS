@@ -13,7 +13,8 @@ import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from agcms.gateway.router import forward_to_llm, list_providers
+from agcms.gateway.router import default_provider, forward_to_llm, list_providers, pop_routing
+from agcms.gateway.tenant_policy import active_policy
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
@@ -188,10 +189,8 @@ async def playground_chat(req: PlaygroundChatRequest):
     if not prompt_text:
         raise HTTPException(status_code=422, detail="Message must not be empty.")
 
-    # Effective provider — used for the LLM call and recorded in the audit log.
-    provider_name = (
-        req.provider or os.environ.get("AGCMS_DEFAULT_PROVIDER", "groq")
-    ).lower()
+    # Provider that actually answered (after failover); recorded in the audit log.
+    routing: dict = {}
 
     # --- Steps 4 & 5: PII + Injection scan (parallel) ---
     pii_result = {"has_pii": False, "risk_level": "NONE", "entity_types": [], "entities": [], "masked_text": None}
@@ -217,10 +216,13 @@ async def playground_chat(req: PlaygroundChatRequest):
     policy_start = time.time()
     decision = {"action": "ALLOW", "reason": None, "triggered_policies": []}
     try:
+        # The Playground exercises the default tenant's active policy.
+        tenant_policy = await active_policy("default")
         async with httpx.AsyncClient(timeout=5.0) as client:
             policy_resp = await client.post(f"{_POLICY_URL}/resolve", json={
                 "pii_result": pii_result,
                 "injection_result": injection_result,
+                "policy": tenant_policy,
             })
         if policy_resp.status_code == 200:
             decision = policy_resp.json()
@@ -249,6 +251,7 @@ async def playground_chat(req: PlaygroundChatRequest):
         llm_start = time.time()
         llm_result = await forward_to_llm(messages=messages, provider=req.provider)
         llm_ms = round((time.time() - llm_start) * 1000, 1)
+        routing = pop_routing(llm_result)
 
         # Extract response text, or surface the provider error to the caller
         if "choices" in llm_result:
@@ -290,7 +293,8 @@ async def playground_chat(req: PlaygroundChatRequest):
                     "decision": decision,
                     "compliance_result": compliance_result,
                     "start_time": total_start,
-                    "llm_provider": provider_name,
+                    "llm_provider": routing.get("provider") or "none",
+                    "llm_model": routing.get("model"),
                 })
         except Exception:
             pass
@@ -307,6 +311,9 @@ async def playground_chat(req: PlaygroundChatRequest):
         },
         "llm_response": llm_response_text,
         "llm_error": llm_error,
+        "llm_provider": routing.get("provider"),
+        "llm_model": routing.get("model"),
+        "llm_attempts": routing.get("attempts", []),
         "original_text": prompt_text,
         "masked_text": masked_text,
         "timing": {
@@ -324,10 +331,7 @@ async def playground_chat(req: PlaygroundChatRequest):
 async def get_playground_providers():
     """List LLM providers and whether each one's API key is configured.
 
-    Powers the provider picker in the Playground UI so the operator can route a
-    prompt to Groq, Mistral, Gemini, or a local Ollama instance.
+    Powers the provider picker in the Playground UI. Providers are listed in
+    failover order: Gemini, Groq, OpenRouter, local Ollama.
     """
-    return {
-        "providers": list_providers(),
-        "default": os.environ.get("AGCMS_DEFAULT_PROVIDER", "groq").lower(),
-    }
+    return {"providers": list_providers(), "default": default_provider()}

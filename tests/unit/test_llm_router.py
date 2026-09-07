@@ -1,385 +1,243 @@
-"""Unit tests for the multi-LLM router.
+"""Unit tests for the multi-LLM router with failover.
 
-Covers:
-  - Provider selection precedence (request > env default > groq)
-  - All 4 providers: groq, gemini, mistral, ollama
-  - Missing API key returns structured error, no exception
-  - Unknown provider returns structured error
-  - HTTP errors from provider return structured error
-  - Connection errors return structured error
-  - Timeout returns structured error
-  - Default model used when model param omitted
-  - list_providers() reports availability correctly
-  - Ollama uses OLLAMA_URL env var
+Covers provider selection, the four providers (gemini, groq, openrouter,
+ollama), structured errors, endpoints and headers, default models, the
+failover chain and the routing record, and list_providers().
 """
 
 import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import httpx
 import pytest
 
-from agcms.gateway.router import forward_to_llm, list_providers
+from agcms.gateway.router import (
+    default_provider, forward_to_llm, list_providers, pop_routing, provider_order,
+)
 
 _MESSAGES = [{"role": "user", "content": "Hello"}]
+_OK = {"id": "chatcmpl-abc", "object": "chat.completion",
+       "choices": [{"message": {"role": "assistant", "content": "Hi there"}}]}
+_ALL_KEYS = {"GEMINI_API_KEY": "g", "GROQ_API_KEY": "q", "OPENROUTER_API_KEY": "o",
+             "OLLAMA_URL": "http://localhost:11434"}
+_NO_FAILOVER = {"AGCMS_FAILOVER": "false"}
 
-_GROQ_RESPONSE = {
-    "id": "chatcmpl-abc",
-    "object": "chat.completion",
-    "choices": [{"message": {"role": "assistant", "content": "Hi there"}}],
-}
 
-
-def _mock_resp(status_code: int = 200, json_data: dict | None = None, text: str = ""):
-    """Build a mock httpx.Response."""
+def _resp(status_code=200, json_data=None, text=""):
     resp = MagicMock()
     resp.status_code = status_code
-    resp.json.return_value = json_data or _GROQ_RESPONSE
+    resp.json.return_value = dict(json_data or _OK)
     resp.text = text
     return resp
 
 
-# ==================================================================
-# 1. Provider Selection Precedence
-# ==================================================================
+def _client(side_effect=None, return_value=None):
+    """Patch httpx.AsyncClient; returns the mock whose .post records calls."""
+    mock_client = AsyncMock()
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+    mock_client.post = AsyncMock(side_effect=side_effect, return_value=return_value or _resp())
+    patcher = patch("agcms.gateway.router.httpx.AsyncClient", return_value=mock_client)
+    return patcher, mock_client
+
+
+def _env(extra=None, clear_default=True):
+    env = {k: v for k, v in os.environ.items()
+           if not (clear_default and k in ("AGCMS_DEFAULT_PROVIDER", "AGCMS_PROVIDER_ORDER", "AGCMS_FAILOVER"))}
+    env.update(_ALL_KEYS)
+    env.update(extra or {})
+    return patch.dict(os.environ, env, clear=True)
 
 
 class TestProviderSelection:
+    def test_default_order_and_default_provider(self):
+        with _env():
+            assert provider_order() == ["gemini", "groq", "openrouter", "ollama"]
+            assert default_provider() == "gemini"
+
+    def test_env_default_provider(self):
+        with _env({"AGCMS_DEFAULT_PROVIDER": "groq"}):
+            assert default_provider() == "groq"
+
+    def test_custom_order_drops_unknown_names(self):
+        with _env({"AGCMS_PROVIDER_ORDER": "ollama, mistral ,groq"}):
+            assert provider_order() == ["ollama", "groq"]
+
     @pytest.mark.asyncio
     async def test_explicit_provider_takes_precedence(self):
-        """provider param overrides AGCMS_DEFAULT_PROVIDER."""
-        with patch.dict(os.environ, {"GROQ_API_KEY": "key", "AGCMS_DEFAULT_PROVIDER": "groq"}):
-            with patch("agcms.gateway.router.httpx.AsyncClient") as mock_client_cls:
-                mock_client = AsyncMock()
-                mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-                mock_client.__aexit__ = AsyncMock(return_value=None)
-                mock_client.post = AsyncMock(return_value=_mock_resp())
-                mock_client_cls.return_value = mock_client
-
-                await forward_to_llm(_MESSAGES, provider="groq")
-                call_args = mock_client.post.call_args
-                assert "groq.com" in call_args[0][0]
+        patcher, client = _client()
+        with _env(_NO_FAILOVER), patcher:
+            await forward_to_llm(_MESSAGES, provider="groq")
+        assert "groq.com" in client.post.call_args[0][0]
 
     @pytest.mark.asyncio
-    async def test_default_provider_from_env(self):
-        """AGCMS_DEFAULT_PROVIDER env var sets the default."""
-        with patch.dict(os.environ, {
-            "GROQ_API_KEY": "key",
-            "AGCMS_DEFAULT_PROVIDER": "groq",
-        }):
-            with patch("agcms.gateway.router.httpx.AsyncClient") as mock_client_cls:
-                mock_client = AsyncMock()
-                mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-                mock_client.__aexit__ = AsyncMock(return_value=None)
-                mock_client.post = AsyncMock(return_value=_mock_resp())
-                mock_client_cls.return_value = mock_client
-
-                await forward_to_llm(_MESSAGES)
-                call_args = mock_client.post.call_args
-                assert "groq.com" in call_args[0][0]
-
-    @pytest.mark.asyncio
-    async def test_groq_is_hardcoded_fallback(self):
-        """Without AGCMS_DEFAULT_PROVIDER, Groq is used."""
-        env = {k: v for k, v in os.environ.items() if k != "AGCMS_DEFAULT_PROVIDER"}
-        env["GROQ_API_KEY"] = "test_key"
-        with patch.dict(os.environ, env, clear=True):
-            with patch("agcms.gateway.router.httpx.AsyncClient") as mock_client_cls:
-                mock_client = AsyncMock()
-                mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-                mock_client.__aexit__ = AsyncMock(return_value=None)
-                mock_client.post = AsyncMock(return_value=_mock_resp())
-                mock_client_cls.return_value = mock_client
-
-                result = await forward_to_llm(_MESSAGES)
-                assert "error" not in result or result.get("error") != "provider_unknown"
-
-
-# ==================================================================
-# 2. Missing / Unknown Provider Errors
-# ==================================================================
+    async def test_default_is_gemini(self):
+        patcher, client = _client()
+        with _env(_NO_FAILOVER), patcher:
+            await forward_to_llm(_MESSAGES)
+        assert "generativelanguage.googleapis.com" in client.post.call_args[0][0]
 
 
 class TestProviderErrors:
     @pytest.mark.asyncio
-    async def test_missing_api_key_returns_error_dict(self):
-        """Missing API key returns structured error, does not raise."""
-        with patch.dict(os.environ, {"GROQ_API_KEY": ""}):
+    async def test_missing_key_without_failover(self):
+        with _env({"GROQ_API_KEY": "", **_NO_FAILOVER}):
             result = await forward_to_llm(_MESSAGES, provider="groq")
         assert result["error"] == "provider_unavailable"
         assert "GROQ_API_KEY" in result["reason"]
 
     @pytest.mark.asyncio
-    async def test_missing_mistral_key_returns_error(self):
-        with patch.dict(os.environ, {"MISTRAL_API_KEY": ""}):
+    async def test_unknown_provider(self):
+        with _env():
+            result = await forward_to_llm(_MESSAGES, provider="openai")
+        assert result["error"] == "provider_unknown"
+
+    @pytest.mark.asyncio
+    async def test_mistral_no_longer_supported(self):
+        with _env():
             result = await forward_to_llm(_MESSAGES, provider="mistral")
-        assert result["error"] == "provider_unavailable"
-        assert "MISTRAL_API_KEY" in result["reason"]
-
-    @pytest.mark.asyncio
-    async def test_missing_gemini_key_returns_error(self):
-        with patch.dict(os.environ, {"GEMINI_API_KEY": ""}):
-            result = await forward_to_llm(_MESSAGES, provider="gemini")
-        assert result["error"] == "provider_unavailable"
-        assert "GEMINI_API_KEY" in result["reason"]
-
-    @pytest.mark.asyncio
-    async def test_unknown_provider_returns_error(self):
-        result = await forward_to_llm(_MESSAGES, provider="openai")
-        assert result["error"] == "provider_unknown"
-        assert "openai" in result["reason"]
-
-    @pytest.mark.asyncio
-    async def test_openai_is_not_a_supported_provider(self):
-        """OpenAI is intentionally excluded (paid)."""
-        result = await forward_to_llm(_MESSAGES, provider="openai")
         assert result["error"] == "provider_unknown"
 
     @pytest.mark.asyncio
-    async def test_anthropic_is_not_a_supported_provider(self):
-        """Anthropic is intentionally excluded (paid)."""
-        result = await forward_to_llm(_MESSAGES, provider="anthropic")
-        assert result["error"] == "provider_unknown"
-
-
-# ==================================================================
-# 3. HTTP-level Errors
-# ==================================================================
-
-
-class TestHTTPErrors:
-    @pytest.mark.asyncio
-    async def test_provider_500_returns_error_dict(self):
-        with patch.dict(os.environ, {"GROQ_API_KEY": "key"}):
-            with patch("agcms.gateway.router.httpx.AsyncClient") as mock_client_cls:
-                mock_client = AsyncMock()
-                mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-                mock_client.__aexit__ = AsyncMock(return_value=None)
-                mock_client.post = AsyncMock(
-                    return_value=_mock_resp(500, text="Internal Server Error")
-                )
-                mock_client_cls.return_value = mock_client
-
-                result = await forward_to_llm(_MESSAGES, provider="groq")
-        assert result["error"] == "llm_error"
-        assert "500" in result["reason"]
+    async def test_500_without_failover(self):
+        patcher, _ = _client(return_value=_resp(500, text="Internal Server Error"))
+        with _env(_NO_FAILOVER), patcher:
+            result = await forward_to_llm(_MESSAGES, provider="groq")
+        assert result["error"] == "llm_error" and "500" in result["reason"]
 
     @pytest.mark.asyncio
-    async def test_connect_error_returns_structured_error(self):
-        import httpx as _httpx
-        with patch.dict(os.environ, {"GROQ_API_KEY": "key"}):
-            with patch("agcms.gateway.router.httpx.AsyncClient") as mock_client_cls:
-                mock_client = AsyncMock()
-                mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-                mock_client.__aexit__ = AsyncMock(return_value=None)
-                mock_client.post = AsyncMock(
-                    side_effect=_httpx.ConnectError("Connection refused")
-                )
-                mock_client_cls.return_value = mock_client
-
-                result = await forward_to_llm(_MESSAGES, provider="groq")
+    async def test_connect_error_without_failover(self):
+        patcher, _ = _client(side_effect=httpx.ConnectError("refused"))
+        with _env(_NO_FAILOVER), patcher:
+            result = await forward_to_llm(_MESSAGES, provider="groq")
         assert result["error"] == "provider_unreachable"
 
     @pytest.mark.asyncio
-    async def test_timeout_returns_structured_error(self):
-        import httpx as _httpx
-        with patch.dict(os.environ, {"GROQ_API_KEY": "key"}):
-            with patch("agcms.gateway.router.httpx.AsyncClient") as mock_client_cls:
-                mock_client = AsyncMock()
-                mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-                mock_client.__aexit__ = AsyncMock(return_value=None)
-                mock_client.post = AsyncMock(
-                    side_effect=_httpx.TimeoutException("timeout")
-                )
-                mock_client_cls.return_value = mock_client
-
-                result = await forward_to_llm(_MESSAGES, provider="groq")
+    async def test_timeout_without_failover(self):
+        patcher, _ = _client(side_effect=httpx.TimeoutException("timeout"))
+        with _env(_NO_FAILOVER), patcher:
+            result = await forward_to_llm(_MESSAGES, provider="groq")
         assert result["error"] == "provider_timeout"
-
-
-# ==================================================================
-# 4. Correct Endpoints and Headers
-# ==================================================================
 
 
 class TestEndpointsAndHeaders:
     @pytest.mark.asyncio
-    async def test_groq_uses_correct_endpoint(self):
-        with patch.dict(os.environ, {"GROQ_API_KEY": "gsk_test"}):
-            with patch("agcms.gateway.router.httpx.AsyncClient") as mock_client_cls:
-                mock_client = AsyncMock()
-                mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-                mock_client.__aexit__ = AsyncMock(return_value=None)
-                mock_client.post = AsyncMock(return_value=_mock_resp())
-                mock_client_cls.return_value = mock_client
-
-                await forward_to_llm(_MESSAGES, provider="groq")
-                url = mock_client.post.call_args[0][0]
-                assert "groq.com" in url
+    @pytest.mark.parametrize("name,host", [
+        ("gemini", "generativelanguage.googleapis.com"), ("groq", "groq.com"),
+        ("openrouter", "openrouter.ai"), ("ollama", "localhost:11434"),
+    ])
+    async def test_endpoint(self, name, host):
+        patcher, client = _client()
+        with _env(_NO_FAILOVER), patcher:
+            await forward_to_llm(_MESSAGES, provider=name)
+        assert host in client.post.call_args[0][0]
 
     @pytest.mark.asyncio
-    async def test_mistral_uses_correct_endpoint(self):
-        with patch.dict(os.environ, {"MISTRAL_API_KEY": "msk_test"}):
-            with patch("agcms.gateway.router.httpx.AsyncClient") as mock_client_cls:
-                mock_client = AsyncMock()
-                mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-                mock_client.__aexit__ = AsyncMock(return_value=None)
-                mock_client.post = AsyncMock(return_value=_mock_resp())
-                mock_client_cls.return_value = mock_client
-
-                await forward_to_llm(_MESSAGES, provider="mistral")
-                url = mock_client.post.call_args[0][0]
-                assert "mistral.ai" in url
-
-    @pytest.mark.asyncio
-    async def test_gemini_uses_correct_endpoint(self):
-        with patch.dict(os.environ, {"GEMINI_API_KEY": "gem_test"}):
-            with patch("agcms.gateway.router.httpx.AsyncClient") as mock_client_cls:
-                mock_client = AsyncMock()
-                mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-                mock_client.__aexit__ = AsyncMock(return_value=None)
-                mock_client.post = AsyncMock(return_value=_mock_resp())
-                mock_client_cls.return_value = mock_client
-
-                await forward_to_llm(_MESSAGES, provider="gemini")
-                url = mock_client.post.call_args[0][0]
-                assert "generativelanguage.googleapis.com" in url
-
-    @pytest.mark.asyncio
-    async def test_ollama_uses_ollama_url_env(self):
-        with patch.dict(os.environ, {"OLLAMA_URL": "http://localhost:11434"}):
-            with patch("agcms.gateway.router.httpx.AsyncClient") as mock_client_cls:
-                mock_client = AsyncMock()
-                mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-                mock_client.__aexit__ = AsyncMock(return_value=None)
-                mock_client.post = AsyncMock(return_value=_mock_resp())
-                mock_client_cls.return_value = mock_client
-
-                await forward_to_llm(_MESSAGES, provider="ollama")
-                url = mock_client.post.call_args[0][0]
-                assert "localhost:11434" in url
-
-    @pytest.mark.asyncio
-    async def test_bearer_token_sent_in_headers(self):
-        with patch.dict(os.environ, {"GROQ_API_KEY": "gsk_mykey"}):
-            with patch("agcms.gateway.router.httpx.AsyncClient") as mock_client_cls:
-                mock_client = AsyncMock()
-                mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-                mock_client.__aexit__ = AsyncMock(return_value=None)
-                mock_client.post = AsyncMock(return_value=_mock_resp())
-                mock_client_cls.return_value = mock_client
-
-                await forward_to_llm(_MESSAGES, provider="groq")
-                headers = mock_client.post.call_args[1]["headers"]
-                assert headers["Authorization"] == "Bearer gsk_mykey"
+    async def test_bearer_token_sent(self):
+        patcher, client = _client()
+        with _env({"GROQ_API_KEY": "gsk_mykey", **_NO_FAILOVER}), patcher:
+            await forward_to_llm(_MESSAGES, provider="groq")
+        assert client.post.call_args[1]["headers"]["Authorization"] == "Bearer gsk_mykey"
 
     @pytest.mark.asyncio
     async def test_ollama_sends_no_auth_header(self):
-        with patch.dict(os.environ, {"OLLAMA_URL": "http://localhost:11434"}):
-            with patch("agcms.gateway.router.httpx.AsyncClient") as mock_client_cls:
-                mock_client = AsyncMock()
-                mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-                mock_client.__aexit__ = AsyncMock(return_value=None)
-                mock_client.post = AsyncMock(return_value=_mock_resp())
-                mock_client_cls.return_value = mock_client
-
-                await forward_to_llm(_MESSAGES, provider="ollama")
-                headers = mock_client.post.call_args[1]["headers"]
-                assert "Authorization" not in headers
-
-
-# ==================================================================
-# 5. Default Models
-# ==================================================================
+        patcher, client = _client()
+        with _env(_NO_FAILOVER), patcher:
+            await forward_to_llm(_MESSAGES, provider="ollama")
+        assert "Authorization" not in client.post.call_args[1]["headers"]
 
 
 class TestDefaultModels:
     @pytest.mark.asyncio
-    async def test_groq_default_model(self):
-        with patch.dict(os.environ, {"GROQ_API_KEY": "key"}):
-            with patch("agcms.gateway.router.httpx.AsyncClient") as mock_client_cls:
-                mock_client = AsyncMock()
-                mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-                mock_client.__aexit__ = AsyncMock(return_value=None)
-                mock_client.post = AsyncMock(return_value=_mock_resp())
-                mock_client_cls.return_value = mock_client
-
-                await forward_to_llm(_MESSAGES, provider="groq")
-                payload = mock_client.post.call_args[1]["json"]
-                assert payload["model"] == "openai/gpt-oss-120b"
+    @pytest.mark.parametrize("name,model", [
+        ("gemini", "gemini-3.8-flash"), ("groq", "openai/gpt-oss-120b"),
+        ("openrouter", "nvidia/nemotron-3-ultra-550b-a55b:free"), ("ollama", "llama3.2:3b"),
+    ])
+    async def test_default_model(self, name, model):
+        patcher, client = _client()
+        with _env(_NO_FAILOVER), patcher:
+            result = await forward_to_llm(_MESSAGES, provider=name)
+        assert client.post.call_args[1]["json"]["model"] == model
+        assert result["agcms_routing"] == {"provider": name, "model": model, "attempts": []}
 
     @pytest.mark.asyncio
     async def test_model_override_respected(self):
-        with patch.dict(os.environ, {"GROQ_API_KEY": "key"}):
-            with patch("agcms.gateway.router.httpx.AsyncClient") as mock_client_cls:
-                mock_client = AsyncMock()
-                mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-                mock_client.__aexit__ = AsyncMock(return_value=None)
-                mock_client.post = AsyncMock(return_value=_mock_resp())
-                mock_client_cls.return_value = mock_client
+        patcher, client = _client()
+        with _env(_NO_FAILOVER), patcher:
+            await forward_to_llm(_MESSAGES, model="llama-3.1-8b-instant", provider="groq")
+        assert client.post.call_args[1]["json"]["model"] == "llama-3.1-8b-instant"
 
-                await forward_to_llm(_MESSAGES, model="llama-3.1-8b-instant", provider="groq")
-                payload = mock_client.post.call_args[1]["json"]
-                assert payload["model"] == "llama-3.1-8b-instant"
+
+class TestFailover:
+    @pytest.mark.asyncio
+    async def test_falls_through_to_next_provider(self):
+        """Gemini 429 -> Groq answers; routing records the failed attempt."""
+        patcher, client = _client(side_effect=[_resp(429, text="quota"), _resp()])
+        with _env(), patcher:
+            result = await forward_to_llm(_MESSAGES)
+        urls = [c[0][0] for c in client.post.call_args_list]
+        assert "googleapis" in urls[0] and "groq.com" in urls[1]
+        routing = pop_routing(result)
+        assert routing["provider"] == "groq"
+        assert [a["provider"] for a in routing["attempts"]] == ["gemini"]
+        assert "agcms_routing" not in result and "choices" in result
 
     @pytest.mark.asyncio
-    async def test_mistral_default_model(self):
-        with patch.dict(os.environ, {"MISTRAL_API_KEY": "key"}):
-            with patch("agcms.gateway.router.httpx.AsyncClient") as mock_client_cls:
-                mock_client = AsyncMock()
-                mock_client.__aenter__ = AsyncMock(return_value=mock_client)
-                mock_client.__aexit__ = AsyncMock(return_value=None)
-                mock_client.post = AsyncMock(return_value=_mock_resp())
-                mock_client_cls.return_value = mock_client
+    async def test_missing_key_is_skipped_in_chain(self):
+        patcher, client = _client()
+        with _env({"GEMINI_API_KEY": ""}), patcher:
+            result = await forward_to_llm(_MESSAGES)
+        assert "groq.com" in client.post.call_args[0][0]
+        assert result["agcms_routing"]["attempts"][0]["error"] == "provider_unavailable"
 
-                await forward_to_llm(_MESSAGES, provider="mistral")
-                payload = mock_client.post.call_args[1]["json"]
-                assert payload["model"] == "mistral-medium-latest"
+    @pytest.mark.asyncio
+    async def test_model_override_only_sent_to_first_provider(self):
+        patcher, client = _client(side_effect=[_resp(503), _resp()])
+        with _env(), patcher:
+            await forward_to_llm(_MESSAGES, model="gemini-3.7-flash")
+        models = [c[1]["json"]["model"] for c in client.post.call_args_list]
+        assert models == ["gemini-3.7-flash", "openai/gpt-oss-120b"]
 
+    @pytest.mark.asyncio
+    async def test_chain_starts_after_requested_provider(self):
+        patcher, client = _client(side_effect=[httpx.ConnectError("x"), _resp()])
+        with _env(), patcher:
+            result = await forward_to_llm(_MESSAGES, provider="openrouter")
+        assert "localhost:11434" in client.post.call_args_list[1][0][0]
+        assert result["agcms_routing"]["provider"] == "ollama"
 
-# ==================================================================
-# 6. list_providers()
-# ==================================================================
+    @pytest.mark.asyncio
+    async def test_all_fail_returns_last_error_with_attempts(self):
+        patcher, _ = _client(side_effect=httpx.TimeoutException("t"))
+        with _env(), patcher:
+            result = await forward_to_llm(_MESSAGES)
+        assert result["error"] == "provider_timeout"
+        assert [a["provider"] for a in result["agcms_routing"]["attempts"]] == \
+            ["gemini", "groq", "openrouter", "ollama"]
+
+    @pytest.mark.asyncio
+    async def test_failover_disabled_stops_at_first(self):
+        patcher, client = _client(return_value=_resp(429, text="quota"))
+        with _env(_NO_FAILOVER), patcher:
+            result = await forward_to_llm(_MESSAGES)
+        assert client.post.call_count == 1 and result["error"] == "llm_error"
+
+    def test_pop_routing_on_dict_without_record(self):
+        assert pop_routing({"choices": []}) == {}
 
 
 class TestListProviders:
-    def test_returns_all_four_providers(self):
-        providers = list_providers()
-        names = {p["provider"] for p in providers}
-        assert {"groq", "gemini", "mistral", "ollama"} == names
+    def test_returns_four_providers_in_order(self):
+        with _env():
+            assert [p["provider"] for p in list_providers()] == ["gemini", "groq", "openrouter", "ollama"]
 
-    def test_gemini_available_when_key_set(self):
-        with patch.dict(os.environ, {"GEMINI_API_KEY": "test"}):
+    def test_availability_follows_keys(self):
+        with _env({"OPENROUTER_API_KEY": ""}):
             providers = {p["provider"]: p for p in list_providers()}
         assert providers["gemini"]["available"] is True
-
-    def test_gemini_default_model(self):
-        providers = {p["provider"]: p for p in list_providers()}
-        assert providers["gemini"]["default_model"] == "gemini-2.5-flash"
-
-    def test_groq_available_when_key_set(self):
-        with patch.dict(os.environ, {"GROQ_API_KEY": "test"}):
-            providers = {p["provider"]: p for p in list_providers()}
-        assert providers["groq"]["available"] is True
-
-    def test_groq_unavailable_when_key_missing(self):
-        env = {k: v for k, v in os.environ.items() if k != "GROQ_API_KEY"}
-        with patch.dict(os.environ, env, clear=True):
-            providers = {p["provider"]: p for p in list_providers()}
-        assert providers["groq"]["available"] is False
-
-    def test_ollama_always_available(self):
-        """Ollama reports available=True since no key is required."""
-        providers = {p["provider"]: p for p in list_providers()}
+        assert providers["openrouter"]["available"] is False
         assert providers["ollama"]["available"] is True
-
-    def test_ollama_default_model_is_installed(self):
-        """Ollama default model matches what is installed on the host."""
-        providers = {p["provider"]: p for p in list_providers()}
-        assert providers["ollama"]["default_model"] == "llama3.2:3b"
 
     def test_each_provider_has_required_fields(self):
         for p in list_providers():
-            assert "provider" in p
-            assert "default_model" in p
-            assert "available" in p
-            assert "note" in p
+            assert {"provider", "default_model", "available", "note"} <= set(p)

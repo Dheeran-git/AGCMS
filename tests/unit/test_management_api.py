@@ -274,6 +274,10 @@ class TestAuditEndpoints:
         body = resp.text
         assert "interaction_id" in body
         assert "tenant_id" in body
+        # The export must select the same detail columns the list view shows.
+        sql = fake_conn.fetch.call_args[0][0]
+        for col in ("pii_entity_types", "injection_type", "response_violated"):
+            assert col in sql
 
     def test_export_audit_logs_json(self):
         fake_conn = FakeConn()

@@ -87,7 +87,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install integration test dependencies
-        run: pip install httpx pytest python-jose[cryptography]
+        run: pip install httpx pytest python-jose[cryptography] asyncpg
 
       - name: Run integration tests
         run: |

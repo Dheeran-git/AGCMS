@@ -122,3 +122,21 @@ class TestGlobalIPRateLimit:
 
         assert any("global:ip" in k for k in keys_used), f"Expected 'global:ip' in key, got: {keys_used}"
         assert not any(k.startswith("agcms:rate:") and "global" not in k for k in keys_used)
+
+
+class TestTenantRpm:
+    def test_policy_value_used_when_no_override(self, monkeypatch):
+        from agcms.gateway import rate_limiter as rl
+        monkeypatch.setattr(rl, "_ENV_RPM", "")
+        assert rl.tenant_rpm({"rate_limits": {"requests_per_minute": 120}}) == 120
+
+    def test_defaults_to_60_without_policy(self, monkeypatch):
+        from agcms.gateway import rate_limiter as rl
+        monkeypatch.setattr(rl, "_ENV_RPM", "")
+        assert rl.tenant_rpm(None) == 60
+        assert rl.tenant_rpm({"rate_limits": {}}) == 60
+
+    def test_env_override_wins(self, monkeypatch):
+        from agcms.gateway import rate_limiter as rl
+        monkeypatch.setattr(rl, "_ENV_RPM", "5000")
+        assert rl.tenant_rpm({"rate_limits": {"requests_per_minute": 60}}) == 5000

@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from agcms.gateway.auth import AuthContext
 from agcms.gateway.rbac import require_admin, require_compliance
+from agcms.gateway.tenant_policy import invalidate
 from agcms.gateway.api.common import db_dsn
 
 router = APIRouter()
@@ -67,6 +68,7 @@ async def update_policy(
     finally:
         await conn.close()
 
+    invalidate(ctx.tenant_id)
     return _serialize_policy(row)
 
 
