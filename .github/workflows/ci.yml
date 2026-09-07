@@ -118,7 +118,7 @@ jobs:
 
       - name: Build and push service images
         run: |
-          REPO="ghcr.io/${{ github.repository }}"
+          REPO="ghcr.io/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')"   # ghcr requires lowercase
           TAG="${{ steps.tag.outputs.TAG }}"
           for svc in gateway pii injection response policy audit auth tenant; do
             echo "Building agcms-$svc:$TAG"
@@ -132,7 +132,7 @@ jobs:
 
       - name: Build and push dashboard image
         run: |
-          REPO="ghcr.io/${{ github.repository }}"
+          REPO="ghcr.io/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')"   # ghcr requires lowercase
           TAG="${{ steps.tag.outputs.TAG }}"
           docker build \
             -t "$REPO/agcms-dashboard:$TAG" \
