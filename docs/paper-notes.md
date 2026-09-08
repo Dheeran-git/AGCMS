@@ -58,14 +58,15 @@ that reproduce every number in `docs/evaluation.md`.
 | deepset/prompt-injections (546 train / 116 test) | injection train + held-out | Apache-2.0 | Hugging Face dataset card |
 | jackhhao/jailbreak-classification (1,040 / 262) | injection train + held-out | Apache-2.0 | Hugging Face dataset card; benign rows from OpenOrca and GPTeacher |
 | AdvBench harmful behaviours (520) | excluded slice, reported separately | MIT (llm-attacks repo) | Zou et al., "Universal and Transferable Adversarial Attacks on Aligned Language Models", arXiv:2307.15043, 2023 |
-| ai4privacy/pii-masking-200k (400 English rows) | PII evaluation | not stated on the dataset card; confirm with the authors before publication | DOI 10.57967/hf/1532 |
+| ai4privacy/pii-masking-200k (400 English rows) | PII evaluation | no licence field on the 200k card; the sibling 300k/400k cards carry the "AI4Privacy Dataset License": academic and non-commercial use with acknowledgment, no redistribution or derivatives without written permission (checked 2026-09-07). We therefore fetch the rows at evaluation time and do not commit them. | DOI 10.57967/hf/1532; acknowledge AI4Privacy |
 | Faker | synthetic PII prompts and hard negatives | MIT | joke2k/faker |
 | distilbert-base-uncased | fine-tuned classifier | Apache-2.0 | Sanh et al., "DistilBERT, a distilled version of BERT", 2019 |
 | protectai/deberta-v3-base-prompt-injection-v2 | off-the-shelf baseline | Apache-2.0 | Hugging Face model card |
 | spaCy en_core_web_sm | person-name NER | MIT | Honnibal et al., spaCy |
 | ONNX Runtime | classifier serving | MIT | Microsoft |
 
-Check the ai4privacy licence before submission; everything else is
+ai4privacy rows are evaluation-only and are not redistributed with the code
+(`tests/eval/data/pii_ai4privacy.jsonl` is gitignored); everything else is
 permissive.
 
 ## Reproducing the numbers

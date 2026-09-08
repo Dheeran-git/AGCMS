@@ -154,7 +154,11 @@ def main() -> None:
     injection = build_injection()
     _write("injection.jsonl", injection)
     benign = [r["text"] for r in injection if r["label"] == 0 and r["source"] != "agcms-synthetic"]
-    _write("pii.jsonl", build_pii(benign))
+    pii = build_pii(benign)
+    # ai4privacy's licence allows academic use but not redistribution, so its
+    # rows go to a gitignored file that the harness merges in when present.
+    _write("pii.jsonl", [r for r in pii if r["source"] != "ai4privacy"])
+    _write("pii_ai4privacy.jsonl", [r for r in pii if r["source"] == "ai4privacy"])
     _write("response.jsonl", response_synth.generate(240, seed=SEED))
 
 

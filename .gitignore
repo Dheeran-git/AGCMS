@@ -61,3 +61,4 @@ agcms-design-system/
 # Evaluation run outputs (latest.json is committed; timestamped runs are not)
 tests/eval/results/eval_*.json
 tests/load/results/
+tests/eval/data/pii_ai4privacy.jsonl

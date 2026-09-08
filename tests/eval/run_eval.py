@@ -54,6 +54,9 @@ GOLD_TYPES = {"EMAIL", "PHONE_US", "SSN", "CREDIT_CARD", "AADHAAR", "PAN", "IBAN
 
 def load(name: str, limit: int | None) -> list[dict]:
     rows = [json.loads(l) for l in open(DATA / name, encoding="utf-8")]
+    if name == "pii.jsonl" and (DATA / "pii_ai4privacy.jsonl").exists():
+        # licensed for academic use only, fetched locally by prepare_datasets.py
+        rows += [json.loads(l) for l in open(DATA / "pii_ai4privacy.jsonl", encoding="utf-8")]
     return rows[:limit] if limit else rows
 
 

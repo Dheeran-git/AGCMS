@@ -81,6 +81,8 @@ def main() -> None:
     test = [r for r in rows if r["split"] == "test" and r["source"] != "advbench"]
     gold = [r["label"] for r in test]
     pii_rows = [json.loads(l) for l in open(DATA_DIR / "pii.jsonl", encoding="utf-8")]
+    if (DATA_DIR / "pii_ai4privacy.jsonl").exists():   # not redistributed; see prepare_datasets.py
+        pii_rows += [json.loads(l) for l in open(DATA_DIR / "pii_ai4privacy.jsonl", encoding="utf-8")]
     print(f"held-out test rows: {len(test)} ({sum(gold)} positive); PII prompts: {len(pii_rows)}")
 
     report = {"test_rows": len(test), "models": {}}

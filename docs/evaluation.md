@@ -8,7 +8,9 @@ printed by `run_eval.py`.
 ## Reproduce
 
 ```bash
-# one-off: build the corpora (downloads public datasets from Hugging Face)
+# one-off: build the corpora (downloads public datasets from Hugging Face;
+# the ai4privacy rows are written to a gitignored file because their licence
+# permits academic use but not redistribution)
 python tests/eval/prepare_datasets.py
 
 # full run (loads spaCy + DeBERTa ONNX, takes a few minutes on CPU)
