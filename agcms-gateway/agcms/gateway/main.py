@@ -18,6 +18,7 @@ from fastapi.responses import JSONResponse
 from agcms.gateway.auth import authenticate
 from agcms.gateway.dashboard_api import router as dashboard_router
 from agcms.gateway.management_api import router as management_router
+from agcms.gateway.messages import joined_prompt, redact_messages, reply_text, validate_body
 from agcms.gateway.rate_limiter import check_global_ip_rate_limit, check_rate_limit, tenant_rpm
 from agcms.gateway.router import forward_to_llm, list_providers, pop_routing
 from agcms.gateway.tenant_policy import active_policy
@@ -64,16 +65,6 @@ def _error_response(code: str, reason: str, interaction_id: str, status: int) ->
     )
 
 
-def _extract_prompt_text(body: dict) -> str:
-    """Extract concatenated user message text from OpenAI-format body."""
-    messages = body.get("messages", [])
-    return " ".join(
-        m.get("content", "")
-        for m in messages
-        if isinstance(m, dict) and m.get("role") == "user" and isinstance(m.get("content"), str)
-    )
-
-
 @app.get("/health")
 async def health():
     return {"status": "healthy", "service": "gateway"}
@@ -100,14 +91,11 @@ async def chat_completions(request: Request):
             interaction_id, 400,
         )
 
-    messages = body.get("messages")
-    if not messages or not isinstance(messages, list):
-        return _error_response(
-            "invalid_request", "Request must include 'messages' array",
-            interaction_id, 400,
-        )
+    invalid = validate_body(body)
+    if invalid:
+        return _error_response("invalid_request", invalid, interaction_id, 400)
 
-    prompt_text = _extract_prompt_text(body)
+    prompt_text, segments = joined_prompt(body["messages"])
 
     # --- Step 1b: Global IP rate limit (pre-auth, prevents key-rotation bypass) ---
     client_ip = request.headers.get("X-Forwarded-For", request.client.host if request.client else "unknown")
@@ -168,7 +156,9 @@ async def chat_completions(request: Request):
     injection_result = None
 
     async with httpx.AsyncClient(timeout=10.0) as client:
-        pii_task = client.post(f"{_PII_URL}/scan", json={"text": prompt_text})
+        pii_task = client.post(f"{_PII_URL}/scan", json={
+            "text": prompt_text, "policy": (tenant_policy or {}).get("pii"),
+        })
         injection_task = client.post(f"{_INJECTION_URL}/scan", json={"text": prompt_text})
 
         pii_resp, injection_resp = await asyncio.gather(
@@ -234,11 +224,9 @@ async def chat_completions(request: Request):
         ))
 
     # --- Step 8: Prepare messages for LLM ---
-    forwarded_messages = body.get("messages", [])
-    if action == "REDACT" and pii_result and pii_result.get("masked_text"):
-        # Replace user messages with masked versions
-        masked_text = pii_result["masked_text"]
-        forwarded_messages = _redact_messages(forwarded_messages, prompt_text, masked_text)
+    forwarded_messages = body["messages"]
+    if action == "REDACT" and pii_result and pii_result.get("entities"):
+        forwarded_messages = redact_messages(forwarded_messages, segments, pii_result["entities"])
 
     # --- Step 9: Forward to LLM ---
     llm_response = await forward_to_llm(
@@ -264,7 +252,7 @@ async def chat_completions(request: Request):
         )
 
     # --- Step 10: Response compliance check ---
-    response_text = _extract_response_text(llm_response)
+    response_text = reply_text(llm_response)
     compliance_result = None
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
@@ -291,30 +279,6 @@ async def chat_completions(request: Request):
                  "X-AGCMS-Provider": routing.get("provider") or "",
                  "X-AGCMS-Failovers": str(len(routing.get("attempts") or []))},
     )
-
-
-def _redact_messages(messages: list, original: str, masked: str) -> list:
-    """Replace user message content with PII-masked versions."""
-    result = []
-    for msg in messages:
-        if msg.get("role") == "user" and isinstance(msg.get("content"), str):
-            content = msg["content"]
-            # If this message's content is part of the original prompt, mask it
-            if content in original or original in content:
-                result.append({**msg, "content": masked})
-            else:
-                result.append(msg)
-        else:
-            result.append(msg)
-    return result
-
-
-def _extract_response_text(llm_response: dict) -> str:
-    """Extract assistant message text from OpenAI-format response."""
-    choices = llm_response.get("choices", [])
-    if choices:
-        return choices[0].get("message", {}).get("content", "")
-    return ""
 
 
 async def _create_escalation(
