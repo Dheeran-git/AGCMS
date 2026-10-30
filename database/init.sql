@@ -116,7 +116,7 @@ CREATE TABLE audit_logs (
 -- Default partition (catches any date not covered by monthly partitions)
 CREATE TABLE audit_logs_default PARTITION OF audit_logs DEFAULT;
 
--- Monthly partitions for 2026
+-- Monthly partitions for 2026-2027
 CREATE TABLE audit_logs_2026_01 PARTITION OF audit_logs
     FOR VALUES FROM ('2026-01-01') TO ('2026-02-01');
 CREATE TABLE audit_logs_2026_02 PARTITION OF audit_logs
@@ -141,6 +141,30 @@ CREATE TABLE audit_logs_2026_11 PARTITION OF audit_logs
     FOR VALUES FROM ('2026-11-01') TO ('2026-12-01');
 CREATE TABLE audit_logs_2026_12 PARTITION OF audit_logs
     FOR VALUES FROM ('2026-12-01') TO ('2027-01-01');
+CREATE TABLE audit_logs_2027_01 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-01-01') TO ('2027-02-01');
+CREATE TABLE audit_logs_2027_02 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-02-01') TO ('2027-03-01');
+CREATE TABLE audit_logs_2027_03 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-03-01') TO ('2027-04-01');
+CREATE TABLE audit_logs_2027_04 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-04-01') TO ('2027-05-01');
+CREATE TABLE audit_logs_2027_05 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-05-01') TO ('2027-06-01');
+CREATE TABLE audit_logs_2027_06 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-06-01') TO ('2027-07-01');
+CREATE TABLE audit_logs_2027_07 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-07-01') TO ('2027-08-01');
+CREATE TABLE audit_logs_2027_08 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-08-01') TO ('2027-09-01');
+CREATE TABLE audit_logs_2027_09 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-09-01') TO ('2027-10-01');
+CREATE TABLE audit_logs_2027_10 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-10-01') TO ('2027-11-01');
+CREATE TABLE audit_logs_2027_11 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-11-01') TO ('2027-12-01');
+CREATE TABLE audit_logs_2027_12 PARTITION OF audit_logs
+    FOR VALUES FROM ('2027-12-01') TO ('2028-01-01');
 
 -- Indexes for dashboard queries
 CREATE INDEX idx_audit_tenant_created ON audit_logs (tenant_id, created_at DESC);

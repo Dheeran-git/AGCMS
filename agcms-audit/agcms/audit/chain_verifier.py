@@ -50,7 +50,7 @@ _CHAIN_ROW_FIELDS: frozenset[str] = frozenset(
 class ChainIssue:
     """One discrepancy found while replaying the chain."""
 
-    kind: str            # 'gap' | 'reorder' | 'signature' | 'link' | 'unknown_kid' | 'missing_field' | 'legacy'
+    kind: str            # 'gap' | 'reorder' | 'signature' | 'link' | 'unknown_kid' | 'missing_field' | 'truncation'
     sequence_number: Optional[int]
     interaction_id: Optional[str]
     detail: str
@@ -99,6 +99,7 @@ def verify_chain(
     *,
     expected_start_sequence: Optional[int] = None,
     expected_previous_hash: Optional[str] = None,
+    expected_head: Optional[tuple[int, Optional[str]]] = None,
 ) -> ChainReport:
     """Replay ``rows`` as a chain for ``tenant_id``.
 
@@ -109,6 +110,10 @@ def verify_chain(
     If ``expected_start_sequence`` / ``expected_previous_hash`` are
     supplied (e.g. verifying a slice mid-chain), the first chain row in
     the slice must match them.
+
+    If ``expected_head`` (``chain_heads`` sequence number and signature) is
+    supplied, the last chain row must match it; rows deleted from the end of
+    the chain leave no gap, so only the recorded head can reveal them.
     """
     report = ChainReport(tenant_id=tenant_id)
     previous_log_hash = expected_previous_hash or AuditLogger.ZERO_HASH
@@ -148,23 +153,11 @@ def verify_chain(
             report.legacy_rows_skipped += 1
             continue
 
-        # Gap / reorder detection
-        if previous_seq is None:
-            # First chain row in this slice
-            if expected_start_sequence is not None and seq != expected_start_sequence:
-                report.issues.append(
-                    ChainIssue(
-                        kind="reorder",
-                        sequence_number=seq,
-                        interaction_id=iid,
-                        detail=(
-                            f"first row sequence_number={seq} does not match "
-                            f"expected_start_sequence={expected_start_sequence}"
-                        ),
-                    )
-                )
+        if report.first_sequence_number is None:
             report.first_sequence_number = seq
-        else:
+
+        # Gap / reorder detection (a supplied expected_start_sequence seeds previous_seq)
+        if previous_seq is not None:
             if seq < previous_seq + 1:
                 report.issues.append(
                     ChainIssue(
@@ -268,6 +261,20 @@ def verify_chain(
         report.last_sequence_number = seq
         report.last_log_signature = row.get("log_signature")
 
+    if expected_head is not None:
+        head_seq, head_sig = expected_head
+        if (report.last_sequence_number or 0, report.last_log_signature) != (head_seq, head_sig if head_seq else None):
+            report.issues.append(
+                ChainIssue(
+                    kind="truncation",
+                    sequence_number=report.last_sequence_number,
+                    interaction_id=None,
+                    detail=(
+                        f"chain ends at sequence_number {report.last_sequence_number or 0} but the "
+                        f"recorded head is {head_seq}; rows were removed from the end of the chain"
+                    ),
+                )
+            )
     return report
 
 
@@ -289,6 +296,8 @@ async def verify_tenant_chain(
     """Stream every chain row for ``tenant_id`` in order and verify.
 
     ``start`` / ``end`` are ISO timestamps on ``created_at`` (inclusive).
+    A slice that starts mid-chain is linked to the row before it; a check
+    that runs to the end of the chain is compared with ``chain_heads``.
     """
     import sqlalchemy
     from agcms.db import database
@@ -301,6 +310,15 @@ async def verify_tenant_chain(
     if end is not None:
         where.append("created_at <= :end")
         params["end"] = end
+    head = None
+    if end is None:
+        # Read the head first and stop there, so a row written mid-check is not a false alarm.
+        row = await database.fetch_one(sqlalchemy.text(
+            "SELECT last_sequence_number, last_log_signature FROM chain_heads WHERE tenant_id = :tid"
+        ).bindparams(tid=tenant_id))
+        head = (row["last_sequence_number"], row["last_log_signature"]) if row else (0, None)
+        where.append("sequence_number <= :head_seq")
+        params["head_seq"] = head[0]
 
     query = sqlalchemy.text(
         "SELECT interaction_id, tenant_id, user_id, department, created_at, "
@@ -315,7 +333,19 @@ async def verify_tenant_chain(
 
     raw_rows = await database.fetch_all(query)
     rows = [_normalize_row(dict(r)) for r in raw_rows]
-    return verify_chain(tenant_id, rows)
+
+    start_seq = previous_hash = None
+    if start is not None and rows and rows[0]["sequence_number"] > 1:
+        start_seq = rows[0]["sequence_number"]
+        previous_hash = await database.fetch_val(sqlalchemy.text(
+            "SELECT log_signature FROM audit_logs WHERE tenant_id = :tid AND sequence_number = :seq"
+        ).bindparams(tid=tenant_id, seq=start_seq - 1))
+    return verify_chain(
+        tenant_id, rows,
+        expected_start_sequence=start_seq,
+        expected_previous_hash=previous_hash,
+        expected_head=head,
+    )
 
 
 def _normalize_row(row: dict) -> dict:

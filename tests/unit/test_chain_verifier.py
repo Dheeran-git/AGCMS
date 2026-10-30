@@ -200,3 +200,70 @@ class TestSliceVerification:
         )
         assert not report.ok
         assert any(i.kind == "link" for i in report.issues)
+
+
+class TestHeadCheck:
+    def test_chain_matching_head_verifies(self):
+        rows = _build_chain(5)
+        report = verify_chain(TENANT, rows, expected_head=(5, rows[-1]["log_signature"]))
+        assert report.ok, report.issues
+
+    def test_rows_deleted_from_the_end_are_flagged(self):
+        rows = _build_chain(5)
+        report = verify_chain(TENANT, rows[:3], expected_head=(5, rows[-1]["log_signature"]))
+        assert [i.kind for i in report.issues] == ["truncation"]
+
+    def test_every_row_deleted_is_flagged(self):
+        rows = _build_chain(2)
+        report = verify_chain(TENANT, [], expected_head=(2, rows[-1]["log_signature"]))
+        assert [i.kind for i in report.issues] == ["truncation"]
+
+    def test_empty_chain_with_empty_head_verifies(self):
+        assert verify_chain(TENANT, [], expected_head=(0, None)).ok
+
+
+class FakeDB:
+    """Answers the three queries verify_tenant_chain makes."""
+
+    def __init__(self, rows, head):
+        self.rows, self.head = rows, head
+
+    async def fetch_one(self, query):
+        return {"last_sequence_number": self.head[0], "last_log_signature": self.head[1]}
+
+    async def fetch_all(self, query):
+        params = query.compile().params
+        rows = [r for r in self.rows if r["sequence_number"] <= params.get("head_seq", 10**9)]
+        if "start" in params:
+            rows = [r for r in rows if r["created_at"] >= params["start"]]
+        return [deepcopy(r) for r in rows]
+
+    async def fetch_val(self, query):
+        seq = query.compile().params["seq"]
+        return next((r["log_signature"] for r in self.rows if r["sequence_number"] == seq), None)
+
+
+class TestVerifyTenantChain:
+    async def _verify(self, monkeypatch, rows, head, **kw):
+        from agcms import db
+        from agcms.audit.chain_verifier import verify_tenant_chain
+        monkeypatch.setattr(db, "database", FakeDB(rows, head))
+        return await verify_tenant_chain(TENANT, **kw)
+
+    async def test_slice_from_start_links_to_previous_row(self, monkeypatch):
+        rows = _build_chain(6)
+        report = await self._verify(monkeypatch, rows, (6, rows[-1]["log_signature"]),
+                                    start=rows[3]["created_at"])
+        assert report.ok, report.issues
+        assert report.first_sequence_number == 4
+
+    async def test_row_written_after_head_read_is_ignored(self, monkeypatch):
+        rows = _build_chain(6)
+        report = await self._verify(monkeypatch, rows, (5, rows[4]["log_signature"]))
+        assert report.ok, report.issues
+        assert report.last_sequence_number == 5
+
+    async def test_truncated_tail_is_flagged(self, monkeypatch):
+        rows = _build_chain(6)
+        report = await self._verify(monkeypatch, rows[:4], (6, rows[-1]["log_signature"]))
+        assert [i.kind for i in report.issues] == ["truncation"]

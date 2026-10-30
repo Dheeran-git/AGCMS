@@ -82,8 +82,11 @@ async def log_entry(req: LogRequest):
 
 
 @app.get("/verify/{interaction_id}")
-async def verify_entry(interaction_id: str):
+async def verify_entry(interaction_id: str, tenant_id: Optional[str] = None):
     """Recompute the HMAC signature over the stored row and compare.
+
+    ``tenant_id`` restricts the lookup to one tenant's rows; the gateway
+    always passes the caller's tenant.
 
     Reconstructs the exact entry dict shape used by ``AuditLogger.sign()``
     at write time. Any type drift (e.g., Decimal vs float, datetime object
@@ -104,8 +107,9 @@ async def verify_entry(interaction_id: str):
         "response_violations, total_latency_ms, log_signature, "
         "previous_log_hash, sequence_number, signing_key_id, schema_version "
         "FROM audit_logs WHERE interaction_id = :iid "
+        "AND (CAST(:tid AS VARCHAR) IS NULL OR tenant_id = :tid) "
         "ORDER BY created_at DESC LIMIT 1"
-    ).bindparams(iid=iid)
+    ).bindparams(iid=iid, tid=tenant_id)
     row = await database.fetch_one(query)
     if row is None:
         raise HTTPException(status_code=404, detail="Audit log not found")

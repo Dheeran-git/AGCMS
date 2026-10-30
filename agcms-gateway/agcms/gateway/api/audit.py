@@ -1,4 +1,4 @@
-"""Audit log list / get / export / per-row verify."""
+"""Audit log list / get / export / per-row and whole-chain verify."""
 
 import csv
 import io
@@ -143,9 +143,25 @@ async def verify_audit_log(
     interaction_id: str,
     ctx: AuthContext = Depends(require_compliance),
 ):
-    """Verify the HMAC signature of an audit log entry (via audit service)."""
+    """Verify the HMAC signature of one of the caller's tenant's audit rows."""
     async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.get(f"{AUDIT_URL}/verify/{interaction_id}")
+        resp = await client.get(
+            f"{AUDIT_URL}/verify/{interaction_id}", params={"tenant_id": ctx.tenant_id},
+        )
+    return passthrough(resp)
+
+
+@router.get("/audit/chain/verify")
+async def verify_audit_chain(
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    ctx: AuthContext = Depends(require_compliance),
+):
+    """Replay the caller's tenant's hash chain (via audit service) and report issues."""
+    params = {"tenant_id": ctx.tenant_id}
+    params.update({k: v for k, v in (("start", start), ("end", end)) if v is not None})
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        resp = await client.get(f"{AUDIT_URL}/chain/verify", params=params)
     return passthrough(resp)
 
 
