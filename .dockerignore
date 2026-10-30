@@ -35,3 +35,8 @@ tests
 # OS junk
 .DS_Store
 Thumbs.db
+
+# ML training artefacts: only the exported ONNX model ships in the injection image
+agcms-injection/ml/data
+agcms-injection/ml/model/*
+!agcms-injection/ml/model/onnx
