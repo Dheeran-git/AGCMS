@@ -9,8 +9,13 @@ import { Audit } from './pages/Audit';
 import { Alerts } from './pages/Alerts';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
+import { SignIn } from './pages/SignIn';
+import { useAuthStore } from './stores/auth';
 
 function App() {
+  const signedIn = useAuthStore((s) => s.token !== null);
+  if (!signedIn) return <SignIn />;
+
   return (
     <AppLayout>
       <Routes>

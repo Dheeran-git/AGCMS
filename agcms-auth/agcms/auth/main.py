@@ -2,7 +2,7 @@
 
 Endpoints:
   POST /v1/auth/token    — exchange API key for JWT access + refresh tokens
-  POST /v1/auth/refresh  — exchange refresh token for new access token
+  POST /v1/auth/refresh  — exchange a refresh token for new access + refresh tokens (rotation)
   GET  /v1/auth/me       — return caller identity from access token
   GET  /health           — liveness probe
 """
@@ -43,12 +43,6 @@ class TokenResponse(BaseModel):
     expires_in: int = 900
 
 
-class AccessTokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-    expires_in: int = 900
-
-
 class MeResponse(BaseModel):
     tenant_id: str
     user_id: str
@@ -85,9 +79,9 @@ async def issue_token(body: TokenRequest):
     return TokenResponse(access_token=access, refresh_token=refresh)
 
 
-@app.post("/v1/auth/refresh", response_model=AccessTokenResponse)
+@app.post("/v1/auth/refresh", response_model=TokenResponse)
 async def refresh_token(body: RefreshRequest):
-    """Exchange a refresh token for a new access token (single-use enforcement)."""
+    """Exchange a single-use refresh token for a new access token and a new refresh token."""
     payload = verify_refresh_token(body.refresh_token)
     if payload is None:
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
@@ -106,7 +100,7 @@ async def refresh_token(body: RefreshRequest):
     access = create_access_token(
         tenant_id=tenant_id, role=user["role"], user_id=user["external_id"],
     )
-    return AccessTokenResponse(access_token=access)
+    return TokenResponse(access_token=access, refresh_token=create_refresh_token(tenant_id=tenant_id))
 
 
 @app.get("/v1/auth/me", response_model=MeResponse)

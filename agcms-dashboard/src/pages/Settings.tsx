@@ -34,7 +34,8 @@ const SERVICE_ENDPOINTS: [string, string][] = [
 ];
 
 export function Settings() {
-  const token = useAuthStore((s) => s.token);
+  const token = useAuthStore((s) => s.token) ?? '';
+  const identity = useAuthStore((s) => s.identity);
 
   const usage = useQuery({
     queryKey: ['tenant-usage'],
@@ -107,12 +108,13 @@ export function Settings() {
                   <MaskedValue value={token} />
                 </Row>
                 <Row label="Auth method">
-                  <Badge variant="info">
-                    {token.startsWith('agcms_') ? 'API Key (dev fast-path)' : 'JWT Bearer'}
-                  </Badge>
+                  <Badge variant="info">JWT Bearer (from API key)</Badge>
+                </Row>
+                <Row label="Tenant">
+                  <span className="text-fg-primary">{identity?.tenant_id ?? 'unknown'}</span>
                 </Row>
                 <Row label="Role">
-                  <Badge variant="accent">admin</Badge>
+                  <Badge variant="accent">{identity?.role ?? 'unknown'}</Badge>
                 </Row>
               </tbody>
             </table>

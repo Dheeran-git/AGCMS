@@ -1,21 +1,32 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
-interface AuthState {
-  token: string;
-  refreshToken: string | null;
-  setToken: (token: string) => void;
-  setTokens: (access: string, refresh: string) => void;
-  clearToken: () => void;
+export interface Identity {
+  tenant_id: string;
+  user_id: string;
+  role: string;
 }
 
-const DEFAULT_TOKEN =
-  (import.meta.env.VITE_AGCMS_API_KEY as string | undefined) ||
-  'agcms_test_key_for_development';
+interface AuthState {
+  token: string | null;
+  refreshToken: string | null;
+  identity: Identity | null;
+  setSession: (access: string, refresh: string | null, identity: Identity) => void;
+  setAccessToken: (access: string) => void;
+  signOut: () => void;
+}
 
-export const useAuthStore = create<AuthState>((set) => ({
-  token: DEFAULT_TOKEN,
-  refreshToken: null,
-  setToken: (token) => set({ token }),
-  setTokens: (access, refresh) => set({ token: access, refreshToken: refresh }),
-  clearToken: () => set({ token: DEFAULT_TOKEN, refreshToken: null }),
-}));
+/** Session lives in sessionStorage: it survives reloads but not closing the tab. */
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      token: null,
+      refreshToken: null,
+      identity: null,
+      setSession: (token, refreshToken, identity) => set({ token, refreshToken, identity }),
+      setAccessToken: (token) => set({ token }),
+      signOut: () => set({ token: null, refreshToken: null, identity: null }),
+    }),
+    { name: 'agcms-session', storage: createJSONStorage(() => sessionStorage) },
+  ),
+);

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { ChevronLeft, ChevronRight, Download, RotateCcw, ShieldCheck, ShieldAlert } from 'lucide-react';
 import {
   fetchAuditLogs,
@@ -48,8 +49,9 @@ export function Audit() {
         limit: PAGE_SIZE,
         offset,
         action: actionFilter || undefined,
-        start: startFilter || undefined,
-        end: endFilter || undefined,
+        // datetime-local is the browser's local time; send it with its offset.
+        start: startFilter ? new Date(startFilter).toISOString() : undefined,
+        end: endFilter ? new Date(endFilter).toISOString() : undefined,
       }),
     refetchInterval: 30_000,
   });
@@ -61,6 +63,10 @@ export function Audit() {
     },
     onSuccess: (data) => {
       setVerifyResults((r) => ({ ...r, [data.interaction_id]: data.verified }));
+    },
+    onError: (err, id) => {
+      setVerifyResults(({ [id]: _, ...rest }) => rest);
+      toast.error(`Verify failed: ${(err as Error).message}`);
     },
   });
 

@@ -58,15 +58,61 @@ function getAuthHeaders(): Record<string, string> {
   };
 }
 
+async function errorMessage(res: Response): Promise<string> {
+  const body = await res.json().catch(() => ({})) as Record<string, unknown>;
+  return String(body.detail ?? body.reason ?? body.error ?? `API error: ${res.status}`);
+}
+
+/** Exchange a tenant API key for a JWT session and load the caller's identity. */
+export async function signIn(apiKey: string): Promise<void> {
+  const res = await fetch(`${MGMT_BASE}/auth/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ api_key: apiKey }),
+  });
+  if (!res.ok) throw new Error(await errorMessage(res));
+  const tokens = await res.json() as { access_token: string; refresh_token: string };
+  const me = await fetch(`${MGMT_BASE}/auth/me`, {
+    headers: { Authorization: `Bearer ${tokens.access_token}` },
+  });
+  if (!me.ok) throw new Error(await errorMessage(me));
+  useAuthStore.getState().setSession(tokens.access_token, tokens.refresh_token, await me.json());
+}
+
+let refreshing: Promise<boolean> | null = null;
+
+/** Rotate the refresh token once, shared by every request that hit a 401 meanwhile. */
+function refreshSession(): Promise<boolean> {
+  refreshing ??= (async () => {
+    const { refreshToken, identity, setSession } = useAuthStore.getState();
+    if (!refreshToken || !identity) return false;
+    const res = await fetch(`${MGMT_BASE}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+    if (!res.ok) return false;
+    const tokens = await res.json() as { access_token: string; refresh_token: string };
+    setSession(tokens.access_token, tokens.refresh_token, identity);
+    return true;
+  })().finally(() => { refreshing = null; });
+  return refreshing;
+}
+
 async function fetchAuth<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
+  const send = () => fetch(url, {
     ...options,
     headers: { ...getAuthHeaders(), ...(options?.headers ?? {}) },
   });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({})) as Record<string, unknown>;
-    throw new Error(String(body.detail ?? body.error ?? `API error: ${res.status}`));
+  let res = await send();
+  if (res.status === 401) {
+    if (await refreshSession()) {
+      res = await send();
+    } else {
+      useAuthStore.getState().signOut();
+    }
   }
+  if (!res.ok) throw new Error(await errorMessage(res));
   return res.json() as Promise<T>;
 }
 

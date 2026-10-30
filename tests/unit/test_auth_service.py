@@ -249,6 +249,7 @@ class TestRefreshToken:
         assert resp.status_code == 200
         data = resp.json()
         assert "access_token" in data
+        assert data["refresh_token"] != valid_refresh  # rotated
         assert data["token_type"] == "bearer"
 
     def test_invalid_refresh_token_returns_401(self, client):

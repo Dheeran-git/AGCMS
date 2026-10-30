@@ -1,6 +1,6 @@
 import { useLocation } from 'react-router-dom';
 import { Menu, Search, User } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from './ui/button';
 import { Kbd } from './ui/kbd';
 import { HealthPill } from './ui/pill';
@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { useDashboardStore } from '../stores/dashboard';
+import { useAuthStore } from '../stores/auth';
 import { fetchStats } from '../lib/api';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -32,6 +33,9 @@ const PAGE_TITLES: Record<string, string> = {
 export function TopBar({ onOpenPalette }: { onOpenPalette: () => void }) {
   const location = useLocation();
   const toggleSidebar = useDashboardStore((s) => s.toggleSidebar);
+  const identity = useAuthStore((s) => s.identity);
+  const signOut = useAuthStore((s) => s.signOut);
+  const queryClient = useQueryClient();
   const title =
     PAGE_TITLES[location.pathname] ??
     Object.entries(PAGE_TITLES).find(([p]) => p !== '/' && location.pathname.startsWith(p))?.[1] ??
@@ -107,13 +111,18 @@ export function TopBar({ onOpenPalette }: { onOpenPalette: () => void }) {
           <DropdownMenuContent align="end" className="min-w-[200px]">
             <DropdownMenuLabel>Signed in</DropdownMenuLabel>
             <DropdownMenuItem>
-              <span className="text-fg-primary">admin@agcms</span>
+              <span className="text-fg-primary">
+                {identity ? `${identity.user_id} @ ${identity.tenant_id} (${identity.role})` : 'unknown'}
+              </span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem>Documentation</DropdownMenuItem>
             <DropdownMenuItem>Keyboard shortcuts</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-status-danger focus:text-status-danger">
+            <DropdownMenuItem
+              className="text-status-danger focus:text-status-danger"
+              onSelect={() => { queryClient.clear(); signOut(); }}
+            >
               Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>

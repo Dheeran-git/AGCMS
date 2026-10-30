@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   AlertOctagon,
   Inbox,
@@ -161,14 +162,17 @@ export function Alerts() {
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: ['escalations-all'] });
   };
+  const onError = (err: Error) => toast.error(err.message);
 
   const ack = useMutation({
     mutationFn: (id: string) => acknowledgeEscalation(id),
     onSuccess: invalidate,
+    onError,
   });
   const assign = useMutation({
     mutationFn: ({ id, uid }: { id: string; uid: string | null }) => assignEscalation(id, uid),
     onSuccess: invalidate,
+    onError,
   });
   const resolve = useMutation({
     mutationFn: ({ id, notes }: { id: string; notes: string }) => resolveEscalation(id, notes),
@@ -176,6 +180,7 @@ export function Alerts() {
       invalidate();
       setResolvingId(null);
     },
+    onError,
   });
 
   const escList = all.data?.escalations ?? [];
@@ -272,8 +277,8 @@ export function Alerts() {
                     const stage = lifecycleStage(esc);
                     const sla = slaState(esc);
                     return (
-                      <>
-                        <Tr key={esc.id}>
+                      <Fragment key={esc.id}>
+                        <Tr>
                           <Td>
                             <Badge variant={severityVariant(esc.severity)}>
                               {esc.severity}
@@ -357,7 +362,7 @@ export function Alerts() {
                             </Td>
                           </Tr>
                         )}
-                      </>
+                      </Fragment>
                     );
                   })}
                 </TBody>

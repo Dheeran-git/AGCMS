@@ -5,6 +5,7 @@
  *   - Docker stack running: docker compose up -d --wait
  *   - Dashboard served on http://localhost:4173  (nginx inside container, host port AGCMS_DASHBOARD_PORT)
  *   - Gateway on http://localhost:8000
+ *   - AGCMS_E2E_API_KEY: a tenant API key (defaults to the seeded dev key)
  *
  * Each test navigates to a page and verifies:
  *   1. No crash (page title / heading present)
@@ -34,15 +35,44 @@ test.afterEach(async () => {
   expect(fatal, `Uncaught JS errors: ${fatal.join('; ')}`).toHaveLength(0);
 });
 
+const API_KEY = process.env.AGCMS_E2E_API_KEY || 'agcms_test_key_for_development';
+
+type Page = import('@playwright/test').Page;
+
+async function signIn(page: Page, key = API_KEY) {
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.getByLabel('API key').fill(key);
+  await page.getByRole('button', { name: /sign in/i }).click();
+}
+
 // ---------------------------------------------------------------------------
-// Sidebar navigation helper
+// Sidebar navigation helper (signs in first; the session lives in sessionStorage)
 // ---------------------------------------------------------------------------
 
-async function navigateTo(page: import('@playwright/test').Page, path: string) {
+async function navigateTo(page: Page, path: string) {
+  await signIn(page);
+  await expect(page.getByRole('heading', { name: /overview/i })).toBeVisible({ timeout: 10_000 });
   await page.goto(path, { waitUntil: 'domcontentloaded' });
   // Wait for React to render — look for main content area
   await page.waitForSelector('main, [role="main"], .min-h-screen', { timeout: 10_000 });
 }
+
+// ---------------------------------------------------------------------------
+// 0. Sign-in
+// ---------------------------------------------------------------------------
+
+test('Signed-out visitors see the sign-in form, and a wrong key is refused', async ({ page }) => {
+  await signIn(page, 'agcms_not_a_real_key');
+  await expect(page.getByRole('alert')).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole('heading', { name: /sign in to agcms/i })).toBeVisible();
+});
+
+test('Sign out returns to the sign-in form', async ({ page }) => {
+  await navigateTo(page, '/');
+  await page.getByRole('button', { name: 'Account' }).click();
+  await page.getByRole('menuitem', { name: /sign out/i }).click();
+  await expect(page.getByRole('heading', { name: /sign in to agcms/i })).toBeVisible();
+});
 
 // ---------------------------------------------------------------------------
 // 1. Overview

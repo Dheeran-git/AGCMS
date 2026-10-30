@@ -35,7 +35,7 @@ Auth (:8006) issues JWTs; Tenant (:8007) provisions tenants + API keys.
 ## Quickstart
 
 ```bash
-cp .env.example .env            # set AGCMS_SIGNING_KEY, JWT_SECRET_KEY, GROQ_API_KEY
+cp .env.example .env            # set AGCMS_SIGNING_KEY, JWT_SECRET_KEY and at least one provider key (GEMINI_API_KEY)
 docker compose up --build --wait
 
 # Critical PII (an SSN) is blocked by the default policy: HTTP 403, audit row records BLOCK
@@ -44,8 +44,11 @@ curl -s -X POST http://localhost:8000/v1/chat/completions   -H "Authorization: B
 # Medium-risk PII (an email address) is redacted before the prompt reaches the LLM
 curl -s -X POST http://localhost:8000/v1/chat/completions   -H "Authorization: Bearer agcms_test_key_for_development"   -H "Content-Type: application/json"   -d '{"messages":[{"role":"user","content":"Reply to jane.doe@example.com about the invoice."}]}'
 
-open http://localhost:4173        # dashboard (host port set by AGCMS_DASHBOARD_PORT)
+open http://localhost:4173        # dashboard: sign in with a tenant API key (host port: AGCMS_DASHBOARD_PORT)
 ```
+
+`agcms_test_key_for_development` is the seeded key of the `default` tenant. It is
+for local use only: replace it before any shared deployment.
 
 Providers, in failover order: Gemini `gemini-3.8-flash` (default), Groq
 `openai/gpt-oss-120b`, OpenRouter `nvidia/nemotron-3-ultra-550b-a55b:free`,

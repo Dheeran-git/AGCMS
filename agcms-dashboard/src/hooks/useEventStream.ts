@@ -74,6 +74,11 @@ export function useEventStream<T = unknown>({
             dispatchFrame(frame, handlersRef.current);
           }
         }
+        // The server closed the stream (restart, proxy timeout): reconnect.
+        if (!cancelled) {
+          setStatus('reconnecting');
+          reconnectTimer = setTimeout(connect, reconnectMs);
+        }
       } catch (err) {
         if (cancelled) return;
         setError(err as Error);
