@@ -241,3 +241,28 @@ class TestListProviders:
     def test_each_provider_has_required_fields(self):
         for p in list_providers():
             assert {"provider", "default_model", "available", "note"} <= set(p)
+
+
+def _non_json_resp():
+    resp = _resp(text="<html>bad gateway</html>")
+    resp.json.side_effect = ValueError("not json")
+    return resp
+
+
+class TestProviderFaultsFailOver:
+    """Any provider fault becomes an attempt and the chain moves on; nothing raises."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("first", [
+        httpx.RemoteProtocolError("server disconnected"),
+        _non_json_resp(),
+        _resp(json_data={"error": {"message": "quota", "code": 429}}),
+    ])
+    async def test_fault_falls_through_to_next_provider(self, first):
+        patcher, _ = _client(side_effect=[first, _resp()])
+        with _env(), patcher:
+            result = await forward_to_llm(_MESSAGES)
+        routing = pop_routing(result)
+        assert routing["provider"] == "groq"
+        assert routing["attempts"][0]["provider"] == "gemini"
+        assert isinstance(routing["attempts"][0]["reason"], str)

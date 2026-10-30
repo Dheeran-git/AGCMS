@@ -76,7 +76,7 @@ async def check_global_ip_rate_limit(client_ip: str) -> Tuple[bool, int]:
     via API key rotation and protects unauthenticated endpoints.
 
     Args:
-        client_ip: The client's IP address (from X-Forwarded-For or direct).
+        client_ip: The client IP (uvicorn resolves X-Forwarded-For for trusted proxies only).
 
     Returns:
         (allowed, current_count) — allowed is True if under limit.

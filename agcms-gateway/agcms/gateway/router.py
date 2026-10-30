@@ -116,10 +116,17 @@ async def _call_provider(
     except httpx.TimeoutException:
         return {"error": "provider_timeout",
                 "reason": f"Provider '{name}' timed out after {cfg.timeout:.0f} seconds."}
+    except httpx.HTTPError as exc:
+        return {"error": "provider_unreachable", "reason": f"'{name}' request failed: {exc!r}"}
 
     if resp.status_code != 200:
         return {"error": "llm_error", "reason": f"{name} returned {resp.status_code}: {resp.text[:300]}"}
-    body = resp.json()
+    try:
+        body = resp.json()
+    except ValueError:
+        return {"error": "llm_error", "reason": f"{name} returned a non-JSON body: {resp.text[:300]}"}
+    if not isinstance(body, dict):
+        return {"error": "llm_error", "reason": f"{name} returned an unexpected body: {resp.text[:300]}"}
     body[_ROUTING_KEY] = {"provider": name, "model": payload["model"], "attempts": []}
     return body
 
@@ -153,7 +160,9 @@ async def forward_to_llm(
         if "error" not in result:
             result[_ROUTING_KEY]["attempts"] = attempts
             return result
-        attempts.append({"provider": name, "error": result["error"], "reason": result["reason"]})
+        # A provider may answer 200 with its own {"error": {...}} body.
+        error = result["error"] if isinstance(result["error"], str) else "llm_error"
+        attempts.append({"provider": name, "error": error, "reason": result.get("reason") or str(result["error"])})
 
     last = attempts[-1]
     return {"error": last["error"], "reason": last["reason"],

@@ -16,6 +16,7 @@ import asyncpg
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
+from redis.exceptions import RedisError
 
 from agcms.gateway.auth import AuthContext
 from agcms.gateway.messages import reply_text
@@ -214,7 +215,10 @@ async def playground_chat(req: PlaygroundChatRequest, ctx: AuthContext = Depends
         tenant_policy = await active_policy(ctx.tenant_id)
     except Exception as exc:
         raise _unavailable("Policy lookup") from exc
-    allowed, count = await check_rate_limit(ctx.tenant_id, rpm_limit=tenant_rpm(tenant_policy))
+    try:
+        allowed, count = await check_rate_limit(ctx.tenant_id, rpm_limit=tenant_rpm(tenant_policy))
+    except RedisError as exc:
+        raise _unavailable("Rate limiter") from exc
     if not allowed:
         raise HTTPException(status_code=429, detail=f"Rate limit exceeded ({count} requests/minute)")
 

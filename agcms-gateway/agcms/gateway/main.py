@@ -14,6 +14,7 @@ import httpx
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from redis.exceptions import RedisError
 
 from agcms.gateway.auth import _jwt_secret, authenticate
 from agcms.gateway.dashboard_api import router as dashboard_router
@@ -71,6 +72,14 @@ def _error_response(code: str, reason: str, interaction_id: str, status: int) ->
     )
 
 
+def _rate_limiter_down(exc: Exception, interaction_id: str) -> JSONResponse:
+    return _error_response(
+        "governance_unavailable",
+        f"Rate limiter unavailable ({type(exc).__name__}); request rejected (fail-closed)",
+        interaction_id, 503,
+    )
+
+
 @app.get("/health")
 async def health():
     return {"status": "healthy", "service": "gateway"}
@@ -110,9 +119,15 @@ async def chat_completions(request: Request):
         )
 
     # --- Step 1b: Global IP rate limit (pre-auth, prevents key-rotation bypass) ---
-    client_ip = request.headers.get("X-Forwarded-For", request.client.host if request.client else "unknown")
-    client_ip = client_ip.split(",")[0].strip()
-    ip_allowed, ip_count = await check_global_ip_rate_limit(client_ip)
+    # uvicorn sets client.host from X-Forwarded-For only for FORWARDED_ALLOW_IPS
+    # proxies; reading the header directly would let any client pick its own IP.
+    client_ip = request.client.host if request.client else "unknown"
+    try:
+        ip_allowed, ip_count = await check_global_ip_rate_limit(client_ip)
+    except RedisError as exc:
+        if _FAIL_MODE == "closed":
+            return _rate_limiter_down(exc, interaction_id)
+        ip_allowed, ip_count = True, 0
     if not ip_allowed:
         return _error_response(
             "rate_limited",
@@ -141,8 +156,8 @@ async def chat_completions(request: Request):
     if ctx.auth_method == "jwt":
         user_id = ctx.user_id
     else:
-        user_id = request.headers.get("X-AGCMS-User-ID", "anonymous")
-    department = request.headers.get("X-AGCMS-Department")
+        user_id = request.headers.get("X-AGCMS-User-ID", "anonymous")[:256]  # audit column widths
+    department = (request.headers.get("X-AGCMS-Department") or "")[:128] or None
 
     # --- Step 3: Rate limit (limit comes from the tenant's active policy) ---
     try:
@@ -155,7 +170,12 @@ async def chat_completions(request: Request):
                 interaction_id, 503,
             )
         tenant_policy = None
-    allowed, count = await check_rate_limit(tenant_id, rpm_limit=tenant_rpm(tenant_policy))
+    try:
+        allowed, count = await check_rate_limit(tenant_id, rpm_limit=tenant_rpm(tenant_policy))
+    except RedisError as exc:
+        if _FAIL_MODE == "closed":
+            return _rate_limiter_down(exc, interaction_id)
+        allowed, count = True, 0
     if not allowed:
         return _error_response(
             "rate_limited",
