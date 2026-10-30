@@ -406,3 +406,9 @@ class TestValidatorInvalid:
         }
         errors = validate_policy(config)
         assert any("restricted_topics" in e for e in errors)
+
+
+def test_null_attack_type_is_reported_as_unknown():
+    decision = _resolver().resolve(_pii(), _injection(score=0.99, attack_type=None))
+    assert decision.action == "BLOCK"
+    assert "None" not in decision.reason and "UNKNOWN" in decision.reason

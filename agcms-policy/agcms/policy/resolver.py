@@ -71,7 +71,7 @@ class PolicyResolver:
                 score >= ml_only_threshold
             )
             if should_block:
-                attack = injection_result.get("attack_type", "UNKNOWN")
+                attack = injection_result.get("attack_type") or "UNKNOWN"  # key may be present as null
                 triggered.append("injection")
                 # Escalate on repeated injection if configured
                 escalate_threshold = inj_policy.get("escalate_threshold")
