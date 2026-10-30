@@ -11,9 +11,8 @@ import uuid
 from copy import deepcopy
 from typing import List
 
-import pytest
 
-from agcms.audit.chain_verifier import ChainIssue, verify_chain
+from agcms.audit.chain_verifier import verify_chain
 from agcms.audit.logger import AuditLogger
 
 

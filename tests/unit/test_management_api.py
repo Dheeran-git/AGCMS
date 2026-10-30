@@ -20,9 +20,8 @@ Mocking strategy:
 import os
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, patch
-from uuid import UUID, uuid4
+from uuid import uuid4
 
-import pytest
 
 os.environ.setdefault("JWT_SECRET_KEY", "test-secret-for-unit-tests")
 os.environ.setdefault("DATABASE_URL", "postgresql://agcms:secret@localhost:5433/agcms")

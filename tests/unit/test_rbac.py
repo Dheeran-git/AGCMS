@@ -7,9 +7,7 @@ Covers:
 """
 
 import os
-from unittest.mock import patch
 
-import pytest
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 

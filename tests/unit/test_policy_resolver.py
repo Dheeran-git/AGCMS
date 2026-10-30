@@ -8,11 +8,9 @@ Covers:
 
 import os
 
-import pytest
 
 os.environ.setdefault("DATABASE_URL", "postgresql://agcms:secret@localhost:5433/agcms")
 
-from agcms.policy.models import EnforcementDecision  # noqa: E402
 from agcms.policy.resolver import PolicyResolver  # noqa: E402
 from agcms.policy.validator import validate_policy  # noqa: E402
 

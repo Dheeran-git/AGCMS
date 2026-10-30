@@ -328,7 +328,6 @@ class TestHTTPEndpoints:
         assert "api_key" in data
 
     def test_get_tenant_found(self):
-        from datetime import datetime, timezone
         fake_tenant = TenantDetail(
             id="t1", name="T1", plan="starter",
             admin_email="a@a.com", is_active=True,

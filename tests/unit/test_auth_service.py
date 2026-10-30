@@ -203,7 +203,6 @@ class TestIssueToken:
         assert resp.status_code == 401
 
     def test_inactive_tenant_returns_401(self, client):
-        inactive = {**_TENANT, "is_active": False}
         with patch("agcms.auth.main.get_tenant_by_api_key", new_callable=AsyncMock) as mock_t:
             mock_t.return_value = None  # db.py returns None for inactive
             resp = client.post("/v1/auth/token", json={"api_key": "any_key"})
