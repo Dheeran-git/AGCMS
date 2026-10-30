@@ -173,21 +173,24 @@ class TestResponseFormat:
 
 class TestDashboardAPI:
     def test_stats_endpoint(self, client: httpx.Client):
-        resp = client.get("/api/dashboard/stats")
+        resp = client.get("/api/dashboard/stats", headers=HEADERS)
         assert resp.status_code == 200
         body = resp.json()
         assert "total_requests" in body
         assert "violations" in body
 
     def test_violations_endpoint(self, client: httpx.Client):
-        resp = client.get("/api/dashboard/violations")
+        resp = client.get("/api/dashboard/violations", headers=HEADERS)
         assert resp.status_code == 200
         body = resp.json()
         assert "violations" in body
         assert "total" in body
 
     def test_timeline_endpoint(self, client: httpx.Client):
-        resp = client.get("/api/dashboard/timeline")
+        resp = client.get("/api/dashboard/timeline", headers=HEADERS)
         assert resp.status_code == 200
         body = resp.json()
         assert "timeline" in body
+
+    def test_dashboard_requires_auth(self, client: httpx.Client):
+        assert client.get("/api/dashboard/stats").status_code == 401

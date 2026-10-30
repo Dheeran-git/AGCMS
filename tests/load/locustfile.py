@@ -137,4 +137,4 @@ class AGCMSUser(HttpUser):
     @task(1)
     def dashboard_stats(self):
         """Dashboard stats endpoint."""
-        self.client.get("/api/dashboard/stats", name="/api/dashboard/stats")
+        self.client.get("/api/dashboard/stats", headers=HEADERS, name="/api/dashboard/stats")

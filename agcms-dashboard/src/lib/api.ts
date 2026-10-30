@@ -3,7 +3,7 @@ import { useAuthStore } from '../stores/auth';
 const API_BASE = '/api/dashboard';
 const MGMT_BASE = '/api/v1';
 
-// ─── Unauthenticated dashboard types (existing) ───────────────────────────────
+// ─── Dashboard types ───────────────────────────────────────────────────────────
 
 export interface DashboardStats {
   total_requests: number;
@@ -58,14 +58,6 @@ function getAuthHeaders(): Record<string, string> {
   };
 }
 
-async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`API error: ${res.status} ${res.statusText}`);
-  }
-  return res.json() as Promise<T>;
-}
-
 async function fetchAuth<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     ...options,
@@ -78,20 +70,20 @@ async function fetchAuth<T>(url: string, options?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-// ─── Unauthenticated endpoints (existing) ─────────────────────────────────────
+// ─── Dashboard endpoints (tenant-scoped) ─────────────────────────────────────────
 
 export function fetchStats(): Promise<DashboardStats> {
-  return fetchJson<DashboardStats>(`${API_BASE}/stats`);
+  return fetchAuth<DashboardStats>(`${API_BASE}/stats`);
 }
 
 export function fetchViolations(limit = 50, offset = 0): Promise<ViolationsResponse> {
-  return fetchJson<ViolationsResponse>(
+  return fetchAuth<ViolationsResponse>(
     `${API_BASE}/violations?limit=${limit}&offset=${offset}`
   );
 }
 
 export function fetchTimeline(hours = 24): Promise<TimelineResponse> {
-  return fetchJson<TimelineResponse>(`${API_BASE}/timeline?hours=${hours}`);
+  return fetchAuth<TimelineResponse>(`${API_BASE}/timeline?hours=${hours}`);
 }
 
 // --- Playground types ---
@@ -139,20 +131,14 @@ export interface PlaygroundResponse {
   };
 }
 
-export async function postPlaygroundChat(
+export function postPlaygroundChat(
   message: string,
   provider?: string,
 ): Promise<PlaygroundResponse> {
-  const res = await fetch(`${API_BASE}/playground/chat`, {
+  return fetchAuth<PlaygroundResponse>(`${API_BASE}/playground/chat`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message, provider }),
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as Record<string, unknown>;
-    throw new Error(String(err.reason ?? err.detail ?? `API error: ${res.status}`));
-  }
-  return res.json() as Promise<PlaygroundResponse>;
 }
 
 // --- Playground provider picker ---
@@ -170,7 +156,7 @@ export interface PlaygroundProvidersResponse {
 }
 
 export function fetchPlaygroundProviders(): Promise<PlaygroundProvidersResponse> {
-  return fetchJson<PlaygroundProvidersResponse>(`${API_BASE}/playground/providers`);
+  return fetchAuth<PlaygroundProvidersResponse>(`${API_BASE}/playground/providers`);
 }
 
 // ─── Management API types ──────────────────────────────────────────────────────
