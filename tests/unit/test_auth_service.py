@@ -241,10 +241,9 @@ class TestRefreshToken:
     def test_valid_refresh_returns_new_access_token(self, client, valid_refresh):
         with patch.dict(os.environ, {"JWT_SECRET_KEY": _SECRET}), \
              patch("agcms.auth.main.get_admin_user", new_callable=AsyncMock) as mock_u, \
-             patch("agcms.auth.main.is_jti_blacklisted", new_callable=AsyncMock) as mock_bl, \
-             patch("agcms.auth.main.blacklist_jti", new_callable=AsyncMock):
+             patch("agcms.auth.main.claim_jti", new_callable=AsyncMock) as mock_claim:
             mock_u.return_value = _USER
-            mock_bl.return_value = False
+            mock_claim.return_value = True
             resp = client.post("/v1/auth/refresh", json={"refresh_token": valid_refresh})
 
         assert resp.status_code == 200
@@ -265,25 +264,33 @@ class TestRefreshToken:
     def test_replayed_refresh_token_returns_401(self, client, valid_refresh):
         """A blacklisted jti must be rejected — replay attack prevention."""
         with patch.dict(os.environ, {"JWT_SECRET_KEY": _SECRET}), \
-             patch("agcms.auth.main.is_jti_blacklisted", new_callable=AsyncMock) as mock_bl:
-            mock_bl.return_value = True  # simulate already-used token
+             patch("agcms.auth.main.claim_jti", new_callable=AsyncMock) as mock_claim:
+            mock_claim.return_value = False  # simulate already-used token
             resp = client.post("/v1/auth/refresh", json={"refresh_token": valid_refresh})
 
         assert resp.status_code == 401
         assert "already used" in resp.json()["detail"]
 
-    def test_blacklist_called_after_successful_refresh(self, client, valid_refresh):
-        """jti must be blacklisted after a successful token exchange."""
+    def test_second_use_of_a_refresh_token_is_rejected(self, client, valid_refresh):
+        """The jti claim is one atomic SET NX, so only the first use succeeds."""
+        store: dict[str, str] = {}
+
+        class FakeRedis:
+            async def set(self, key, value, ex=None, nx=False):
+                if nx and key in store:
+                    return None
+                store[key] = value
+                return True
+
         with patch.dict(os.environ, {"JWT_SECRET_KEY": _SECRET}), \
              patch("agcms.auth.main.get_admin_user", new_callable=AsyncMock) as mock_u, \
-             patch("agcms.auth.main.is_jti_blacklisted", new_callable=AsyncMock) as mock_bl, \
-             patch("agcms.auth.main.blacklist_jti", new_callable=AsyncMock) as mock_blist:
+             patch("agcms.auth.tokens._get_blacklist_redis", return_value=FakeRedis()):
             mock_u.return_value = _USER
-            mock_bl.return_value = False
-            resp = client.post("/v1/auth/refresh", json={"refresh_token": valid_refresh})
+            first = client.post("/v1/auth/refresh", json={"refresh_token": valid_refresh})
+            second = client.post("/v1/auth/refresh", json={"refresh_token": valid_refresh})
 
-        assert resp.status_code == 200
-        mock_blist.assert_called_once()
+        assert first.status_code == 200
+        assert second.status_code == 401
 
 
 # ==================================================================

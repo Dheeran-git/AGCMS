@@ -38,17 +38,15 @@ def _get_blacklist_redis() -> aioredis.Redis:
     return _redis
 
 
-async def blacklist_jti(jti: str, exp_timestamp: int) -> None:
-    """Mark a refresh token jti as used. TTL matches the token's own expiry."""
+async def claim_jti(jti: str, exp_timestamp: int) -> bool:
+    """Atomically mark a refresh token jti as used; False if it already was.
+
+    SET NX makes the check and the mark one step, so two concurrent refreshes
+    with the same token cannot both succeed. TTL matches the token's expiry.
+    """
     r = _get_blacklist_redis()
     ttl = max(exp_timestamp - int(datetime.now(timezone.utc).timestamp()), 1)
-    await r.set(f"agcms:rt:blacklist:{jti}", "1", ex=ttl)
-
-
-async def is_jti_blacklisted(jti: str) -> bool:
-    """Return True if this jti has already been used."""
-    r = _get_blacklist_redis()
-    return await r.exists(f"agcms:rt:blacklist:{jti}") == 1
+    return bool(await r.set(f"agcms:rt:blacklist:{jti}", "1", ex=ttl, nx=True))
 
 
 def create_access_token(tenant_id: str, role: str, user_id: str) -> str:

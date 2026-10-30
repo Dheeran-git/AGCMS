@@ -37,13 +37,14 @@ async def get_tenant_by_api_key(api_key: str) -> Optional[dict]:
 
 
 async def get_admin_user(tenant_id: str) -> Optional[dict]:
-    """Return the admin tenant_user row for the given tenant."""
+    """Return the active admin tenant_user row, or None if it or the tenant is inactive."""
     conn = await asyncpg.connect(_DATABASE_URL)
     try:
         row = await conn.fetchrow(
-            "SELECT id, external_id, email, role "
-            "FROM tenant_users "
-            "WHERE tenant_id = $1 AND role = 'admin' AND is_active = TRUE "
+            "SELECT u.id, u.external_id, u.email, u.role "
+            "FROM tenant_users u JOIN tenants t ON t.id = u.tenant_id "
+            "WHERE u.tenant_id = $1 AND u.role = 'admin' AND u.is_active = TRUE "
+            "AND t.is_active = TRUE "
             "LIMIT 1",
             tenant_id,
         )

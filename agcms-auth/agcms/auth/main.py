@@ -14,10 +14,9 @@ from pydantic import BaseModel
 
 from agcms.auth.db import get_admin_user, get_tenant_by_api_key
 from agcms.auth.tokens import (
-    blacklist_jti,
+    claim_jti,
     create_access_token,
     create_refresh_token,
-    is_jti_blacklisted,
     verify_access_token,
     verify_refresh_token,
 )
@@ -96,7 +95,7 @@ async def refresh_token(body: RefreshRequest):
     jti = payload.get("jti")
     if jti is None:
         raise HTTPException(status_code=401, detail="Refresh token missing jti claim")
-    if await is_jti_blacklisted(jti):
+    if not await claim_jti(jti, payload["exp"]):
         raise HTTPException(status_code=401, detail="Refresh token already used")
 
     tenant_id = payload["sub"]
@@ -107,7 +106,6 @@ async def refresh_token(body: RefreshRequest):
     access = create_access_token(
         tenant_id=tenant_id, role=user["role"], user_id=user["external_id"],
     )
-    await blacklist_jti(jti, payload["exp"])
     return AccessTokenResponse(access_token=access)
 
 
