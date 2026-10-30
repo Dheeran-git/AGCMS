@@ -15,6 +15,7 @@ log = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    _get_logger()  # fail at startup, not on the first fire-and-forget /log, if the signing key is missing
     await database.connect()
     try:
         yield
@@ -29,7 +30,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Lazy init — logger import requires AGCMS_SIGNING_KEY and DB
+# Built once in lifespan; importing the logger requires AGCMS_SIGNING_KEY
 _logger = None
 
 
