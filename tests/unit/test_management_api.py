@@ -797,7 +797,7 @@ class TestStatsEndpoints:
 class TestTenantProxies:
     def test_tenant_provision_forwards(self):
         fake_client = FakeHttpxClient(FakeResponse(201, {"tenant_id": "acme", "api_key": "k"}))
-        app = _make_app(_ADMIN)
+        app = _make_app(AuthContext(tenant_id="default", user_id="op", role="admin", auth_method="jwt"))
         with _patch_httpx(fake_client):
             resp = TestClient(app).post(
                 "/api/v1/tenant/provision",
@@ -806,6 +806,13 @@ class TestTenantProxies:
         assert resp.status_code == 200  # _passthrough doesn't rewrite 201 → 200 but doesn't fail
         assert resp.json()["tenant_id"] == "acme"
         assert any(c[1].endswith("/provision") for c in fake_client.calls)
+
+    def test_tenant_admin_cannot_provision_other_tenants(self):
+        fake_client = FakeHttpxClient(FakeResponse(201, {}))
+        with _patch_httpx(fake_client):
+            resp = TestClient(_make_app(_ADMIN)).post("/api/v1/tenant/provision", json={"name": "X"})
+        assert resp.status_code == 403
+        assert fake_client.calls == []
 
     def test_tenant_usage_uses_ctx_tenant_id(self):
         fake_client = FakeHttpxClient(FakeResponse(200, {"tenant_id": "t1", "requests_today": 100}))
