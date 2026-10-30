@@ -4,13 +4,14 @@ import json
 from typing import Any, Optional
 
 import asyncpg
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from agcms.gateway.auth import AuthContext
 from agcms.gateway.rbac import require_admin, require_compliance
 from agcms.gateway.tenant_policy import invalidate
-from agcms.gateway.api.common import db_dsn
+from agcms.gateway.api.common import POLICY_URL, db_dsn
 
 router = APIRouter()
 
@@ -44,7 +45,8 @@ async def update_policy(
     body: PolicyUpdate,
     ctx: AuthContext = Depends(require_admin),
 ):
-    """Replace the active policy for the tenant with a new version (bumped patch)."""
+    """Validate, then replace the active policy for the tenant with a new version (bumped patch)."""
+    await _validate(body.config)
     conn = await asyncpg.connect(db_dsn())
     try:
         current = await conn.fetchrow(
@@ -70,6 +72,19 @@ async def update_policy(
 
     invalidate(ctx.tenant_id)
     return _serialize_policy(row)
+
+
+async def _validate(config: dict) -> None:
+    """Reject a config the policy service's validator does not accept (422)."""
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.post(f"{POLICY_URL}/validate", json={"config": config})
+        resp.raise_for_status()
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=503, detail="Policy validator unavailable") from exc
+    errors = resp.json()["errors"]
+    if errors:
+        raise HTTPException(status_code=422, detail="Invalid policy: " + "; ".join(errors))
 
 
 @router.get("/policy/versions")

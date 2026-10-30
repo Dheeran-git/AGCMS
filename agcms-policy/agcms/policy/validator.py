@@ -9,6 +9,7 @@ Validates a policy config dict against the AGCMS policy DSL rules:
 Returns a list of error strings; empty list means valid.
 """
 
+import re
 from typing import Any
 
 # Allowed action enum values
@@ -18,6 +19,43 @@ _CRITICAL_ACTIONS = {"BLOCK", "ESCALATE"}
 
 # Sections that must be present (but can be empty dicts)
 _REQUIRED_SECTIONS = {"pii", "injection"}
+
+
+def _is_number(value: Any) -> bool:
+    """True for int/float but not bool (bool is an int subclass in Python)."""
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _is_positive_int(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 1
+
+
+def _string_list_errors(name: str, value: Any) -> list[str]:
+    """An empty string would match every response, so entries must be non-blank."""
+    if not isinstance(value, list):
+        return [f"{name} must be a list"]
+    if not all(isinstance(t, str) and t.strip() for t in value):
+        return [f"{name} must contain only non-empty strings"]
+    return []
+
+
+def _custom_pattern_errors(patterns: Any) -> list[str]:
+    """Each pattern must compile and must not match the empty string."""
+    if not isinstance(patterns, dict):
+        return ["pii.custom_patterns must be an object"]
+    errors = []
+    for name, pattern in patterns.items():
+        if not name.strip() or not isinstance(pattern, str):
+            errors.append(f"pii.custom_patterns.{name!r} must map a name to a regex string")
+            continue
+        try:
+            compiled = re.compile(pattern)
+        except re.error as exc:
+            errors.append(f"pii.custom_patterns.{name} is not a valid regex: {exc}")
+            continue
+        if compiled.fullmatch(""):
+            errors.append(f"pii.custom_patterns.{name} must not match the empty string")
+    return errors
 
 
 def validate_policy(config: Any) -> list[str]:
@@ -41,7 +79,7 @@ def validate_policy(config: Any) -> list[str]:
 
     # --- PII section ---
     pii = config.get("pii")
-    if pii is not None:
+    if "pii" in config:
         if not isinstance(pii, dict):
             errors.append("'pii' must be an object")
         else:
@@ -49,7 +87,7 @@ def validate_policy(config: Any) -> list[str]:
 
     # --- Injection section ---
     injection = config.get("injection")
-    if injection is not None:
+    if "injection" in config:
         if not isinstance(injection, dict):
             errors.append("'injection' must be an object")
         else:
@@ -57,7 +95,7 @@ def validate_policy(config: Any) -> list[str]:
 
     # --- Response compliance section (optional) ---
     rc = config.get("response_compliance")
-    if rc is not None:
+    if "response_compliance" in config:
         if not isinstance(rc, dict):
             errors.append("'response_compliance' must be an object")
         else:
@@ -65,7 +103,7 @@ def validate_policy(config: Any) -> list[str]:
 
     # --- Rate limits section (optional) ---
     rl = config.get("rate_limits")
-    if rl is not None:
+    if "rate_limits" in config:
         if not isinstance(rl, dict):
             errors.append("'rate_limits' must be an object")
         else:
@@ -100,8 +138,8 @@ def _validate_pii(pii: dict) -> list[str]:
         )
 
     custom_patterns = pii.get("custom_patterns")
-    if custom_patterns is not None and not isinstance(custom_patterns, dict):
-        errors.append("pii.custom_patterns must be an object")
+    if custom_patterns is not None:
+        errors.extend(_custom_pattern_errors(custom_patterns))
 
     return errors
 
@@ -115,7 +153,7 @@ def _validate_injection(injection: dict) -> list[str]:
 
     block_threshold = injection.get("block_threshold")
     if block_threshold is not None:
-        if not isinstance(block_threshold, (int, float)):
+        if not _is_number(block_threshold):
             errors.append("injection.block_threshold must be a number")
         elif not (0.0 <= block_threshold <= 1.0):
             errors.append(
@@ -124,7 +162,7 @@ def _validate_injection(injection: dict) -> list[str]:
 
     ml_only_threshold = injection.get("ml_only_block_threshold")
     if ml_only_threshold is not None:
-        if not isinstance(ml_only_threshold, (int, float)):
+        if not _is_number(ml_only_threshold):
             errors.append("injection.ml_only_block_threshold must be a number")
         elif not (0.0 <= ml_only_threshold <= 1.0):
             errors.append(
@@ -134,13 +172,13 @@ def _validate_injection(injection: dict) -> list[str]:
 
     escalate_threshold = injection.get("escalate_threshold")
     if escalate_threshold is not None:
-        if not isinstance(escalate_threshold, (int, float)):
+        if not _is_number(escalate_threshold):
             errors.append("injection.escalate_threshold must be a number")
         elif not (0.0 <= escalate_threshold <= 1.0):
             errors.append(
                 f"injection.escalate_threshold must be between 0.0 and 1.0, got {escalate_threshold}"
             )
-        elif block_threshold is not None and isinstance(block_threshold, (int, float)):
+        elif _is_number(block_threshold):
             if escalate_threshold < block_threshold:
                 errors.append(
                     "injection.escalate_threshold must be >= injection.block_threshold "
@@ -161,12 +199,9 @@ def _validate_response_compliance(rc: dict) -> list[str]:
     if enabled is not None and not isinstance(enabled, bool):
         errors.append("response_compliance.enabled must be a boolean")
 
-    restricted_topics = rc.get("restricted_topics")
-    if restricted_topics is not None:
-        if not isinstance(restricted_topics, list):
-            errors.append("response_compliance.restricted_topics must be a list")
-        elif not all(isinstance(t, str) for t in restricted_topics):
-            errors.append("response_compliance.restricted_topics must contain only strings")
+    for key in ("restricted_topics", "system_prompt_keywords"):
+        if rc.get(key) is not None:
+            errors.extend(_string_list_errors(f"response_compliance.{key}", rc[key]))
 
     action = rc.get("action_on_violation")
     if action is not None and action not in _PII_ACTIONS:
@@ -183,14 +218,14 @@ def _validate_rate_limits(rl: dict) -> list[str]:
 
     rpm = rl.get("requests_per_minute")
     if rpm is not None:
-        if not isinstance(rpm, int) or rpm < 1:
+        if not _is_positive_int(rpm):
             errors.append("rate_limits.requests_per_minute must be a positive integer")
 
     rpd = rl.get("requests_per_day")
     if rpd is not None:
-        if not isinstance(rpd, int) or rpd < 1:
+        if not _is_positive_int(rpd):
             errors.append("rate_limits.requests_per_day must be a positive integer")
-        elif rpm is not None and isinstance(rpm, int) and rpm >= 1:
+        elif _is_positive_int(rpm):
             if rpd < rpm:
                 errors.append(
                     "rate_limits.requests_per_day must be >= requests_per_minute "

@@ -52,7 +52,9 @@ class ResponseComplianceAgent:
         if not response_text:
             return ComplianceResult()
 
-        p = (policy or {}).get("response_compliance", {})
+        p = (policy or {}).get("response_compliance") or {}
+        if p.get("enabled") is False:
+            return ComplianceResult()
         violations: List[ComplianceViolation] = []
 
         # Check 1: System prompt leak

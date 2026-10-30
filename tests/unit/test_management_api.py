@@ -87,6 +87,9 @@ class FakeResponse:
     def json(self):
         return self._payload
 
+    def raise_for_status(self):
+        pass
+
 
 class FakeHttpxClient:
     """Replaces ``httpx.AsyncClient(...)`` — supports context manager + verb methods."""
@@ -356,7 +359,8 @@ class TestPolicyEndpoints:
         ]
 
         app = _make_app(_ADMIN)
-        with _patch_asyncpg(fake_conn):
+        valid = FakeHttpxClient(FakeResponse(200, {"valid": True, "errors": []}))
+        with _patch_asyncpg(fake_conn), _patch_httpx(valid):
             resp = TestClient(app).put(
                 "/api/v1/policy",
                 json={"config": {"pii": {"enabled": True}}, "notes": "bump"},
@@ -378,7 +382,8 @@ class TestPolicyEndpoints:
         ]
 
         app = _make_app(_ADMIN)
-        with _patch_asyncpg(fake_conn):
+        valid = FakeHttpxClient(FakeResponse(200, {"valid": True, "errors": []}))
+        with _patch_asyncpg(fake_conn), _patch_httpx(valid):
             resp = TestClient(app).put(
                 "/api/v1/policy",
                 json={"config": {"injection": {"threshold": 0.7}}},
