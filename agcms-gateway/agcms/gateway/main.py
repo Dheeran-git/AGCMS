@@ -271,6 +271,7 @@ async def chat_completions(request: Request):
             comp_resp = await client.post(f"{_RESPONSE_URL}/check", json={
                 "response_text": response_text,
                 "original_prompt": prompt_text,
+                "policy": tenant_policy,
             })
         if comp_resp.status_code == 200:
             compliance_result = comp_resp.json()
