@@ -57,6 +57,10 @@ class PIIAgent:
         self.nlp = spacy.load(model_name)
 
     async def scan(self, text: str, policy: dict) -> PIIScanResult:
+        """Async wrapper around :meth:`scan_sync`."""
+        return self.scan_sync(text, policy)
+
+    def scan_sync(self, text: str, policy: dict) -> PIIScanResult:
         """Run full PII detection pipeline on text.
 
         Args:

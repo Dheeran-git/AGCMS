@@ -94,6 +94,13 @@ def test_redact_masks_each_message_before_the_provider():
     ]
 
 
+def test_oversized_prompt_is_rejected_before_scanning():
+    resp, llm = _send([{"role": "user", "content": "a" * (main._MAX_PROMPT_CHARS + 1)}])
+    assert resp.status_code == 413
+    assert FakeClient.posted == {}
+    llm.assert_not_called()
+
+
 def test_non_text_parts_are_rejected():
     resp, llm = _send([{"role": "user", "content": [{"type": "image_url", "image_url": {"url": "x"}}]}])
     assert resp.status_code == 400

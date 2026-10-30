@@ -55,6 +55,10 @@ _DB_URL = os.environ.get("DATABASE_URL", "postgresql://agcms:secret@postgres:543
 # trading governance for availability.
 _FAIL_MODE = os.environ.get("AGCMS_FAIL_MODE", "closed").lower()
 
+# Upper bound on the scanned prompt text. The PII patterns are linear on prose
+# but quadratic on long unbroken runs, so the cap bounds the worst-case scan.
+_MAX_PROMPT_CHARS = int(os.environ.get("AGCMS_MAX_PROMPT_CHARS", "32000"))
+
 
 def _error_response(code: str, reason: str, interaction_id: str, status: int) -> JSONResponse:
     """RULE 7: Structured error responses."""
@@ -96,6 +100,12 @@ async def chat_completions(request: Request):
         return _error_response("invalid_request", invalid, interaction_id, 400)
 
     prompt_text, segments = joined_prompt(body["messages"])
+    if len(prompt_text) > _MAX_PROMPT_CHARS:
+        return _error_response(
+            "prompt_too_large",
+            f"Prompt text exceeds {_MAX_PROMPT_CHARS} characters",
+            interaction_id, 413,
+        )
 
     # --- Step 1b: Global IP rate limit (pre-auth, prevents key-rotation bypass) ---
     client_ip = request.headers.get("X-Forwarded-For", request.client.host if request.client else "unknown")
