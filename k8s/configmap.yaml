@@ -12,13 +12,19 @@ data:
   AUDIT_SERVICE_URL: "http://audit:8005"
   AUTH_SERVICE_URL: "http://auth:8006"
   TENANT_SERVICE_URL: "http://tenant:8007"
+  REDIS_URL: "redis://redis:6379"
   # LLM routing (keys live in agcms-secrets)
   AGCMS_DEFAULT_PROVIDER: "gemini"
   AGCMS_PROVIDER_ORDER: "gemini,groq,openrouter,ollama"
   AGCMS_FAILOVER: "true"
-  # spaCy model toggle (en_core_web_sm in dev, en_core_web_trf in prod)
-  AGCMS_SPACY_MODEL: "en_core_web_trf"
+  # spaCy model: the PII image ships en_core_web_sm (add en_core_web_trf to its Dockerfile to switch)
+  AGCMS_SPACY_MODEL: "en_core_web_sm"
   # ML injection classifier
   AGCMS_ML_ENABLED: "true"
+  AGCMS_FAIL_MODE: "closed"
+  AGCMS_ALLOW_DEV_KEY: "false"
+  AGCMS_PLATFORM_TENANT: "default"
+  # Proxies whose X-Forwarded-For uvicorn trusts (the ingress controller pods)
+  FORWARDED_ALLOW_IPS: "10.0.0.0/8"
   # Audit log partition retention (days)
   AUDIT_RETENTION_DAYS: "90"

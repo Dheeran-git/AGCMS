@@ -25,7 +25,7 @@ spec:
                 name: agcms-secrets
           env:
             - name: DATABASE_URL
-              value: "postgresql+asyncpg://agcms:$(POSTGRES_PASSWORD)@postgres:5432/agcms"
+              value: "postgresql://agcms:$(POSTGRES_PASSWORD)@postgres:5432/agcms"
           resources:
             requests:
               memory: "256Mi"

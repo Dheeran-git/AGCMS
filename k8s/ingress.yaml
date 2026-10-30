@@ -4,7 +4,6 @@ metadata:
   name: agcms-ingress
   namespace: agcms
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/proxy-body-size: "10m"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
     # Enforce HTTPS — nginx redirects any HTTP request to HTTPS.
@@ -42,33 +41,25 @@ spec:
     - host: agcms.example.com   # replace with real hostname or use IP
       http:
         paths:
-          # Management + governance API
-          - path: /api/v1(/|$)(.*)
-            pathType: ImplementationSpecific
+          # Governance API (/api/v1, /api/dashboard) and LLM proxy (/v1). Paths
+          # pass through unchanged: the gateway serves these exact prefixes.
+          - path: /api
+            pathType: Prefix
             backend:
               service:
                 name: gateway
                 port:
                   number: 8000
-          # LLM proxy endpoint
-          - path: /v1(/|$)(.*)
-            pathType: ImplementationSpecific
+          - path: /v1
+            pathType: Prefix
             backend:
               service:
                 name: gateway
                 port:
                   number: 8000
-          # Legacy dashboard API (unauthenticated stats)
-          - path: /api/dashboard(/|$)(.*)
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: gateway
-                port:
-                  number: 8000
-          # React SPA (catch-all — must be last)
-          - path: /(/|$)(.*)
-            pathType: ImplementationSpecific
+          # React SPA (everything else)
+          - path: /
+            pathType: Prefix
             backend:
               service:
                 name: dashboard

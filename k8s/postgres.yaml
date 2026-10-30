@@ -61,6 +61,7 @@ spec:
         - name: postgres-data
           persistentVolumeClaim:
             claimName: postgres-pvc
+        # Create first: kubectl create configmap postgres-init-sql --namespace=agcms --from-file=init.sql=database/init.sql
         - name: init-sql
           configMap:
             name: postgres-init-sql
