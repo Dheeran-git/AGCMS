@@ -7,8 +7,10 @@ Accepts either of the following in the ``Authorization: Bearer <token>`` header:
 2. **Raw API keys** looked up via SHA-256 hash against the ``tenants`` table.
    Enables direct LLM access without a login roundtrip.
 
-The Phase-1 dev key ``agcms_test_key_for_development`` still works via a
-fast-path hash comparison (used by existing tests, the dashboard, and demos).
+The Phase-1 dev key ``agcms_test_key_for_development`` is seeded for the
+``default`` tenant in ``database/init.sql`` and so works through the normal
+API-key lookup. A database-free fast path for it exists for tests and is only
+honoured when ``AGCMS_ALLOW_DEV_KEY=true``. ``JWT_SECRET_KEY`` has no default.
 
 Detection heuristic:
     token with exactly 2 dots   → JWT path
@@ -45,7 +47,15 @@ _JWT_ALGORITHM = "HS256"
 
 def _jwt_secret() -> str:
     """Read JWT_SECRET_KEY at call time so env overrides work after import."""
-    return os.environ.get("JWT_SECRET_KEY", "dev-jwt-secret-change-me")
+    secret = os.environ.get("JWT_SECRET_KEY", "")
+    if not secret:
+        raise RuntimeError("JWT_SECRET_KEY is not set; refusing to accept or verify tokens")
+    return secret
+
+
+def _dev_key_allowed() -> bool:
+    """The built-in dev key bypasses the database; only honour it when explicitly enabled."""
+    return os.environ.get("AGCMS_ALLOW_DEV_KEY", "false").lower() == "true"
 
 
 def _database_url() -> str:
@@ -79,7 +89,9 @@ class AuthContext:
 def _try_jwt(token: str) -> Tuple[Optional[AuthContext], Optional[dict]]:
     """Decode a JWT access token. Returns (ctx, payload) or (None, None)."""
     try:
-        payload = jwt.decode(token, _jwt_secret(), algorithms=[_JWT_ALGORITHM])
+        payload = jwt.decode(
+            token, _jwt_secret(), algorithms=[_JWT_ALGORITHM], options={"require_exp": True},
+        )
     except JWTError:
         return None, None
 
@@ -203,7 +215,7 @@ async def authenticate(
 
     # API-key path — dev key fast-path first
     key_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
-    if key_hash == _DEV_KEY_HASH:
+    if key_hash == _DEV_KEY_HASH and _dev_key_allowed():
         return (
             AuthContext(
                 tenant_id=_DEV_TENANT_ID,

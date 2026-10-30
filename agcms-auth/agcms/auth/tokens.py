@@ -19,7 +19,9 @@ from typing import Optional
 import redis.asyncio as aioredis
 from jose import JWTError, jwt
 
-_SECRET = os.environ.get("JWT_SECRET_KEY", "dev-jwt-secret-change-me")
+_SECRET = os.environ.get("JWT_SECRET_KEY", "")
+if not _SECRET:
+    raise RuntimeError("JWT_SECRET_KEY is not set; the auth service cannot sign tokens")
 _ALGORITHM = "HS256"
 _ACCESS_EXPIRE_MINUTES = 15
 _REFRESH_EXPIRE_DAYS = 7
@@ -80,7 +82,7 @@ def create_refresh_token(tenant_id: str) -> str:
 def decode_token(token: str) -> Optional[dict]:
     """Decode and validate a JWT. Returns payload dict or None on failure."""
     try:
-        return jwt.decode(token, _SECRET, algorithms=[_ALGORITHM])
+        return jwt.decode(token, _SECRET, algorithms=[_ALGORITHM], options={"require_exp": True})
     except JWTError:
         return None
 

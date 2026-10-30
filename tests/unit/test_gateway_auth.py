@@ -121,6 +121,29 @@ class TestDevKeyFastPath:
         assert ctx.auth_method == "dev_key"
         assert ctx.tenant_id == "default"
 
+    async def test_fast_path_is_off_unless_enabled(self, monkeypatch):
+        """Without AGCMS_ALLOW_DEV_KEY the dev key must go through the database like any key."""
+        monkeypatch.setenv("AGCMS_ALLOW_DEV_KEY", "false")
+        mock_connect = _make_mock_connect(None, legacy_row=None)
+        with patch("agcms.gateway.auth.asyncpg.connect", mock_connect):
+            ctx, err = await authenticate(_DEV_KEY)
+        assert ctx is None
+        assert err is not None
+
+
+class TestJWTSecretAndExpiry:
+    async def test_token_without_exp_is_rejected(self):
+        payload = {"sub": "t1", "user_id": "u1", "role": "admin", "type": "access"}
+        ctx, err = await authenticate(f"Bearer {jwt.encode(payload, _SECRET, algorithm=_ALGORITHM)}")
+        assert ctx is None
+        assert err is not None
+
+    def test_missing_secret_refuses_to_run(self, monkeypatch):
+        from agcms.gateway.auth import _jwt_secret
+        monkeypatch.delenv("JWT_SECRET_KEY")
+        with pytest.raises(RuntimeError):
+            _jwt_secret()
+
 
 # ==================================================================
 # 4. JWT path

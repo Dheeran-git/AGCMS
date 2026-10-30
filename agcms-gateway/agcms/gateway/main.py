@@ -15,13 +15,15 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from agcms.gateway.auth import authenticate
+from agcms.gateway.auth import _jwt_secret, authenticate
 from agcms.gateway.dashboard_api import router as dashboard_router
 from agcms.gateway.management_api import router as management_router
 from agcms.gateway.messages import joined_prompt, redact_messages, reply_text, validate_body
 from agcms.gateway.rate_limiter import check_global_ip_rate_limit, check_rate_limit, tenant_rpm
 from agcms.gateway.router import forward_to_llm, list_providers, pop_routing
 from agcms.gateway.tenant_policy import active_policy
+
+_jwt_secret()  # fail at startup, not on the first request, when JWT_SECRET_KEY is missing
 
 app = FastAPI(
     title="AGCMS Proxy Gateway",
