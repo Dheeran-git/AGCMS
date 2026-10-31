@@ -17,7 +17,7 @@ Client -> Gateway (:8000) -> PII (:8001) + Injection (:8002) in parallel
                           -> Policy (:8004) -> LLM provider
                           -> Response check (:8003)
                           -> Audit (:8005, HMAC-SHA256 hash chain per tenant)
-Dashboard (:4173) <- Gateway management API <- PostgreSQL (RLS) + Redis
+Dashboard (:4173) <- Gateway management API <- PostgreSQL + Redis
 Auth (:8006) issues JWTs; Tenant (:8007) provisions tenants + API keys.
 ```
 
@@ -82,6 +82,7 @@ minute per client IP (`AGCMS_GLOBAL_IP_RPM`).
 
 ```bash
 pytest tests/unit/                 # no services needed
+set -a && . ./.env && set +a      # integration tests mint JWTs with JWT_SECRET_KEY
 pytest tests/integration/          # needs `docker compose up`
 cd agcms-dashboard && npx playwright test   # dashboard e2e, needs the stack on :4173
 locust -f tests/load/locustfile.py --host=http://localhost:8000
@@ -122,11 +123,11 @@ breakdowns, the multi-seed table and the caveats.
 agcms-{gateway,pii,injection,response,policy,audit,auth,tenant}/   Python services
 agcms-common/          shared scope vocabulary
 agcms-dashboard/       React 18 / Vite admin UI
-database/init.sql      PostgreSQL schema with row-level security
+database/init.sql      PostgreSQL schema (RLS policies defined, not yet enforced)
 policies/default.yaml  default tenant policy
 k8s/                   plain Kubernetes manifests
 tests/{unit,integration,load,eval}/
-docs/                  cURL quickstart, security checklist, evaluation notes
+docs/                  cURL quickstart, evaluation results, paper notes
 AGCMS_Complete_Build_Guide.md   original design document ("RULE N" references)
 ```
 
