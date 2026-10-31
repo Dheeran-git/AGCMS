@@ -31,6 +31,7 @@ import asyncpg
 from jose import JWTError, jwt
 
 from agcms.common import scopes as scope_vocab
+from agcms.gateway import clients
 
 _log = logging.getLogger("agcms.gateway.auth")
 
@@ -56,10 +57,6 @@ def _jwt_secret() -> str:
 def _dev_key_allowed() -> bool:
     """The built-in dev key bypasses the database; only honour it when explicitly enabled."""
     return os.environ.get("AGCMS_ALLOW_DEV_KEY", "false").lower() == "true"
-
-
-def _database_url() -> str:
-    return os.environ.get("DATABASE_URL", "")
 
 
 # ---------------------------------------------------------------------------
@@ -129,50 +126,44 @@ async def _try_api_key_db(api_key: str) -> Optional[AuthContext]:
     """
     key_hash = hashlib.sha256(api_key.encode("utf-8")).hexdigest()
 
-    db_url = _database_url()
-    if not db_url:
+    if clients.pool is None:
         return None
-
     try:
-        conn = await asyncpg.connect(db_url)
-    except Exception:
-        return None
+        async with clients.pool.acquire() as conn:
+            return await _lookup_key(conn, key_hash)
+    except (OSError, asyncpg.PostgresError, asyncpg.InterfaceError):
+        return None  # database unreachable: the key cannot be verified
 
-    try:
-        row = await conn.fetchrow(
-            "SELECT ak.id, ak.tenant_id, ak.scopes "
-            "FROM api_keys ak "
-            "JOIN tenants t ON t.id = ak.tenant_id "
-            "WHERE ak.key_hash = $1 "
-            "  AND ak.revoked_at IS NULL "
-            "  AND t.is_active = TRUE",
-            key_hash,
+
+async def _lookup_key(conn, key_hash: str) -> Optional[AuthContext]:
+    """Resolve a key hash against ``api_keys``, then the legacy tenant column."""
+    row = await conn.fetchrow(
+        "SELECT ak.id, ak.tenant_id, ak.scopes "
+        "FROM api_keys ak "
+        "JOIN tenants t ON t.id = ak.tenant_id "
+        "WHERE ak.key_hash = $1 "
+        "  AND ak.revoked_at IS NULL "
+        "  AND t.is_active = TRUE",
+        key_hash,
+    )
+    if row is not None:
+        await conn.execute("UPDATE api_keys SET last_used_at = NOW() WHERE id = $1", row["id"])
+        scopes = frozenset(row["scopes"] or [])
+        return AuthContext(
+            tenant_id=row["tenant_id"],
+            user_id="api_key",
+            # The admin scope grants tenant management, so it carries the admin role.
+            role="admin" if scope_vocab.ADMIN in scopes else "user",
+            auth_method="api_key",
+            scopes=scopes,
+            api_key_id=str(row["id"]),
         )
-        if row is not None:
-            await conn.execute(
-                "UPDATE api_keys SET last_used_at = NOW() WHERE id = $1",
-                row["id"],
-            )
-            scopes = frozenset(row["scopes"] or [])
-            return AuthContext(
-                tenant_id=row["tenant_id"],
-                user_id="api_key",
-                # The admin scope grants tenant management, so it carries the admin role.
-                role="admin" if scope_vocab.ADMIN in scopes else "user",
-                auth_method="api_key",
-                scopes=scopes,
-                api_key_id=str(row["id"]),
-            )
 
-        # Legacy path (pre-Phase-6.4 tenants still on tenants.api_key_hash)
-        legacy = await conn.fetchrow(
-            "SELECT id FROM tenants "
-            "WHERE api_key_hash = $1 AND is_active = TRUE",
-            key_hash,
-        )
-    finally:
-        await conn.close()
-
+    # Legacy path (pre-Phase-6.4 tenants still on tenants.api_key_hash)
+    legacy = await conn.fetchrow(
+        "SELECT id FROM tenants WHERE api_key_hash = $1 AND is_active = TRUE",
+        key_hash,
+    )
     if legacy is None:
         return None
 

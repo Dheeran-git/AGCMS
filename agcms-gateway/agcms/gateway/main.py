@@ -8,14 +8,15 @@ import asyncio
 import os
 import time
 import uuid
+from contextlib import asynccontextmanager
 
-import asyncpg
 import httpx
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from redis.exceptions import RedisError
 
+from agcms.gateway import clients
 from agcms.gateway.auth import _jwt_secret, authenticate
 from agcms.gateway.dashboard_api import router as dashboard_router
 from agcms.gateway.management_api import router as management_router
@@ -26,10 +27,21 @@ from agcms.gateway.tenant_policy import active_policy
 
 _jwt_secret()  # fail at startup, not on the first request, when JWT_SECRET_KEY is missing
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await clients.open_all()
+    try:
+        yield
+    finally:
+        await clients.close_all()
+
+
 app = FastAPI(
     title="AGCMS Proxy Gateway",
     description="AI Governance and Compliance Monitoring System — Gateway",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -49,8 +61,6 @@ _INJECTION_URL = os.environ.get("INJECTION_SERVICE_URL", "http://injection:8002"
 _RESPONSE_URL = os.environ.get("RESPONSE_SERVICE_URL", "http://response:8003")
 _POLICY_URL = os.environ.get("POLICY_SERVICE_URL", "http://policy:8004")
 _AUDIT_URL = os.environ.get("AUDIT_SERVICE_URL", "http://audit:8005")
-
-_DB_URL = os.environ.get("DATABASE_URL", "postgresql://agcms:secret@postgres:5432/agcms")
 
 # Governance failure mode. "closed" (default) rejects the request with 503 when
 # a scan or the policy service is unavailable, so an outage can never let
@@ -187,15 +197,13 @@ async def chat_completions(request: Request):
     pii_result = None
     injection_result = None
 
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        pii_task = client.post(f"{_PII_URL}/scan", json={
+    pii_resp, injection_resp = await asyncio.gather(
+        clients.http.post(f"{_PII_URL}/scan", json={
             "text": prompt_text, "policy": (tenant_policy or {}).get("pii"),
-        })
-        injection_task = client.post(f"{_INJECTION_URL}/scan", json={"text": prompt_text})
-
-        pii_resp, injection_resp = await asyncio.gather(
-            pii_task, injection_task, return_exceptions=True,
-        )
+        }),
+        clients.http.post(f"{_INJECTION_URL}/scan", json={"text": prompt_text}),
+        return_exceptions=True,
+    )
 
     if isinstance(pii_resp, httpx.Response) and pii_resp.status_code == 200:
         pii_result = pii_resp.json()
@@ -212,12 +220,11 @@ async def chat_completions(request: Request):
     # --- Step 6: Policy resolution ---
     decision = {"action": "ALLOW", "reason": None, "triggered_policies": []}
     try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            policy_resp = await client.post(f"{_POLICY_URL}/resolve", json={
-                "pii_result": pii_result,
-                "injection_result": injection_result,
-                "policy": tenant_policy,
-            })
+        policy_resp = await clients.http.post(f"{_POLICY_URL}/resolve", json={
+            "pii_result": pii_result,
+            "injection_result": injection_result,
+            "policy": tenant_policy,
+        }, timeout=5.0)
         if policy_resp.status_code == 200:
             decision = policy_resp.json()
         elif _FAIL_MODE == "closed":
@@ -236,7 +243,7 @@ async def chat_completions(request: Request):
     # --- Step 7: Enforce ---
     if action == "BLOCK":
         # Fire-and-forget audit log (RULE 6)
-        asyncio.create_task(_audit_log(
+        clients.fire_and_forget(_audit_log(
             interaction_id, tenant_id, user_id, department, body,
             pii_result, injection_result, decision, None, start_time,
         ))
@@ -248,7 +255,7 @@ async def chat_completions(request: Request):
 
     if action == "ESCALATE":
         # Create escalation record (fire-and-forget) and continue processing
-        asyncio.create_task(_create_escalation(
+        clients.fire_and_forget(_create_escalation(
             interaction_id=interaction_id,
             tenant_id=tenant_id,
             reason=decision.get("reason", "Escalation triggered by policy"),
@@ -273,7 +280,7 @@ async def chat_completions(request: Request):
 
     # Check for LLM errors
     if "error" in llm_response and "choices" not in llm_response:
-        asyncio.create_task(_audit_log(
+        clients.fire_and_forget(_audit_log(
             interaction_id, tenant_id, user_id, department, body,
             pii_result, injection_result, decision, None, start_time, routing,
         ))
@@ -287,19 +294,18 @@ async def chat_completions(request: Request):
     response_text = reply_text(llm_response)
     compliance_result = None
     try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            comp_resp = await client.post(f"{_RESPONSE_URL}/check", json={
-                "response_text": response_text,
-                "original_prompt": prompt_text,
-                "policy": tenant_policy,
-            })
+        comp_resp = await clients.http.post(f"{_RESPONSE_URL}/check", json={
+            "response_text": response_text,
+            "original_prompt": prompt_text,
+            "policy": tenant_policy,
+        }, timeout=5.0)
         if comp_resp.status_code == 200:
             compliance_result = comp_resp.json()
     except Exception:
         pass
 
     # --- Step 11: Audit log (fire-and-forget, RULE 6) ---
-    asyncio.create_task(_audit_log(
+    clients.fire_and_forget(_audit_log(
         interaction_id, tenant_id, user_id, department, body,
         pii_result, injection_result, decision, compliance_result, start_time, routing,
     ))
@@ -320,20 +326,15 @@ async def _create_escalation(
     severity: str = "warning",
 ) -> None:
     """Insert an escalation record into the DB (fire-and-forget)."""
-    dsn = _DB_URL.replace("postgresql+asyncpg://", "postgresql://")
     try:
-        conn = await asyncpg.connect(dsn)
-        try:
-            await conn.execute(
-                "INSERT INTO escalations (interaction_id, tenant_id, reason, status, severity) "
-                "VALUES ($1::uuid, $2, $3, 'PENDING', $4)",
-                interaction_id,
-                tenant_id,
-                reason,
-                severity,
-            )
-        finally:
-            await conn.close()
+        await clients.pool.execute(
+            "INSERT INTO escalations (interaction_id, tenant_id, reason, status, severity) "
+            "VALUES ($1::uuid, $2, $3, 'PENDING', $4)",
+            interaction_id,
+            tenant_id,
+            reason,
+            severity,
+        )
     except Exception:
         pass  # Fire-and-forget: do not crash the response delivery
 
@@ -354,20 +355,19 @@ async def _audit_log(
     """Send audit log entry to the audit service (fire-and-forget)."""
     routing = routing or {}
     try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            await client.post(f"{_AUDIT_URL}/log", json={
-                "llm_provider": routing.get("provider") or "none",
-                "llm_model": routing.get("model"),
-                "interaction_id": interaction_id,
-                "tenant_id": tenant_id,
-                "user_id": user_id,
-                "department": department,
-                "raw_body": raw_body,
-                "pii_result": pii_result,
-                "injection_result": injection_result,
-                "decision": decision,
-                "compliance_result": compliance_result,
-                "start_time": start_time,
-            })
+        await clients.http.post(f"{_AUDIT_URL}/log", json={
+            "llm_provider": routing.get("provider") or "none",
+            "llm_model": routing.get("model"),
+            "interaction_id": interaction_id,
+            "tenant_id": tenant_id,
+            "user_id": user_id,
+            "department": department,
+            "raw_body": raw_body,
+            "pii_result": pii_result,
+            "injection_result": injection_result,
+            "decision": decision,
+            "compliance_result": compliance_result,
+            "start_time": start_time,
+        }, timeout=5.0)
     except Exception:
         pass  # Fire-and-forget: do not crash the response delivery

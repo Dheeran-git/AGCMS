@@ -15,6 +15,7 @@ Covers:
 import hashlib
 import os
 from datetime import datetime, timedelta, timezone
+from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -23,6 +24,7 @@ from jose import jwt
 os.environ.setdefault("JWT_SECRET_KEY", "test-secret-for-unit-tests")
 os.environ.setdefault("DATABASE_URL", "postgresql://agcms:secret@localhost:5433/agcms")
 
+from agcms.gateway import clients  # noqa: E402
 from agcms.gateway.auth import (  # noqa: E402
     AuthContext,
     authenticate,
@@ -124,8 +126,8 @@ class TestDevKeyFastPath:
     async def test_fast_path_is_off_unless_enabled(self, monkeypatch):
         """Without AGCMS_ALLOW_DEV_KEY the dev key must go through the database like any key."""
         monkeypatch.setenv("AGCMS_ALLOW_DEV_KEY", "false")
-        mock_connect = _make_mock_connect(None, legacy_row=None)
-        with patch("agcms.gateway.auth.asyncpg.connect", mock_connect):
+        pool = _make_pool(None, legacy_row=None)
+        with patch.object(clients, "pool", pool):
             ctx, err = await authenticate(_DEV_KEY)
         assert ctx is None
         assert err is not None
@@ -223,19 +225,29 @@ class TestJWTAuth:
 # ==================================================================
 
 
-def _make_mock_connect(row: dict | None, legacy_row: dict | None = None):
-    """Return an AsyncMock that behaves like asyncpg.connect → conn.
+class _FakePool:
+    """Stands in for ``clients.pool``: ``acquire()`` yields ``conn`` or raises ``error``."""
+
+    def __init__(self, conn=None, error: Exception | None = None):
+        self.conn, self.error = conn, error
+
+    @asynccontextmanager
+    async def acquire(self):
+        if self.error is not None:
+            raise self.error
+        yield self.conn
+
+
+def _make_pool(row: dict | None, legacy_row: dict | None = None) -> _FakePool:
+    """A pool whose connection answers the two key lookups.
 
     ``row`` is returned for the first ``fetchrow`` (scoped api_keys lookup).
     ``legacy_row`` is returned for the second (fallback to tenants.api_key_hash).
     """
     conn = AsyncMock()
     conn.fetchrow.side_effect = [row, legacy_row]
-    conn.close.return_value = None
     conn.execute.return_value = None
-    return AsyncMock(return_value=conn)
-
-
+    return _FakePool(conn)
 class TestAPIKeyDBAuth:
     async def test_valid_api_key_returns_ctx(self):
         scoped_row = {
@@ -243,8 +255,8 @@ class TestAPIKeyDBAuth:
             "tenant_id": "acme-corp",
             "scopes": ["ingest", "read:audit"],
         }
-        mock_connect = _make_mock_connect(scoped_row)
-        with patch("agcms.gateway.auth.asyncpg.connect", mock_connect):
+        pool = _make_pool(scoped_row)
+        with patch.object(clients, "pool", pool):
             ctx, err = await authenticate("Bearer agcms_prod_key_xyz")
 
         assert err is None
@@ -258,15 +270,15 @@ class TestAPIKeyDBAuth:
 
         # Confirm the query was called with the SHA-256 of the token
         expected_hash = hashlib.sha256(b"agcms_prod_key_xyz").hexdigest()
-        conn = mock_connect.return_value
+        conn = pool.conn
         assert conn.fetchrow.call_args_list[0].args[1] == expected_hash
         # last_used_at updated
         assert conn.execute.await_count == 1
 
     async def test_legacy_api_key_fallback(self):
         """Pre-6.4 keys only exist in tenants.api_key_hash — must still auth."""
-        mock_connect = _make_mock_connect(None, legacy_row={"id": "legacy-tenant"})
-        with patch("agcms.gateway.auth.asyncpg.connect", mock_connect):
+        pool = _make_pool(None, legacy_row={"id": "legacy-tenant"})
+        with patch.object(clients, "pool", pool):
             ctx, err = await authenticate("Bearer agcms_legacy_key")
 
         assert err is None
@@ -278,8 +290,8 @@ class TestAPIKeyDBAuth:
         assert ctx.role == "admin"
 
     async def test_unknown_api_key_returns_error(self):
-        mock_connect = _make_mock_connect(None, legacy_row=None)
-        with patch("agcms.gateway.auth.asyncpg.connect", mock_connect):
+        pool = _make_pool(None, legacy_row=None)
+        with patch.object(clients, "pool", pool):
             ctx, err = await authenticate("Bearer agcms_unknown_key")
         assert ctx is None
         assert err is not None
@@ -290,8 +302,8 @@ class TestAPIKeyDBAuth:
             "tenant_id": "t1",
             "scopes": ["ingest"],
         }
-        mock_connect = _make_mock_connect(scoped_row)
-        with patch("agcms.gateway.auth.asyncpg.connect", mock_connect):
+        pool = _make_pool(scoped_row)
+        with patch.object(clients, "pool", pool):
             ctx, err = await authenticate("Bearer agcms_ingest_only")
 
         assert err is None
@@ -300,13 +312,13 @@ class TestAPIKeyDBAuth:
         assert not ctx.has_scope("write:policy")
 
     async def test_db_connection_failure_returns_error(self):
-        def raise_conn(*_a, **_kw):
-            raise RuntimeError("db down")
+        with patch.object(clients, "pool", _FakePool(error=ConnectionRefusedError("db down"))):
+            ctx, err = await authenticate("Bearer agcms_prod_key_xyz")
+        assert ctx is None
+        assert err is not None
 
-        async def failing_connect(*_a, **_kw):
-            raise RuntimeError("db down")
-
-        with patch("agcms.gateway.auth.asyncpg.connect", side_effect=failing_connect):
+    async def test_no_pool_returns_error(self):
+        with patch.object(clients, "pool", None):
             ctx, err = await authenticate("Bearer agcms_prod_key_xyz")
         assert ctx is None
         assert err is not None
@@ -320,11 +332,9 @@ class TestAPIKeyDBAuth:
 class TestSelectionLogic:
     async def test_two_dots_uses_jwt_path(self):
         # A string with exactly two dots goes down the JWT path — DB should not
-        # be touched. We patch asyncpg.connect to raise if called.
-        async def should_not_be_called(*_a, **_kw):
-            raise AssertionError("DB was queried for a 2-dot token")
-
-        with patch("agcms.gateway.auth.asyncpg.connect", side_effect=should_not_be_called):
+        # be touched. The pool raises if it is used.
+        pool = _FakePool(error=AssertionError("DB was queried for a 2-dot token"))
+        with patch.object(clients, "pool", pool):
             ctx, err = await authenticate("Bearer invalid.jwt.value")
 
         # Decode will fail → error, but importantly no DB call
@@ -333,10 +343,10 @@ class TestSelectionLogic:
 
     async def test_no_dots_uses_api_key_path(self):
         # Non-dev, non-JWT token must hit the DB
-        mock_connect = _make_mock_connect({
+        pool = _make_pool({
             "id": "k1", "tenant_id": "t1", "scopes": ["ingest"],
         })
-        with patch("agcms.gateway.auth.asyncpg.connect", mock_connect):
+        with patch.object(clients, "pool", pool):
             ctx, err = await authenticate("Bearer plainapikey123")
         assert err is None
         assert ctx is not None
@@ -345,8 +355,8 @@ class TestSelectionLogic:
 
 class TestAPIKeyRole:
     async def test_scoped_key_with_admin_scope_has_admin_role(self):
-        mock_connect = _make_mock_connect({"id": "k1", "tenant_id": "t1", "scopes": ["ingest", "admin"]})
-        with patch("agcms.gateway.auth.asyncpg.connect", mock_connect):
+        pool = _make_pool({"id": "k1", "tenant_id": "t1", "scopes": ["ingest", "admin"]})
+        with patch.object(clients, "pool", pool):
             ctx, err = await authenticate("Bearer agcms_admin_scoped")
         assert err is None
         assert ctx.role == "admin"
