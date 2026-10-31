@@ -71,7 +71,7 @@ APIKEY_HDRS = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "applicatio
 
 @pytest.fixture(scope="module")
 def gw():
-    with httpx.Client(base_url=GATEWAY_URL, timeout=20.0) as c:
+    with httpx.Client(base_url=GATEWAY_URL, timeout=60.0) as c:  # an LLM round trip, possibly with provider failover
         yield c
 
 

@@ -18,7 +18,7 @@ HEADERS = {
 @pytest.fixture(scope="module")
 def client():
     """Shared httpx client for all tests."""
-    with httpx.Client(base_url=GATEWAY_URL, timeout=15.0) as c:
+    with httpx.Client(base_url=GATEWAY_URL, timeout=60.0) as c:  # an LLM round trip, possibly with provider failover
         yield c
 
 

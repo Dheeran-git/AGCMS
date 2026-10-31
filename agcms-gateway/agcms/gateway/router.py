@@ -33,7 +33,9 @@ class _ProviderConfig:
     env_var: Optional[str]   # env var holding the API key; None = no key needed
     endpoint: str
     default_model: str
-    timeout: float = 60.0
+    # Short enough that a hung cloud provider still leaves time to fail over
+    # within a typical 60 s client timeout.
+    timeout: float = 25.0
 
 
 def _ollama_endpoint() -> str:
