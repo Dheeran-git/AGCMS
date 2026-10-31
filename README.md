@@ -50,13 +50,14 @@ open http://localhost:4173        # dashboard: sign in with a tenant API key (ho
 `agcms_test_key_for_development` is the seeded key of the `default` tenant. It is
 for local use only: replace it before any shared deployment.
 
-Providers, in failover order: Gemini `gemini-3.8-flash` (default), Groq
+Providers, in failover order: Gemini `gemini-3.5-flash-lite` (default), Groq
 `openai/gpt-oss-120b`, OpenRouter `nvidia/nemotron-3-ultra-550b-a55b:free`,
 local Ollama `llama3.2:3b`. All speak the OpenAI chat-completions format; set
 the matching API keys in `.env`. When a provider errors or has no key the
 gateway retries the already-sanitised prompt on the next one and records the
 provider that answered in the audit row (`AGCMS_FAILOVER=false` disables
-this; `AGCMS_PROVIDER_ORDER` changes the order).
+this; `AGCMS_PROVIDER_ORDER` changes the order). A provider that times out or
+returns 429/5xx is skipped for `AGCMS_PROVIDER_COOLDOWN` seconds (default 60).
 
 The injection classifier is trained and exported locally before the first
 build (weights are not committed):

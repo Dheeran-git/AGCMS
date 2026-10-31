@@ -11,6 +11,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import pytest
 
+from agcms.gateway import router
 from agcms.gateway.router import (
     default_provider, forward_to_llm, list_providers, pop_routing, provider_order,
 )
@@ -21,6 +22,14 @@ _OK = {"id": "chatcmpl-abc", "object": "chat.completion",
 _ALL_KEYS = {"GEMINI_API_KEY": "g", "GROQ_API_KEY": "q", "OPENROUTER_API_KEY": "o",
              "OLLAMA_URL": "http://localhost:11434"}
 _NO_FAILOVER = {"AGCMS_FAILOVER": "false"}
+
+
+@pytest.fixture(autouse=True)
+def _no_benched_providers():
+    """Cooldowns live in module state; start and end every test with none."""
+    router._benched_until.clear()
+    yield
+    router._benched_until.clear()
 
 
 def _resp(status_code=200, json_data=None, text=""):
@@ -150,7 +159,7 @@ class TestEndpointsAndHeaders:
 class TestDefaultModels:
     @pytest.mark.asyncio
     @pytest.mark.parametrize("name,model", [
-        ("gemini", "gemini-3.8-flash"), ("groq", "openai/gpt-oss-120b"),
+        ("gemini", "gemini-3.5-flash-lite"), ("groq", "openai/gpt-oss-120b"),
         ("openrouter", "nvidia/nemotron-3-ultra-550b-a55b:free"), ("ollama", "llama3.2:3b"),
     ])
     async def test_default_model(self, name, model):
@@ -224,6 +233,61 @@ class TestFailover:
 
     def test_pop_routing_on_dict_without_record(self):
         assert pop_routing({"choices": []}) == {}
+
+
+def _urls(client):
+    return [c[0][0] for c in client.post.call_args_list]
+
+
+class TestProviderCooldown:
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("failure", [
+        _resp(429, text="quota"), _resp(503, text="overloaded"), httpx.TimeoutException("t"),
+    ])
+    async def test_transient_failure_benches_the_provider(self, failure):
+        """After Gemini fails, the next request goes straight to Groq."""
+        patcher, client = _client(side_effect=[failure, _resp(), _resp()])
+        with _env(), patcher:
+            await forward_to_llm(_MESSAGES)
+            result = await forward_to_llm(_MESSAGES)
+        assert "googleapis" in _urls(client)[0]
+        assert "groq.com" in _urls(client)[2]
+        assert result["agcms_routing"]["attempts"] == []
+
+    @pytest.mark.asyncio
+    async def test_client_error_does_not_bench(self):
+        """A 400 (say, a bad model name) is the request's fault, not the provider's."""
+        patcher, client = _client(side_effect=[_resp(400, text="bad model"), _resp(), _resp()])
+        with _env(), patcher:
+            await forward_to_llm(_MESSAGES)
+            await forward_to_llm(_MESSAGES)
+        assert "googleapis" in _urls(client)[2]
+
+    @pytest.mark.asyncio
+    async def test_bench_expires(self):
+        patcher, client = _client(side_effect=[_resp(503), _resp(), _resp()])
+        with _env({"AGCMS_PROVIDER_COOLDOWN": "0"}), patcher:
+            await forward_to_llm(_MESSAGES)
+            await forward_to_llm(_MESSAGES)
+        assert "googleapis" in _urls(client)[2]
+
+    @pytest.mark.asyncio
+    async def test_every_provider_benched_still_tries_them_all(self):
+        patcher, client = _client(side_effect=httpx.TimeoutException("t"))
+        with _env(), patcher:
+            await forward_to_llm(_MESSAGES)
+            client.post.side_effect = None
+            client.post.return_value = _resp()
+            result = await forward_to_llm(_MESSAGES)
+        assert result["agcms_routing"]["provider"] == "gemini"
+
+    @pytest.mark.asyncio
+    async def test_model_override_not_sent_when_requested_provider_is_benched(self):
+        patcher, client = _client(side_effect=[_resp(503), _resp(), _resp()])
+        with _env(), patcher:
+            await forward_to_llm(_MESSAGES)
+            await forward_to_llm(_MESSAGES, model="gemini-3.6-flash")
+        assert client.post.call_args_list[2][1]["json"]["model"] == "openai/gpt-oss-120b"
 
 
 class TestListProviders:

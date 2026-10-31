@@ -10,9 +10,13 @@ Selection: the request's ``provider`` field, else AGCMS_DEFAULT_PROVIDER,
 else the first provider in AGCMS_PROVIDER_ORDER. When AGCMS_FAILOVER is on
 (default), a provider-side failure (missing key, unreachable, timeout, any
 non-200) moves to the next provider in the order; a ``model`` override is
-sent only to the first provider tried, since model names are provider
-specific. The governance decision is already made before this module runs,
-so failover never changes what was scanned or redacted.
+sent only to the requested provider, since model names are provider
+specific. A transient failure (timeout, unreachable, 429, 5xx) also benches
+that provider for AGCMS_PROVIDER_COOLDOWN seconds (default 60), so an outage
+or an exhausted free-tier quota costs one failed call per cooldown instead
+of one per request; when every provider is benched, all are tried anyway.
+The governance decision is already made before this module runs, so
+failover never changes what was scanned or redacted.
 
 Every result carries ``agcms_routing``: the provider and model that
 answered, and one entry per failed attempt. Callers strip it before
@@ -20,12 +24,16 @@ returning the OpenAI-format body and record it in the audit row.
 """
 
 import os
+import time
 from dataclasses import dataclass
 from typing import Optional
 
 import httpx
 
 _ROUTING_KEY = "agcms_routing"
+
+# provider name -> monotonic time until which it is skipped
+_benched_until: dict[str, float] = {}
 
 
 @dataclass(frozen=True)
@@ -47,7 +55,8 @@ _PROVIDERS: dict[str, _ProviderConfig] = {
     "gemini": _ProviderConfig(
         env_var="GEMINI_API_KEY",
         endpoint="https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-        default_model="gemini-3.8-flash",       # stable Flash model, AI Studio free tier
+        # Pinned Flash-Lite: gemini-3.8-flash allows only 20 free-tier requests a day.
+        default_model="gemini-3.5-flash-lite",
     ),
     "groq": _ProviderConfig(
         env_var="GROQ_API_KEY",
@@ -83,6 +92,22 @@ def default_provider() -> str:
 
 def _failover_enabled() -> bool:
     return os.environ.get("AGCMS_FAILOVER", "true").lower() not in ("0", "false", "no", "off")
+
+
+def _is_transient(result: dict) -> bool:
+    """A failure worth benching the provider for: outage, overload or quota."""
+    status = result.get("status", 0)
+    return result["error"] in ("provider_timeout", "provider_unreachable") or status == 429 or status >= 500
+
+
+def _bench(name: str) -> None:
+    _benched_until[name] = time.monotonic() + float(os.environ.get("AGCMS_PROVIDER_COOLDOWN", "60"))
+
+
+def _ready(chain: list[str]) -> list[str]:
+    """Providers in ``chain`` not benched; all of them if every one is benched."""
+    now = time.monotonic()
+    return [p for p in chain if _benched_until.get(p, 0) <= now] or chain
 
 
 async def _call_provider(
@@ -122,7 +147,8 @@ async def _call_provider(
         return {"error": "provider_unreachable", "reason": f"'{name}' request failed: {exc!r}"}
 
     if resp.status_code != 200:
-        return {"error": "llm_error", "reason": f"{name} returned {resp.status_code}: {resp.text[:300]}"}
+        return {"error": "llm_error", "status": resp.status_code,
+                "reason": f"{name} returned {resp.status_code}: {resp.text[:300]}"}
     try:
         body = resp.json()
     except ValueError:
@@ -157,11 +183,13 @@ async def forward_to_llm(
         chain += [p for p in order[start:] if p != first]
 
     attempts = []
-    for i, name in enumerate(chain):
-        result = await _call_provider(name, messages, model if i == 0 else None, temperature, max_tokens)
+    for name in _ready(chain):
+        result = await _call_provider(name, messages, model if name == first else None, temperature, max_tokens)
         if "error" not in result:
             result[_ROUTING_KEY]["attempts"] = attempts
             return result
+        if _is_transient(result):
+            _bench(name)
         # A provider may answer 200 with its own {"error": {...}} body.
         error = result["error"] if isinstance(result["error"], str) else "llm_error"
         attempts.append({"provider": name, "error": error, "reason": result.get("reason") or str(result["error"])})

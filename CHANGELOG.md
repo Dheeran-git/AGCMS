@@ -7,7 +7,7 @@ release has a fixed `YYYY-MM-DD` date once cut.
 ## [Unreleased] — scope reset to the CHTR proposal
 
 ### Changed
-- LLM router: Gemini `gemini-3.8-flash` is the default, then Groq, then
+- LLM router: Gemini `gemini-3.5-flash-lite` is the default, then Groq, then
   OpenRouter (new, `nvidia/nemotron-3-ultra-550b-a55b:free`), then local
   Ollama; Mistral removed. Ordered failover on provider-side failures
   (`AGCMS_FAILOVER`, `AGCMS_PROVIDER_ORDER`); the provider and model that

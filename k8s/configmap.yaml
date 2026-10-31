@@ -17,6 +17,7 @@ data:
   AGCMS_DEFAULT_PROVIDER: "gemini"
   AGCMS_PROVIDER_ORDER: "gemini,groq,openrouter,ollama"
   AGCMS_FAILOVER: "true"
+  AGCMS_PROVIDER_COOLDOWN: "60"
   # spaCy model: the PII image ships en_core_web_sm (add en_core_web_trf to its Dockerfile to switch)
   AGCMS_SPACY_MODEL: "en_core_web_sm"
   # ML injection classifier
