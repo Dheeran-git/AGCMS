@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 import { Toaster } from 'sonner';
 import { TooltipProvider } from './ui/tooltip';
 import { Sidebar } from './Sidebar';

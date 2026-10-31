@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router';
 import { AppLayout } from './components/AppLayout';
 import { Overview } from './pages/Overview';
 import { Violations } from './pages/Violations';

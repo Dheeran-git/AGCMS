@@ -1,4 +1,4 @@
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 import { Menu, Search, User } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from './ui/button';

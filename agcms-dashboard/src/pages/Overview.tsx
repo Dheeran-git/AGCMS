@@ -10,7 +10,7 @@ import {
   Radio,
   RadioTower,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { fetchStats, fetchTimeline, type Violation } from '../lib/api';
 import { StatCard } from '../components/StatCard';
 import { RequestChart } from '../components/RequestChart';
