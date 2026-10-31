@@ -37,7 +37,7 @@ from jose import jwt
 
 GATEWAY_URL = "http://localhost:8000"
 POLICY_URL = "http://localhost:8004"
-_SECRET = "dev-jwt-secret-change-me"
+_SECRET = os.environ["JWT_SECRET_KEY"]  # must match the gateway's secret
 _ALGO = "HS256"
 TENANT_ID = "default"
 API_KEY = "agcms_test_key_for_development"

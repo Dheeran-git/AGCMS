@@ -58,10 +58,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The stack reads .env; the tests mint JWTs, so they need the same secret.
       - name: Generate throwaway secrets for the test stack
         run: |
-          echo "JWT_SECRET_KEY=$(openssl rand -hex 32)" >> .env
-          echo "AGCMS_SIGNING_KEY=$(openssl rand -hex 32)" >> .env
+          for name in JWT_SECRET_KEY AGCMS_SIGNING_KEY; do
+            value=$(openssl rand -hex 32)
+            echo "::add-mask::$value"
+            echo "$name=$value" >> .env
+            echo "$name=$value" >> "$GITHUB_ENV"
+          done
 
       - name: Start all services
         run: |

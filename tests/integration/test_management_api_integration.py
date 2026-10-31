@@ -7,8 +7,8 @@ Token strategy
 The dev API key ``agcms_test_key_for_development`` maps to ``auth_method="dev_key"``
 which the gateway treats as ``role="admin"`` and ``tenant_id="default"``.
 
-JWT tokens are minted locally using the same JWT_SECRET_KEY that the gateway
-uses in its dev configuration (``"dev-jwt-secret-change-me"``).  This lets us
+JWT tokens are minted locally with the JWT_SECRET_KEY the gateway
+reads from its environment (the test run must export the same value).  This lets us
 manufacture tokens with any role without a running auth service.
 
 JWT role mapping used in tests:
@@ -36,7 +36,7 @@ from jose import jwt
 
 GATEWAY_URL = "http://localhost:8000"
 POLICY_URL = "http://localhost:8004"
-_SECRET = "dev-jwt-secret-change-me"
+_SECRET = os.environ["JWT_SECRET_KEY"]  # must match the gateway's secret
 _ALGO = "HS256"
 
 API_KEY = "agcms_test_key_for_development"
