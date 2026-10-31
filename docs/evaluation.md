@@ -196,6 +196,19 @@ Reading the numbers:
   machine. The paper should present both.
 - Raw CSVs in `tests/load/results/gov_u{10,25,50}_*.csv` (ignored by git).
 
+Re-run 2026-10-31 (commit 951ae2d, same laptop and settings) to check the
+numbers against the current code:
+
+| Concurrent users | requests | throughput req/s | p50 ms | p90 ms | p95 ms | p99 ms |
+|---|---|---|---|---|---|---|
+| 10 | 1,012 | 17.0 | 350 | 680 | 1,000 | 2,100 |
+| 25 | 966 | 16.3 | 1,300 | 1,900 | 2,100 | 2,400 |
+| 50 | 1,165 | 19.7 | 2,100 | 3,400 | 3,700 | 4,600 |
+
+0 failures at every level. Throughput is still 16 to 20 req/s, so the
+2026-09-07 table above (the one in the paper) stands; tail latency varies
+between runs on a laptop. Raw CSVs: `tests/load/results/gov1031_u*_*.csv`.
+
 ### Run 2026-09-06 (commit 781c565)
 
 Machine: Windows-11-10.0.26200-SP0, Intel64 Family 6 Model 186 Stepping 2, GenuineIntel, Python 3.12.12, CPU only, DeBERTa ONNX classifier loaded. Corpus sizes: PII 1600, injection 3505, response 240.
