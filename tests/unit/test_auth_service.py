@@ -139,8 +139,10 @@ class TestTokenVerification:
     def test_tampered_token_rejected(self):
         with patch.dict(os.environ, {"JWT_SECRET_KEY": _SECRET}):
             token = create_access_token("t1", "admin", "u1")
-        # Flip last character
-        tampered = token[:-1] + ("A" if token[-1] != "A" else "B")
+        # Change the first signature character: the last one also carries
+        # base64 padding bits, so changing it can leave the signature intact.
+        header, payload, sig = token.split(".")
+        tampered = f"{header}.{payload}.{'A' if sig[0] != 'A' else 'B'}{sig[1:]}"
         assert verify_access_token(tampered) is None
 
     def test_expired_token_rejected(self):
