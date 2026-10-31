@@ -272,8 +272,10 @@ class TestAPIKeyDBAuth:
         assert err is None
         assert ctx is not None
         assert ctx.tenant_id == "legacy-tenant"
-        # Legacy keys retain full scope set (behavior preservation).
+        # The master key keeps the full scope set and, like the admin JWT it
+        # can be exchanged for, the admin role.
         assert "admin" in ctx.scopes
+        assert ctx.role == "admin"
 
     async def test_unknown_api_key_returns_error(self):
         mock_connect = _make_mock_connect(None, legacy_row=None)
@@ -339,3 +341,12 @@ class TestSelectionLogic:
         assert err is None
         assert ctx is not None
         assert ctx.auth_method == "api_key"
+
+
+class TestAPIKeyRole:
+    async def test_scoped_key_with_admin_scope_has_admin_role(self):
+        mock_connect = _make_mock_connect({"id": "k1", "tenant_id": "t1", "scopes": ["ingest", "admin"]})
+        with patch("agcms.gateway.auth.asyncpg.connect", mock_connect):
+            ctx, err = await authenticate("Bearer agcms_admin_scoped")
+        assert err is None
+        assert ctx.role == "admin"

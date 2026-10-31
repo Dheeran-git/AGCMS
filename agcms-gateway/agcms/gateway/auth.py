@@ -72,7 +72,7 @@ class AuthContext:
     """Caller identity passed through the request lifecycle."""
     tenant_id: str
     user_id: str       # JWT claim, or "api_key" for raw API-key auth
-    role: str          # JWT claim, or "user" default for raw API-key auth
+    role: str          # JWT claim; for API keys "admin" if the key holds the admin scope, else "user"
     auth_method: str   # "jwt" | "api_key" | "dev_key"
     scopes: FrozenSet[str] = field(default_factory=frozenset)
     api_key_id: Optional[str] = None  # api_keys.id when auth_method == "api_key"
@@ -153,12 +153,14 @@ async def _try_api_key_db(api_key: str) -> Optional[AuthContext]:
                 "UPDATE api_keys SET last_used_at = NOW() WHERE id = $1",
                 row["id"],
             )
+            scopes = frozenset(row["scopes"] or [])
             return AuthContext(
                 tenant_id=row["tenant_id"],
                 user_id="api_key",
-                role="user",
+                # The admin scope grants tenant management, so it carries the admin role.
+                role="admin" if scope_vocab.ADMIN in scopes else "user",
                 auth_method="api_key",
-                scopes=frozenset(row["scopes"] or []),
+                scopes=scopes,
                 api_key_id=str(row["id"]),
             )
 
@@ -174,10 +176,12 @@ async def _try_api_key_db(api_key: str) -> Optional[AuthContext]:
     if legacy is None:
         return None
 
+    # The tenant master key: /v1/auth/token already exchanges it for an admin
+    # JWT, so it carries the admin role here too. Scoped api_keys stay "user".
     return AuthContext(
         tenant_id=legacy["id"],
         user_id="api_key",
-        role="user",
+        role="admin",
         auth_method="api_key",
         scopes=scope_vocab.ALL_SCOPES,
     )
